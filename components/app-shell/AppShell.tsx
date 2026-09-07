@@ -6,7 +6,13 @@ import Link from "next/link";
 import { SVGProps } from "react";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { ChatIcon, LibraryIcon, BrowseIcon, CommunityIcon, SettingsIcon } from "@/components/icons";
+import {
+  ChatIcon,
+  LibraryIcon,
+  BrowseIcon,
+  CommunityIcon,
+  SettingsIcon,
+} from "@/components/icons";
 
 type IconComponent = (props: SVGProps<SVGSVGElement>) => JSX.Element;
 
@@ -46,7 +52,9 @@ function NavLink({
       onClick={onClick}
       className={[
         "flex items-center gap-3 px-4 py-2.5 text-sm font-body rounded mx-2 transition-fast",
-        active ? "bg-shelf-100 text-shelf-700 font-medium" : "text-ink-800 hover:bg-paper-200 hover:text-ink-950",
+        active
+          ? "bg-shelf-100 text-shelf-700 font-medium"
+          : "text-ink-800 hover:bg-paper-200 hover:text-ink-950",
       ].join(" ")}
     >
       <Icon className="flex-shrink-0" />
@@ -63,7 +71,7 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
+    <div className="h-dvh flex flex-col lg:flex-row">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex w-56 flex-shrink-0 flex-col bg-paper-100 border-r border-ink-200">
         <div className="px-5 pt-5 pb-4">
@@ -71,7 +79,12 @@ export function AppShell({
         </div>
         <nav className="flex-1 flex flex-col gap-0.5">
           {NAV_ITEMS.map((item) => (
-            <NavLink key={item.href} href={item.href} label={item.label} Icon={item.icon} />
+            <NavLink
+              key={item.href}
+              href={item.href}
+              label={item.label}
+              Icon={item.icon}
+            />
           ))}
           <div className="my-2 mx-4 border-t border-ink-200" />
           <NavLink href="/settings" label="Settings" Icon={SettingsIcon} />
@@ -83,13 +96,21 @@ export function AppShell({
           <span className="h-8 w-8 rounded-full bg-shelf-100 text-shelf-700 flex items-center justify-center text-xs font-medium flex-shrink-0">
             {initials(user.name)}
           </span>
-          <span className="text-sm text-ink-800 truncate">{user.name ?? user.email}</span>
+          <span className="text-sm text-ink-800 truncate">
+            {user.name ?? user.email}
+          </span>
         </button>
       </aside>
 
       {/* Mobile top bar */}
       <header className="lg:hidden h-12 bg-paper-50 border-b border-ink-200 flex items-center justify-center relative flex-shrink-0">
         <span className="font-display text-lg text-ink-950">Folio</span>
+        <Link
+          href="/settings"
+          className="absolute left-3 text-sm text-shelf-700"
+        >
+          Settings
+        </Link>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           aria-label="Sign out"
@@ -99,12 +120,19 @@ export function AppShell({
         </button>
       </header>
 
-      <main className="flex-1 min-w-0 overflow-y-auto bg-paper-50">{children}</main>
+      <main className="flex-1 min-w-0 overflow-y-auto bg-paper-50">
+        {children}
+      </main>
 
       {/* Mobile bottom nav */}
       <nav className="lg:hidden h-16 bg-paper-50 border-t border-ink-200 flex-shrink-0 flex items-stretch">
         {NAV_ITEMS.map((item) => (
-          <MobileNavLink key={item.href} href={item.href} label={item.label} Icon={item.icon} />
+          <MobileNavLink
+            key={item.href}
+            href={item.href}
+            label={item.label}
+            Icon={item.icon}
+          />
         ))}
       </nav>
     </div>
@@ -125,9 +153,10 @@ function MobileNavLink({
   return (
     <Link
       href={href}
-      className={["flex-1 flex flex-col items-center justify-center gap-1 text-xs", active ? "text-shelf-700" : "text-ink-500"].join(
-        " ",
-      )}
+      className={[
+        "flex-1 flex flex-col items-center justify-center gap-1 text-xs",
+        active ? "text-shelf-700" : "text-ink-500",
+      ].join(" ")}
     >
       <Icon className="flex-shrink-0" />
       {label}

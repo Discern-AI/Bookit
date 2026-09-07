@@ -1,51 +1,50 @@
 "use client";
-
-// Modal — Implementation Brief §2.7.
-
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
-
+import { useEffect, useRef } from "react";
 export function Modal({
   open,
   onClose,
   children,
+  title = "Book details",
 }: {
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  title?: string;
 }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
-
+  const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
+    const dialog = ref.current;
+    if (open && !dialog?.open) dialog?.showModal();
+    if (!open && dialog?.open) dialog?.close();
     if (!open) return;
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
-
-  if (!mounted || !open) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/50 backdrop-blur-sm">
-      <div
-        className="bg-paper-50 rounded-lg shadow-modal max-w-lg w-full mx-4 p-6 relative transition-base"
-        role="dialog"
-        aria-modal="true"
-      >
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
+  return (
+    <dialog
+      ref={ref}
+      aria-label={title}
+      onCancel={onClose}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="w-full max-w-lg max-h-dialog overflow-y-auto bg-paper-50 text-ink-950 rounded-lg shadow-modal p-6 backdrop:bg-ink-950/50 backdrop:backdrop-blur-sm"
+    >
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <h2 className="font-display text-2xl">{title}</h2>
         <button
+          type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-3 right-3 h-8 w-8 flex items-center justify-center rounded text-ink-500 hover:bg-ink-50 hover:text-ink-950 transition-fast"
+          className="h-8 w-8 rounded hover:bg-ink-50 text-2xl"
         >
-          ×
+          &times;
         </button>
-        {children}
       </div>
-    </div>,
-    document.body,
+      {open && children}
+    </dialog>
   );
 }

@@ -19,29 +19,38 @@ export default function SignupPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
 
-    const res = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
-    });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(body.error ?? "That didn't save. Try again.");
+        setLoading(false);
+        return;
+      }
 
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      setError(body.error ?? "That didn't save. Try again.");
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
       setLoading(false);
-      return;
+      if (result?.error) {
+        setError("Account created — log in to continue.");
+        router.push("/login");
+        return;
+      }
+      router.push("/chat");
+      router.refresh();
+    } catch {
+      setError("The connection was interrupted. Try again.");
+    } finally {
+      setLoading(false);
     }
-
-    const result = await signIn("credentials", { email, password, redirect: false });
-    setLoading(false);
-    if (result?.error) {
-      setError("Account created — log in to continue.");
-      router.push("/login");
-      return;
-    }
-    router.push("/chat");
-    router.refresh();
   }
 
   return (
@@ -50,7 +59,12 @@ export default function SignupPage() {
         <label htmlFor="name" className="text-sm text-ink-800">
           Name
         </label>
-        <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} />
+        <Input
+          id="name"
+          required
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
       </div>
       <div className="flex flex-col gap-1.5">
         <label htmlFor="email" className="text-sm text-ink-800">
@@ -74,6 +88,7 @@ export default function SignupPage() {
           type="password"
           autoComplete="new-password"
           minLength={8}
+          maxLength={72}
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}

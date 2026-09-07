@@ -10,8 +10,14 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      aspectRatio: { book: "5 / 7" },
+
+      gridTemplateColumns: { library: "240px minmax(0, 1fr)" },
+      maxHeight: { dialog: "85dvh" },
+      maxWidth: { message: "85%", 40: "10rem" },
       colors: {
         ink: {
+          100: "#E4EAF0",
           950: "#0D1117",
           800: "#1E2A35",
           500: "#5A6A7A",
@@ -37,6 +43,7 @@ const config: Config = {
           100: "#DFF0E8",
         },
         rose: {
+          700: "#902640",
           600: "#B03050",
           100: "#F7E0E5",
         },

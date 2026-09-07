@@ -26,7 +26,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${lora.variable} ${inter.variable} font-body antialiased`}>
+      <body
+        className={`${lora.variable} ${inter.variable} font-body antialiased`}
+      >
         <Providers>{children}</Providers>
       </body>
     </html>

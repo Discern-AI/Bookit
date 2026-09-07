@@ -1,30 +1,26 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { libraryInclude, serializeBook } from "@/lib/book-data";
 import { LibraryView } from "@/components/library/LibraryView";
-
 export default async function LibraryPage() {
   const session = await auth();
   if (!session?.user) return null;
-
-  const userBooks = await prisma.userBook.findMany({
-    where: { userId: session.user.id },
-    include: { edition: { include: { work: true } } },
-    orderBy: { dateAdded: "desc" },
-  });
-
-  const serialized = userBooks.map((ub) => ({
-    id: ub.id,
-    shelf: ub.shelf,
-    rating: ub.rating,
-    dateAdded: ub.dateAdded.toISOString(),
-    title: ub.edition.work.title,
-    author: ub.edition.work.authorName,
-    isbn13: ub.edition.isbn13,
-    coverUrl: ub.edition.coverUrl,
-    year: ub.edition.year,
-    pageCount: ub.edition.pageCount,
-    format: ub.edition.format,
-  }));
-
-  return <LibraryView initialBooks={serialized} />;
+  const [books, shelves] = await Promise.all([
+    prisma.userBook.findMany({
+      where: { userId: session.user.id },
+      include: libraryInclude,
+      orderBy: { dateAdded: "desc" },
+    }),
+    prisma.customShelf.findMany({
+      where: { userId: session.user.id },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
+  return (
+    <LibraryView
+      initialBooks={books.map(serializeBook)}
+      initialShelves={shelves}
+    />
+  );
 }

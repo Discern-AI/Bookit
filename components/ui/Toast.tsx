@@ -2,7 +2,13 @@
 
 // Toast / Notification — Implementation Brief §2.8.
 
-import { createContext, useCallback, useContext, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useRef,
+  useState,
+} from "react";
 
 type ToastVariant = "default" | "success" | "error" | "warning";
 
@@ -35,7 +41,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const toast = useCallback(
     (message: string, variant: ToastVariant = "default") => {
       const id = nextId.current++;
-      setToasts((current) => [...current, { id, message, variant }]);
+      setToasts((current) => [...current.slice(-2), { id, message, variant }]);
       setTimeout(() => dismiss(id), 4000);
     },
     [dismiss],
@@ -44,7 +50,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+      <div
+        aria-live="polite"
+        className="fixed bottom-20 lg:bottom-4 right-4 z-50 flex flex-col gap-2"
+      >
         {toasts.map((t) => (
           <button
             key={t.id}
@@ -52,7 +61,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             className="bg-ink-950 text-paper-50 rounded-md px-4 py-3 text-sm shadow-panel flex items-center gap-3 max-w-sm text-left"
           >
             {t.variant !== "default" && (
-              <span aria-hidden className={["h-1.5 w-1.5 rounded-full flex-shrink-0", DOT_CLASS[t.variant]].join(" ")} />
+              <span
+                aria-hidden
+                className={[
+                  "h-1.5 w-1.5 rounded-full flex-shrink-0",
+                  DOT_CLASS[t.variant],
+                ].join(" ")}
+              />
             )}
             {t.message}
           </button>

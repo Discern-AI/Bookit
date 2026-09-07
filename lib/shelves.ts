@@ -45,7 +45,8 @@ export const SHELF_EMPTY_COPY: Record<ShelfKey, string> = {
   tbr: "Nothing on your list yet. The chat can help you find what's next.",
   read: "You haven't logged a finished book yet. Add one and it will live here.",
   reading_now: "Nothing here yet. Add a book and mark it as reading now.",
-  owned_unread: "Nothing here yet. Books you own but haven't started will show up here.",
+  owned_unread:
+    "Nothing here yet. Books you own but haven't started will show up here.",
   wishlist: "Nothing here yet. Books you'd like to buy will show up here.",
   not_for_me: "Nothing here yet.",
   dnf: "Nothing here yet.",

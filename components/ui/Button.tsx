@@ -28,34 +28,44 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
 }
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = "primary", size = "md", loading = false, disabled, className = "", children, ...props },
-  ref,
-) {
-  const isLink = variant === "link";
-  return (
-    <button
-      ref={ref}
-      disabled={disabled || loading}
-      className={[
-        "inline-flex items-center justify-center font-medium font-body transition-fast",
-        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-shelf-700",
-        "disabled:opacity-40 disabled:cursor-not-allowed",
-        VARIANT_CLASS[variant],
-        isLink ? "" : SIZE_CLASS[size],
-        className,
-      ].join(" ")}
-      {...props}
-    >
-      {loading ? (
-        <span
-          aria-hidden
-          className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin"
-        />
-      ) : (
-        children
-      )}
-      {loading && <span className="sr-only">Loading</span>}
-    </button>
-  );
-});
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  function Button(
+    {
+      variant = "primary",
+      size = "md",
+      loading = false,
+      disabled,
+      className = "",
+      children,
+      ...props
+    },
+    ref,
+  ) {
+    const isLink = variant === "link";
+    return (
+      <button
+        ref={ref}
+        disabled={disabled || loading}
+        className={[
+          "inline-flex items-center justify-center font-medium font-body transition-fast",
+          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-shelf-700",
+          "disabled:opacity-40 disabled:cursor-not-allowed",
+          VARIANT_CLASS[variant],
+          isLink ? "" : SIZE_CLASS[size],
+          className,
+        ].join(" ")}
+        {...props}
+      >
+        {loading ? (
+          <span
+            aria-hidden
+            className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin"
+          />
+        ) : (
+          children
+        )}
+        {loading && <span className="sr-only">Loading</span>}
+      </button>
+    );
+  },
+);

@@ -2,7 +2,13 @@ import { SHELF_BADGE_CLASS, SHELF_LABEL, ShelfKey } from "@/lib/shelves";
 
 // ShelfBadge — Implementation Brief §2.4.
 
-export function ShelfBadge({ shelf, className = "" }: { shelf: ShelfKey; className?: string }) {
+export function ShelfBadge({
+  shelf,
+  className = "",
+}: {
+  shelf: ShelfKey;
+  className?: string;
+}) {
   return (
     <span
       className={[

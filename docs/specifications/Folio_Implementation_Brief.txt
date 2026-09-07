@@ -1,0 +1,738 @@
+
+--- PAGE 1 ---
+FOLIO
+Implementation Brief for VS Code / Claude Code
+Design system · Screen specs · Component library · Build 
+order
+September 2026 — Confidential
+
+--- PAGE 2 ---
+How to use this document
+This brief is written for an AI coding assistant (Claude Code in VS Code) 
+building the Folio platform from scratch. Every section is a concrete instruction 
+set, not a description. Read the Design System section (§1–§4) first and establish 
+all tokens and base components before building any screen. Then build screens 
+in the order listed in §5 onward — each screen references the base components 
+and should not require new design decisions.
+Where a section says "see token X" or "use component Y", that token or 
+component is defined earlier in this document. When you encounter an 
+ambiguous layout choice, default to the principles in §3. When you encounter a 
+missing piece of copy, use the voice guidelines in §4.
+  Do not import any component library (shadcn, MUI, Ant Design, Radix ⚠
+UI). Build every component from scratch using Tailwind utility classes. The 
+design must not look like any existing component library.
+  Stack: Next.js 14 (App Router), TypeScript, Tailwind CSS, Claude API (claude-⚑
+sonnet-4-6), PostgreSQL via Prisma, Auth.js v5. Monorepo root is /folio.
+SECTION 1
+Design Tokens
+All tokens live in tailwind.config.ts under theme.extend. Never use raw hex 
+values or arbitrary Tailwind values in component code — always reference a 
+named token. This is enforced by the design system.
+1.1  Colour palette
+Folio's palette is drawn from aged paper, ink, deep library shelving, and the 
+particular blue of early-evening reading light. It is warm but not sentimental; 
+serious but not cold.
+ink.950 #0D1117   — near-black; primary text, headings
+ink.800 #1E2A35   — secondary text, icon fills
+ink.500 #5A6A7A   — tertiary text, meta labels, placeholders
+ink.200 #C8D4DC   — borders, dividers, subtle strokes
+ink.50 #F0F4F7   — very light surfaces, hover states
+paper.50 #FAFAF8   — page background (slightly warm white)
+paper.100 #F4F2ED   — card backgrounds, panel fills
+paper.200 #EAE6DE   — active/selected state backgrounds
+shelf.700 #2C4A6E   — primary accent; links, active nav, CTAs
+shelf.500 #4A78A8   — lighter accent; hover on shelf.700 
+elements
+shelf.100 #D6E6F5   — accent tint; selected chip backgrounds
+
+--- PAGE 3 ---
+amber.600 #C4760A   — warning states, price alerts, reminders
+amber.100 #FDF3DC   — warning background tint
+sage.600 #3A7A5A   — success states, availability indicators
+sage.100 #DFF0E8   — success background tint
+rose.600 #B03050   — destructive actions, error states
+rose.100 #F7E0E5   — error background tint
+1.2  Typography
+Two typefaces only. Headings and display: Lora (Google Fonts, serif). Body, UI, 
+labels: Inter (Google Fonts, sans-serif). Load both via next/font/google in 
+app/layout.tsx.
+font-display Lora — headings, book titles, pull quotes, hero text
+font-body Inter — all UI text, labels, buttons, body copy
+text-xs 12px / 1.5 — metadata, timestamps, captions
+text-sm 14px / 1.6 — secondary labels, helper text
+text-base 16px / 1.7 — primary body copy (max 68ch line length)
+text-lg 18px / 1.6 — lead paragraphs, card body
+text-xl 20px / 1.5 — section subheadings, emphasis
+text-2xl 24px / 1.4 — H3 level, card titles
+text-3xl 30px / 1.3 — H2 level, page section headings
+text-4xl 38px / 1.2 — H1 level, page titles
+text-5xl 48px / 1.1 — hero headings, marketing surfaces
+1.3  Spacing
+Use the default Tailwind 4px base scale. Key landmark values:
+space-1 4px
+space-2 8px
+space-3 12px
+space-4 16px — standard inner padding for compact 
+components
+space-5 20px
+space-6 24px — standard gap between related elements
+space-8 32px — section padding, card padding
+space-10 40px
+space-12 48px — major section gaps
+space-16 64px — page-level vertical rhythm
+space-20 80px — hero section padding
+
+--- PAGE 4 ---
+1.4  Border radius
+rounded-sm 4px — input fields, small chips
+rounded 6px — buttons, small cards
+rounded-md 8px — standard cards, panels
+rounded-lg 12px — large cards, modals, drawers
+rounded-full 9999px — avatars, pill badges only
+  No rounded-xl or rounded-2xl anywhere. The design is not bubbly.⚠
+1.5  Shadows
+shadow-card box-shadow: 0 1px 3px rgba(13,17,23,0.08), 0 1px 2px 
+rgba(13,17,23,0.04)
+shadow-panel box-shadow: 0 4px 12px rgba(13,17,23,0.10)
+shadow-modal box-shadow: 0 16px 48px rgba(13,17,23,0.16)
+shadow-none no shadow — use border instead for flat surfaces
+1.6  Motion
+One transition duration: 150ms ease-out for micro-interactions (button press, 
+hover state), 250ms ease-out for panel open/close and page element reveal. No 
+decorative animations. No scroll-triggered fade-ins.
+transition-fast 150ms ease-out
+transition-base 250ms ease-out
+SECTION 2
+Base Component Library
+Build these components first in /components/ui/. All other screens compose from 
+these. Each component spec below includes: purpose, exact class structure, 
+variants, and states.
+2.1  Button
+Variants
+● Primary — shelf.700 fill, white text, hover → shelf.500
+● Secondary — ink.50 fill, ink.800 text, ink.200 border, hover → ink.100 fill
+● Ghost — transparent fill, ink.800 text, hover → ink.50 fill
+● Danger — rose.600 fill, white text, hover → rose.700
+● Link — no background, no border, shelf.700 text, underline on hover
+
+--- PAGE 5 ---
+Sizes
+● sm — h-8 px-3 text-sm rounded
+● md — h-10 px-4 text-base rounded (default)
+● lg — h-12 px-6 text-lg rounded
+States
+● disabled: opacity-40 cursor-not-allowed
+● loading: show a 16px spinner (CSS border-animation, no library), text 
+hidden, same width
+● focus-visible: outline-2 outline-offset-2 outline-shelf-700
+  Buttons never have icons unless the spec explicitly calls for one. No chevrons, no ⚑
+arrows.
+2.2  Input & Textarea
+Base: w-full bg-paper-50 border border-ink-200 rounded-sm       px-3 py-2 
+text-base text-ink-950 placeholder:text-ink-500       focus:outline-none 
+focus:border-shelf-700 focus:ring-1 focus:ring-shelf-700       transition-
+fast Error state: border-rose-600 focus:border-rose-600 focus:ring-rose-600 
+Disabled: bg-ink-50 text-ink-500 cursor-not-allowed
+2.3  BookCard
+The primary unit of display for a book throughout the product. Used on shelves, 
+search results, recommendations, and lists.
+Structure (horizontal, default)
+<div class="flex gap-4 p-4 bg-paper-100 rounded-md shadow-card">   <img  /* 
+cover */ class="w-14 h-20 object-cover rounded flex-shrink-0 shadow-sm" /> 
+<div class="flex flex-col gap-1 min-w-0">     <span /* title */ class="font-
+display text-base font-semibold text-ink-950 truncate" />     <span /* 
+author */ class="text-sm text-ink-500" />     <span /* shelf/status badge */ 
+/>   /* see §2.5 */     <div  /* meta row: year · pages · format */ 
+class="flex gap-2 text-xs text-ink-500 mt-auto" />   </div>   <div  /* 
+action slot: shelf picker, quick-add, kebab */ class="ml-auto flex-shrink-0" 
+/> </div>
+Variant: card-vertical (used in carousels and grid views)
+<div class="flex flex-col gap-2 w-40">   <img class="w-40 h-56 object-cover 
+rounded shadow-card" />   <span /* title */ class="font-display text-sm 
+font-semibold text-ink-950 line-clamp-2" />   <span /* author */ 
+class="text-xs text-ink-500" /> </div>
+  Cover images: fetch from Open Library covers API first ⚑
+(https://covers.openlibrary.org/b/isbn/{isbn}-M.jpg), fallback to a generated 
+placeholder showing first letter of title in paper.200 with ink.500 text, same 
+dimensions.
+2.4  ShelfBadge
+A coloured pill indicating which shelf a book is on.
+reading_now:    bg-shelf-100 text-shelf-700   "Reading now" read:           
+bg-sage-100 text-sage-600     "Read" tbr:            bg-amber-100 text-
+amber-600   "Want to read" owned_unread:   bg-ink-50 text-ink-500        
+"Owned, unread" wishlist:       bg-paper-200 text-ink-800     "Wishlist" 
+
+--- PAGE 6 ---
+dnf:            bg-rose-100 text-rose-600     "Did not finish" not_for_me: 
+bg-ink-50 text-ink-500        "Not for me" interested:     bg-paper-200 
+text-ink-800     "Interested" lent_out:       bg-amber-100 text-amber-600   
+"Lent out"  All: text-xs font-medium px-2 py-0.5 rounded-full
+2.5  RatingStars
+Five stars, half-star precision. Filled: ink.800. Empty: ink.200. Interactive 
+version: hover fills incrementally. Display-only version is identical but pointer-
+events-none. No JavaScript libraries — build with SVG stars and clip-path for 
+half-star.
+2.6  ProgressBar
+Used on Reading Now cards to show reading progress.
+<div class="h-1 bg-ink-200 rounded-full overflow-hidden">   <div class="h-
+full bg-shelf-700 rounded-full transition-base"        style={{ width: `$
+{pct}%` }} /> </div> <span class="text-xs text-ink-500 mt-1">{currentPage} 
+of {totalPages}</span>
+2.7  Modal
+Overlay: bg-ink-950/50 backdrop-blur-sm. Panel: bg-paper-50 rounded-lg 
+shadow-modal max-w-lg w-full mx-4 p-6. Close: ghost button top-right with × 
+character (not an icon library glyph). Animate: panel scales from 96% to 100% 
+over 200ms on open; reverses on close.
+2.8  Toast / Notification
+Position: fixed bottom-4 right-4 z-50 Base: bg-ink-950 text-paper-50 
+rounded-md px-4 py-3 text-sm shadow-panel       flex items-center gap-3 max-
+w-sm Success prefix: small sage.400 dot (6px circle) Error prefix: small 
+rose.400 dot Warning prefix: small amber.400 dot Auto-dismiss: 4 seconds. 
+Dismiss on click. Multiple toasts: stack vertically with 8px gap.
+2.9  Skeleton loader
+Every list/card surface has a skeleton state. Use bg-ink-200 with a shimmer 
+animation (background-position slide, 1.5s ease-in-out infinite). Match the exact 
+shape of the real content — same height, same border-radius.
+2.10  Drawer (side panel)
+Used for book detail, shelf management, chat expansion. Slides in from the 
+right on desktop (width: 480px), full-screen on mobile. Overlay identical to 
+Modal. Contains a sticky header (title + close button) and scrollable body.
+2.11  EmptyState
+Centre-aligned block in the content area. Icon: simple SVG illustration 
+(book-open or similar), 64px, ink.200 Heading: font-display text-xl text-
+ink-800 Body: text-base text-ink-500 max-w-xs mx-auto Action: Primary button 
+below (when applicable) No border, no card — sits directly on page 
+background.
+
+--- PAGE 7 ---
+2.12  Avatar
+Sizes: sm (24px), md (32px), lg (48px), xl (80px) Shape: rounded-full Image: 
+object-cover Fallback: initials (1–2 chars) in font-body font-medium, 
+bg generated from username hash (use one of 8 paper/shelf tones),           
+text-ink-800
+SECTION 3
+Layout System
+3.1  App shell
+The app shell is the persistent wrapper around all authenticated screens.
+Desktop (≥1024px)
+Full-height flex row. Left sidebar: w-56 bg-paper-100 border-r border-ink-
+200 flex-shrink-0   → Logo at top (32px height, left-aligned, px-5 pt-5)   → 
+Nav items (see §3.2)   → User avatar + name at bottom (px-4 py-4) Main 
+content: flex-1 min-w-0 overflow-y-auto bg-paper-50   → Max content width: 
+max-w-4xl mx-auto px-8
+Mobile (< 1024px)
+Full-height flex column. Top bar: h-12 bg-paper-50 border-b border-ink-200 
+→ Logo centre, menu icon left, avatar icon right Content: flex-1 overflow-y-
+auto Bottom nav: h-16 bg-paper-50 border-t border-ink-200   → 4 icons: Chat, 
+Library, Browse, Community   → Icon + label below, text-xs, active state: 
+shelf.700
+3.2  Sidebar navigation
+Nav items (in order)
+Chat         — speech-bubble icon Library      — bookshelf icon Browse 
+— compass icon Community    — people icon ── separator ── Settings     — 
+gear icon (bottom, above avatar)
+Nav item styles
+Default: flex items-center gap-3 px-4 py-2.5 text-sm text-ink-800          
+font-body rounded mx-2          hover: bg-paper-200 text-ink-950 Active:  
+bg-shelf-100 text-shelf-700 font-medium Icon:    20px, currentColor stroke, 
+1.5px stroke-width          (build as inline SVG components, no icon 
+library)
+3.3  Page layouts
+Single-column (Chat, Settings)
+max-w-3xl mx-auto px-4 sm:px-8 py-8
+Two-column (Library, Browse)
+
+--- PAGE 8 ---
+Desktop: grid grid-cols-[240px_1fr] gap-8 Mobile:  stack, secondary column 
+collapses to top filter bar
+Full-width grid (Community feed)
+max-w-5xl mx-auto px-4 sm:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-
+3 gap-6
+SECTION 4
+Voice & Copy Guidelines
+Every string in the UI — buttons, empty states, toasts, labels, AI messages — 
+follows these rules. Do not use placeholder text like "No books found." Write 
+like a thoughtful person who loves books and respects the reader.
+Tone
+● Warm and direct. Not effusive. Not corporate.
+● Sentence case everywhere — never ALL CAPS labels.
+● No exclamation marks in UI chrome. Reserve them for genuine moments 
+of celebration (completing a book, hitting a reading goal).
+● Books and reading are taken seriously. The product does not condescend.
+Empty states — examples
+Empty TBR:        "Nothing on your list yet. The chat can help you find 
+what's next." Empty Read:       "You haven't logged a finished book yet. Add 
+one and it will live here." Empty chat:       "Ask anything. Your library, 
+recommendations, a bookshop nearby." No search result: "Nothing for that 
+search. Try a title, author, or ISBN."
+Toasts — examples
+Book added:        "Added to your library." Session logged:    "36 pages 
+logged. You're on page 214." Gift reminder set: "Reminder set for 3 weeks 
+before Sarah's birthday." Error:             "That didn't save. Try again."
+AI assistant persona
+The AI speaks as a knowledgeable reading companion. It does not say "Great 
+question!" It does not over-explain. It is specific, direct, and sometimes 
+opinionated. It references the user's actual books by title. It occasionally admits 
+uncertainty ("I'm not certain of the exact publication date — worth checking").
+SECTION 5
+Screen: Chat
+
+--- PAGE 9 ---
+Route: /chat (or / for authenticated users). This is the primary surface. It must 
+load fast and feel immediately useful.
+5.1  Layout
+Full-height column: flex flex-col h-full  Header (sticky top):   h-12 
+border-b border-ink-200 bg-paper-50/90 backdrop-blur-sm   px-4 flex items-
+center justify-between   Left: "Chat" in font-display text-lg text-ink-950 
+Right: Context indicator — small BookCard thumbnail of current read 
+(cover image only, 28px wide, rounded-sm) + "p.{page}" text-xs text-ink-500 
+Clicking this opens the book detail drawer.  Message list:   flex-1 
+overflow-y-auto px-4 py-4 space-y-4  Input area (sticky bottom):   border-t 
+border-ink-200 bg-paper-50 px-4 py-3   flex gap-2 items-end
+5.2  Message bubbles
+User message
+Self-contained: max-w-[85%] ml-auto bg-shelf-700 text-white rounded-lg 
+rounded-br-sm px-4 py-2.5 text-base font-body
+Assistant message
+Self-contained: max-w-[85%] mr-auto No bubble background — sits directly on 
+the chat background. font-body text-base text-ink-950 leading-relaxed 
+Markdown rendered: **bold** → font-semibold, *italic* → italic, 
+lists → standard list indent  If the message contains a book recommendation: 
+Inline BookCard (horizontal, compact) embedded in the message flow.   
+Rendered below the text, not inline within it.   Max 3 cards per message. If 
+more, show "Show more" button.
+5.3  Input area
+Textarea (auto-grows, max 6 lines):   flex-1 resize-none bg-paper-100 border 
+border-ink-200 rounded-md   px-3 py-2 text-base focus:outline-none 
+focus:border-shelf-700   placeholder: "Ask anything about your books..."  
+Send button: Primary size-sm, disabled when empty  Suggestion chips (shown 
+when chat is empty):   Horizontal scroll row below the input   bg-paper-100 
+border border-ink-200 rounded-full px-3 py-1.5   text-sm text-ink-800 
+hover:bg-paper-200   Examples:     "What should I read next?"     "Log some 
+pages"     "Find a bookshop nearby"     "Gift ideas for Mum"     "How am I 
+doing this month?"
+5.4  Chat API integration
+POST /api/chat Body: { messages: Message[], userId: string }  Server 
+assembles context object before calling Claude:   - currentBook: { title, 
+author, currentPage, totalPages, pace }   - recentlyRead: last 10 books 
+(title, author, rating)   - tbrTop10: prioritised TBR list   - savedPlaces: 
+user's bookshops and libraries   - userContext: decrypted private context 
+profile (see §13)  System prompt injected server-side — user never sees it. 
+Stream the response: use ReadableStream, render tokens as they arrive. If 
+response contains ISBN references, automatically fetch and render BookCards 
+for those ISBNs at message end.
+SECTION 6
+
+--- PAGE 10 ---
+Screen: Library
+Route: /library. Two-column layout. Left: shelf navigation. Right: book list for 
+the selected shelf.
+6.1  Left column — shelf navigation
+Sticky top-0 (scrolls with page on mobile, fixed on desktop).  Section: 
+"Your shelves" — text-xs text-ink-500 mb-2 font-medium Each shelf item:   
+flex items-center justify-between px-3 py-2 rounded text-sm   hover: bg-
+paper-200   active (selected): bg-shelf-100 text-shelf-700 font-medium   
+Left: shelf name (see §2.4 for shelf names)   Right: book count badge — 
+text-xs text-ink-500 bg-paper-200 px-1.5 rounded-full  Separator then: "Gift 
+lists"   Each contact as a shelf item — Avatar (sm) + contact name  Bottom: 
+"+ New shelf" ghost button, text-sm text-ink-500
+6.2  Right column — book list
+Toolbar
+flex items-center justify-between mb-4 Left: shelf title font-display text-
+2xl text-ink-950       + book count text-sm text-ink-500 ml-3 Right: view 
+toggle (list / grid) + sort dropdown  Sort options: Recently added, Title A–
+Z, Author A–Z,               Date read (finished shelf only), Rating, 
+Progress Sort dropdown: bg-paper-50 border border-ink-200 rounded text-sm 
+px-2 py-1.5
+Book list (default view)
+space-y-2 Each item: BookCard horizontal (§2.3)  For "Reading Now" cards, 
+add below the meta row:   ProgressBar (§2.6)   "Log pages" ghost button — 
+text-sm, opens inline log form  Inline page log form (expands below the 
+card):   "I read from page ___ to page ___"   Two number inputs (w-20), 
+sentence around them   "Log" primary button sm + "Cancel" ghost button sm
+Empty shelf
+EmptyState component (§2.11) Different copy per shelf:   TBR empty: "Nothing 
+on your list yet. The chat can help you find what's next."   Read empty: 
+"You haven't logged a finished book yet."   etc.
+6.3  Book detail drawer
+Opens from clicking any BookCard. Drawer from right (§2.10).
+Drawer contents (top to bottom)
+1. Cover image — centered, 120px wide, shadow-card 2. Title — font-display 
+text-2xl text-ink-950 3. Author(s) — text-base text-ink-500 (clickable → 
+author page) 4. ShelfBadge + shelf picker dropdown 5. RatingStars 
+(interactive) 6. ProgressBar (if reading_now) 7. Tabs: Details | Notes | 
+Sessions | Editions  Tab: Details   Published, pages, language, genres (as 
+chips)   Series indicator if applicable: "Book 2 of The Southern Reach 
+Trilogy"   GET THIS BOOK panel (see §6.4)  Tab: Notes   Textarea: private 
+notes. Auto-saves on blur.   Below: "Reading journal" — chronological list 
+of session notes          Each entry: date, pages read, optional note text 
+"+ Add note to this session" inline textarea  Tab: Sessions   Table: Date | 
+Start page | End page | Pages | Duration (if logged)   Total at bottom: X 
+sessions · Y pages · Z days  Tab: Editions   List editions: Format, 
+Publisher, Year, Translator (if applicable)   "This edition" marker on owned 
+copy   "Find another edition" → opens search
+
+--- PAGE 11 ---
+6.4  GET THIS BOOK panel
+Used in the book detail drawer and on book pages. Shows all acquisition 
+options.
+Heading: "Get this book" text-sm font-medium text-ink-500 mb-2  Sections 
+(only show if data available):  Borrow   → "[Library name] — available" 
+(sage.600) / "not available" (ink.500)   → "Request from network" link  Buy 
+nearby   → "[Shop name] — X miles" (link, opens map)  Buy new   → 
+Bookshop.org | Publisher | Amazon (three inline links, text-sm)  Buy 
+secondhand   → AbeBooks | World of Books (inline links)  Digital   → 
+Internet Archive (free borrow if available, shows "Free")   → Project 
+Gutenberg (if out of copyright, shows "Free")   → Kindle / Kobo links  
+Listen   → Libro.fm | Audible | LibriVox (if out of copyright)  Each section 
+is a flex-col gap-1 block. Section headings: text-xs text-ink-500 uppercase 
+tracking-wide Links: text-sm text-shelf-700 hover:underline Availability 
+indicators: text-xs text-sage-600 or text-ink-500
+6.5  Add book flow
+Triggered by "+ Add book" button in toolbar. Opens a modal (§2.7).
+Step 1: Search   Input with placeholder "Title, author, or ISBN"   Live 
+search against Open Library API as user types (debounce 300ms)   Results: 
+BookCard vertical thumbnails, 4 per row   OR: "Scan barcode" button (mobile 
+only) → camera ISBN scan  Step 2: Confirm & shelve   Selected book shown 
+large (cover + metadata)   Shelf picker: radio group of shelf names   
+Edition selector: dropdown of known editions (format, year, publisher)   
+"Add to library" primary button  After add: toast "Added to [shelf name]." + 
+drawer opens to new book.
+SECTION 7
+Screen: Gift Lists
+Route: /library/gifts. Accessible from the Library left column. Shows all gift 
+contacts and their lists.
+7.1  Contact list view
+Grid: grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4  Each contact card:   
+bg-paper-100 rounded-md p-4 shadow-card hover:shadow-panel cursor-pointer   
+Avatar (xl) centered   Name: font-display text-base text-ink-950 text-center 
+mt-2   Next occasion: text-xs text-ink-500 text-center     If within 30 
+days: text-amber-600 + small dot indicator   Book count: text-xs text-ink-
+500 text-center  "+ Add person" card: same size, dashed border border-ink-
+200,   centred "+" icon + "Add someone" text-sm text-ink-500
+7.2  Contact detail view
+Clicking a contact opens their gift list. Same two-column layout as Library.
+Left column:   Contact avatar (xl) + name (font-display text-2xl)   Taste 
+notes (editable textarea, text-sm text-ink-800)   Upcoming occasions list 
+(date + label, editable)   "Ask AI to expand this list" primary button   
+"Share this list" ghost button (generates shareable link)  Right column:   
+Toolbar: "Gift ideas for [Name]" + "Find nice editions" button   Book list: 
+
+--- PAGE 12 ---
+BookCard horizontal     Each card has right-side: Priority badge (Perfect 
+fit / Might like / Wildcard)                               "Claimed" toggle 
+(checkbox style)                               Remove button (×)  Claimed 
+state: book card opacity-60, strikethrough on title,                "Claimed 
+by [name]" text-xs text-sage-600
+7.3  Birthday reminder banner
+When a contact's occasion is within 21 days: Show a banner at top of 
+/library/gifts (and in Chat as a message)  Banner:   bg-amber-100 border 
+border-amber-600/20 rounded-md p-4   flex items-start gap-3   Left: small 
+gift icon SVG, text-amber-600, 20px   Text: "[Name]'s birthday is in X 
+days." font-medium text-ink-950         "Here are 3 books from their list 
+under £[budget]:" text-sm text-ink-800   Below: 3 BookCard horizontal 
+(compact) with Buy link prominent   Dismiss: × button top-right, ghost, 
+remembers dismissal for that occasion
+SECTION 8
+Screen: Reading Diary
+Route: /library/diary. Accessible from Library left column. Shows reading 
+history, stats, and journal entries.
+8.1  Stats header
+bg-paper-100 rounded-md p-6 mb-6 shadow-card  Top row: 4 stat blocks in a 
+grid   Each block: number (font-display text-3xl text-ink-950) + label 
+(text-sm text-ink-500)   Stats: Pages this year | Books finished | Current 
+streak | Avg session  Below: thin ProgressBar showing year progress (books 
+read vs goal)   Only if user has set a yearly goal.   Label: "X of Y books 
+this year" text-sm text-ink-500  No gamification elements. No trophy icons. 
+No streak fire emoji.
+8.2  Reading timeline
+Chronological list, grouped by month.  Month header: text-sm font-medium 
+text-ink-500 mb-3 (e.g. "September 2026")  Session entry:   flex items-start 
+gap-3 py-3 border-b border-ink-200   Left: date column (text-xs text-ink-
+500, w-16, flex-shrink-0)   Cover thumbnail (32px wide, rounded-sm)   Text 
+block:     Title text-sm font-medium text-ink-950     "X pages (p.Y → p.Z)" 
+text-sm text-ink-500     Duration if logged: "55 min" text-xs text-ink-500 
+Journal note if present: italic text-sm text-ink-800 mt-1
+8.3  Finished book entries
+When a book is marked as finished, appears in timeline as a distinct entry: 
+bg-sage-100 rounded-md p-3 (not a row — stands out)   "Finished: [Title]" 
+font-display text-base text-ink-950   Date, total pages, total days, rating 
+if given   Review link: "Write a review" text-sm text-shelf-700
+SECTION 9
+
+--- PAGE 13 ---
+Screen: Browse
+Route: /browse. Discovery hub: reading paths, bookshops, staff picks, new 
+releases from followed authors, community-curated lists.
+9.1  Layout
+Single column, sections stacked vertically. Each section: mb-12 Section 
+header: flex justify-between items-baseline mb-4   Left: section title font-
+display text-2xl text-ink-950   Right: "See all" text-sm text-shelf-700 link
+9.2  Sections (in order)
+Continue reading
+Only shown if user has a current book. Full-width card: bg-paper-100 
+rounded-md p-5 shadow-card   Horizontal: cover (80px) | book info + progress 
+| "Log pages" button
+New from authors you've read
+Horizontal scroll of BookCard vertical (§2.3) Author badge below card: small 
+Avatar + author name text-xs Overflow: scroll-snap-x mandatory, hidden 
+scrollbar,           arrow buttons at edges on desktop (ghost, ink.200 bg on 
+hover)
+Reading paths
+Grid: grid-cols-1 sm:grid-cols-2 gap-4  ReadingPathCard:   bg-paper-100 
+rounded-md p-4 shadow-card   Title: font-display text-lg text-ink-950   
+Description: text-sm text-ink-500 line-clamp-2   Footer: "X books" text-xs 
+text-ink-500 + creator Avatar + name text-xs   Cover collage: 3 small book 
+covers overlapping, top-right corner
+Nearby bookshops
+Only shown if location permission granted. Horizontal scroll of 
+BookshopCard:   bg-paper-100 rounded-md p-4 shadow-card w-48 flex-shrink-0 
+Name: text-sm font-medium text-ink-950   Type badge: text-xs text-ink-500 
+(Independent / Secondhand / Antiquarian)   Distance: text-xs text-ink-500   
+"Save" ghost button sm
+From the community
+Grid: grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 CommunityCard: review 
+excerpt, avatar + name, book cover thumbnail See §11 for full Community card 
+spec.
+SECTION 10
+Screen: Book Page
+Route: /book/[workId]. Public page for a specific work. SEO-optimised (SSR).
+
+--- PAGE 14 ---
+10.1  Header
+Two-column: left 200px (cover), right flex-1  Cover: 200px wide, rounded-md, 
+shadow-panel Right column (top to bottom):   Title: font-display text-4xl 
+text-ink-950   Author(s): text-xl text-ink-500 (links to author page)   
+Series indicator (if applicable): text-sm text-shelf-700   Genre chips: 
+text-xs bg-paper-200 text-ink-800 rounded-full px-2 py-0.5   Meta row: Year 
+· Pages · Original language · text-sm text-ink-500   RatingStars + community 
+rating text-sm text-ink-500 ("4.1 · 312 ratings")   Add to library button: 
+Primary lg   GET THIS BOOK panel (§6.4)
+10.2  Body tabs
+Tabs: About | Editions & Translations | Reviews | Discussion | Reading Paths 
+Tab bar: border-b border-ink-200, each tab text-sm px-4 py-2 Active tab: 
+border-b-2 border-shelf-700 text-shelf-700 font-medium  Tab: About   
+Description (up to 4 paragraphs, "Show more" collapse)   Awards (if any): 
+list with year   Adaptations: films, TV, audiobooks   Wikipedia link: text-
+sm text-shelf-700  Tab: Editions & Translations   Grouped by language, then 
+by translator   Each edition row: Publisher | Year | Format | Translator | 
+ISBN | "Add to library"   Translator name is a link → translator profile 
+page  Tab: Reviews   Community reviews sorted by Most liked   Each: Avatar + 
+name, RatingStars, date, review text (collapsed to 4 lines, expand)   "Write 
+a review" button (if in library)  Tab: Discussion   Forum threads for this 
+book   Two sections: No spoilers | Spoilers (collapsed by default)  Tab: 
+Reading Paths   ReadingPathCards (§9.2) that include this book
+SECTION 11
+Screen: Community
+Route: /community. Logged-out public feed and logged-in personalised feed.
+11.1  Feed
+max-w-2xl mx-auto — narrower than Browse, more like a reading feed.  
+FeedCard variants:  Review card:   bg-paper-50 border border-ink-200 
+rounded-md p-4 mb-3   Header: Avatar sm + name text-sm font-medium + 
+"reviewed" text-sm text-ink-500           + book cover thumbnail 36px + 
+title text-sm text-shelf-700   RatingStars (display)   Review excerpt: text-
+base text-ink-950 line-clamp-4   Footer: Like count | Comment count | Share 
+button           All text-xs text-ink-500  Finished book card (milestone): 
+Same frame, different content:   "[Name] finished [Title]"   Pages + days 
+taken text-sm text-ink-500   Quote (if user chose to share one): italic 
+text-base text-ink-950  Blog post card:   Cover image (if post has one): 
+full-width, max-h-48, object-cover, rounded-t-md   Title: font-display text-
+xl text-ink-950   Excerpt: text-base text-ink-500 line-clamp-2   Author + 
+date + read time text-xs text-ink-500
+11.2  Book clubs
+Route: /community/clubs. Grid of BookClubCards.
+BookClubCard:   bg-paper-100 rounded-md p-4 shadow-card   Name: font-display 
+text-lg   Current read: BookCard horizontal compact   Members: row of Avatar 
+sm overlapping (max 5, "+X more")   "Join" or "Request to join" primary 
+button sm   Privacy badge: "Open" / "Private" text-xs text-ink-500
+
+--- PAGE 15 ---
+SECTION 12
+Screen: Profile
+Route: /profile/[username]. Public-facing reading identity.
+Header:   Avatar xl centered (desktop: left-aligned)   Display name: font-
+display text-3xl text-ink-950   Username: text-sm text-ink-500   Bio: text-
+base text-ink-800 max-w-xl   Stats row: X books | X reviews | Following X | 
+X followers              text-sm text-ink-500, numbers font-medium text-ink-
+950   Follow button (if not own profile): Primary  Tabs: Shelves | Reviews | 
+Reading paths | Blog | Shop  Tab: Shelves   Shows public shelves only   
+Horizontal scroll per shelf (BookCard vertical)  Tab: Reviews   
+Chronological list of public reviews  Tab: Shop (if user has enabled it)   
+Curated lists with Buy links   Text: "Books I recommend"
+SECTION 13
+Screen: Private Context Profile
+Route: /settings/context. Not linked from public navigation — only accessible 
+from Settings. This is the most sensitive screen in the product.
+13.1  Page design
+max-w-2xl mx-auto px-4 py-8  Page header:   Title: font-display text-3xl 
+"Your reading context"   Subtext: text-base text-ink-500 max-w-prose     
+"This is private. Only you and the Folio AI can read it.",     "It shapes 
+recommendations silently — you'll never need to repeat yourself."   Privacy 
+badge: bg-sage-100 text-sage-600 rounded px-3 py-1.5 text-sm     "Encrypted 
+· Not used for advertising · Delete anytime"
+13.2  Sections
+Life right now
+Label: "Is there anything going on in your life the AI should be aware of?" 
+text-base text-ink-800  Below: freeform textarea, 5 rows, placeholder:   
+"Anything at all — a bereavement, something you'd rather not read about   
+right now, a difficult period. You don't need to be specific."  This maps 
+to: life_context in the schema.
+Your days
+Label: "When do you usually read?" Multi-select chips: Morning commute | 
+Lunch | Evenings | Weekends | Before bed   | Whenever I can These are chips 
+with toggle behaviour.  Below: "How much time do you usually have?" — radio 
+row:   Under 30 min | 30–60 min | 1–2 hours | As long as I like
+
+--- PAGE 16 ---
+Reading diary (private)
+A simple chronological journal. Not connected to reading sessions — this is 
+personal writing.  "+ New entry" button → expands inline textarea with 
+today's date as label Entries displayed: date (text-xs text-ink-500) + text 
+(text-base text-ink-800) Edit: click to expand back to textarea Delete: × 
+per entry (with confirmation: "Delete this entry?")  Important: entries are 
+encrypted at rest. Add a subtle visual cue:   Small lock icon (16px, 
+ink.200) beside the "Reading diary" section heading.
+Save behaviour
+Auto-save on blur for all fields. Toast on save: "Saved." (no detail) No 
+explicit save button needed.  Delete all button: bottom of page, rose.600 
+ghost, "Delete my context profile" Confirmation modal: "This will clear 
+everything. The AI will start fresh.                     Your reading 
+library is not affected." "Delete" button danger variant | "Keep it" ghost 
+button
+SECTION 14
+Screen: Settings
+Route: /settings. Standard settings layout — left nav + right panel.
+Settings sections (left nav):   Account | Reading context | Notifications | 
+Privacy | Connections |   Reading goal | Import & export | Danger zone  
+Connections sub-page:   Connected accounts: TikTok, Instagram, YouTube, 
+Reddit, Bluesky   Each: logo (SVG) + platform name + "Connected as 
+@handle" / "Connect" button   Library connections: Goodreads (import), 
+Kindle (sync), Audible (sync)   Location: "Allow location access" toggle — 
+used for bookshop discovery  Reading goal sub-page:   "Books this year:" 
+number input   Toggle: "Show progress in Diary"  Import & export:   "Import 
+from Goodreads" — file upload (.csv), progress bar during import   "Export 
+my library" — download as CSV or JSON   "Import from LibraryThing" — file 
+upload
+SECTION 15
+Database & API Setup
+15.1  Prisma schema (key models)
+// prisma/schema.prisma  model Work {   id              String       @id 
+@default(cuid())   title           String   openLibraryId   String?      
+@unique   wikidataId      String?   originalLang    String       
+@default("en")   description     String?   genres          String[]   themes 
+String[]   embedding       Float[]      // pgvector   translations    
+Translation[]   authors         AuthorWork[] }  model Translation {   id 
+String     @id @default(cuid())   workId      String   language    String   
+translators Contributor[] @relation("TranslatorRelation")   editions    
+Edition[]   work        Work       @relation(fields: [workId], references: 
+[id]) }  model Edition {   id            String      @id @default(cuid())   
+translationId String?   workId        String   publisher     String?   year 
+
+--- PAGE 17 ---
+Int?   isbn13        String?     @unique   format        String      // 
+hardback|paperback|ebook|audiobook   coverUrl      String?   pageCount     
+Int?   userBooks     UserBook[] }  model UserBook {   id          String   
+@id @default(cuid())   userId      String   editionId   String   shelf 
+String   priority    Int      @default(0)   dateAdded   DateTime 
+@default(now())   dateStarted DateTime?   dateFinished DateTime?   rating 
+Float?   privateNotes String?   sessions    ReadingSession[]   user        
+User     @relation(fields: [userId], references: [id])   edition     Edition 
+@relation(fields: [editionId], references: [id]) }  model ReadingSession { 
+id          String   @id @default(cuid())   userBookId  String   date 
+DateTime @default(now())   pageStart   Int   pageEnd     Int   timeStart   
+DateTime?   timeEnd     DateTime?   note        String?   userBook    
+UserBook @relation(fields: [userBookId], references: [id]) }  model 
+GiftContact {   id          String   @id @default(cuid())   userId      
+String   name        String   birthday    DateTime?   tasteNotes  String?   
+giftItems   GiftItem[] }  model GiftItem {   id          String      @id 
+@default(cuid())   contactId   String   editionId   String   priority    
+String      // perfect|might_like|wildcard   claimedBy   String?   note 
+String? }  model UserContextProfile {   id              String   @id 
+@default(cuid())   userId          String   @unique   lifeContext     Bytes? 
+// AES-256-GCM encrypted   lifeStructure   Bytes?   tasteProfile    Bytes? 
+biography       Bytes?   updatedAt       DateTime @updatedAt }  model 
+ContextDiaryEntry {   id          String   @id @default(cuid())   userId 
+String   content     Bytes    // AES-256-GCM encrypted   createdAt   
+DateTime @default(now()) }
+15.2  Key API routes
+POST   /api/chat                  — streaming AI chat POST   /api/chat/log-
+session      — parse + log reading session from chat message  GET    
+/api/books/search          — search Open Library + local DB GET    
+/api/books/[isbn]          — fetch full book metadata by ISBN POST   
+/api/library/add           — add book to user library PATCH  
+/api/library/[userBookId]  — update shelf, rating, notes POST   
+/api/library/session       — log a reading session directly  GET    
+/api/gifts/contacts        — list gift contacts POST   /api/gifts/contacts 
+— create contact GET    /api/gifts/[contactId]     — contact + their gift 
+list POST   /api/gifts/[contactId]/ai  — AI expand gift list  GET    
+/api/places/nearby         — bookshops near coords GET    
+/api/availability/[isbn]   — library + retail availability  GET    
+/api/context               — decrypt + return user context (session-gated) 
+PATCH  /api/context               — update context (encrypts before save) 
+POST   /api/context/diary         — add diary entry (encrypts before save) 
+DELETE /api/context               — wipe all context  POST   
+/api/import/goodreads      — parse Goodreads CSV, queue import job GET    
+/api/import/status/[jobId] — poll import progress
+15.3  Environment variables
+DATABASE_URL= NEXTAUTH_SECRET= NEXTAUTH_URL=  ANTHROPIC_API_KEY=  
+OPEN_LIBRARY_BASE=https://openlibrary.org GOOGLE_PLACES_API_KEY= 
+WORLDCAT_API_KEY=  BOOKSHOP_ORG_AFFILIATE_ID= AMAZON_ASSOCIATE_TAG= 
+ABEBOOKS_AFFILIATE_KEY=  CONTEXT_ENCRYPTION_SALT=   # server-side salt for 
+key derivation  AWS_S3_BUCKET= AWS_REGION=eu-west-2 AWS_ACCESS_KEY_ID= 
+AWS_SECRET_ACCESS_KEY=
+SECTION 16
+
+--- PAGE 18 ---
+Build Order
+Follow this sequence. Do not build a later phase until the earlier phase works 
+end-to-end. Each phase ends with a testable product.
+Phase 1 — Foundation (build this first)
+● Project scaffold: Next.js 14 App Router, TypeScript, Tailwind with token 
+config
+● Prisma schema + migrations for: Work, Translation, Edition, UserBook, 
+ReadingSession, User
+● Auth.js: email/password sign-up and login
+● App shell: sidebar + bottom nav, responsive
+● All base components (§2): Button, Input, BookCard, ShelfBadge, Modal, 
+Toast, Skeleton, EmptyState
+● Library screen: default shelves, book add (ISBN lookup), shelf 
+management
+● Chat screen: basic message UI, Claude API streaming integration, library 
+context injection
+● Goodreads CSV import
+  End of Phase 1: a user can sign up, import their Goodreads library, view their ⚑
+shelves, and chat with an AI that knows their books.
+Phase 2 — Core features
+● Reading session logging (via chat NLP + direct UI)
+● Reading diary screen with stats
+● Translation and edition hierarchy in UI
+● Book detail drawer with all tabs
+● GET THIS BOOK panel with Bookshop.org + library availability
+● Browse screen: Continue reading, New from authors, Reading paths
+● Book page (public, SSR)
+  End of Phase 2: the product is meaningfully better than Goodreads.⚑
+Phase 3 — Gift & social
+● Gift contacts and gift lists
+● Birthday reminder banner and notifications
+● AI gift list expansion (POST /api/gifts/[contactId]/ai)
+● Public profiles
+● Reviews and community feed
+● Book clubs (create, join, discussion)
+● Reading challenges
+Phase 4 — Creator & social media
+● Blog editor (TipTap) and public blog
+
+--- PAGE 19 ---
+● Video upload and per-book attachment
+● Social media cross-posting (TikTok, Instagram, YouTube)
+● Shareable asset generation (book cards, quote cards)
+● Personalised shop pages
+Phase 5 — Context & marketplace
+● Private context profile screen (§13) with encryption
+● Context injection into chat AI (life context, diary)
+● Reading Life marketplace (MVP: Reading Objects + Books)
+● Sensory reading kit generation
+● Reading afternoon planning (weather + places + pace synthesis)
+● Nearby bookshops screen
+● Nice editions finder
+End of implementation brief.

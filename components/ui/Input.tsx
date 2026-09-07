@@ -20,16 +20,27 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   { error, className = "", ...props },
   ref,
 ) {
-  return <input ref={ref} className={[BASE, stateClass(error), className].join(" ")} {...props} />;
+  return (
+    <input
+      ref={ref}
+      className={[BASE, stateClass(error), className].join(" ")}
+      {...props}
+    />
+  );
 });
 
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   error?: boolean;
 }
 
-export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
-  { error, className = "", ...props },
-  ref,
-) {
-  return <textarea ref={ref} className={[BASE, stateClass(error), className].join(" ")} {...props} />;
-});
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
+  function Textarea({ error, className = "", ...props }, ref) {
+    return (
+      <textarea
+        ref={ref}
+        className={[BASE, stateClass(error), className].join(" ")}
+        {...props}
+      />
+    );
+  },
+);

@@ -1,0 +1,788 @@
+
+--- PAGE 1 ---
+FOLIO
+Product & Engineering Blueprint
+A platform for readers, built around being a reader
+Confidential — September 2026
+
+--- PAGE 2 ---
+PART ONE
+Product, Features & Design
+Folio is a platform for readers. Not a book database, not a social network about 
+books — a platform built around the full experience of being someone who 
+reads: finding books, acquiring them, reading them, recording them, discussing 
+them, and living a reading life. Goodreads treats books as inventory. Folio treats 
+reading as an identity.
+The core proposition: your library is the centre of your reading life, the AI is 
+your guide, and community is what makes it worth turning up for.
+1. Positioning & Brand
+The difference: Goodreads is about books. Folio is about being a reader. That 
+distinction gives the product permission to include things that would seem out 
+of place on any existing platform: the tea you drink while reading, the bookshop 
+you want to visit, the chair you read in, the translation you preferred, the 
+afternoon you planned around finishing a novel. All of it coheres because it is all 
+part of one person's relationship with reading.
+The tone throughout — in the AI, in the interface copy, in community features — 
+should feel warm, unhurried, and literate. Not a productivity app. Not a fitness 
+tracker for books. Closer to a very good reading companion who happens to 
+know everything about books and quite a lot about you.
+Name: Folio. Clean, literary, connotes a page and a collection. Alternative 
+candidates if taken: Stacks, Commonplace, Verso, The Shelf.
+2. Navigation & Layout
+Four primary navigation areas, accessible from a persistent bottom bar (mobile) 
+or left sidebar (desktop):
+● Chat — the AI reading companion; the entry point for almost everything
+● Library — personal collection, all shelves, reading diary
+● Browse — discovery, community content, reading paths, bookshops
+● Community — forums, book clubs, creator profiles, Reading Life 
+marketplace
+The home screen on first open should be the Chat interface with a subtle 
+summary card beneath it: what you are currently reading, your reading streak 
+this week, and one gentle prompt. On mobile, the Library tab is the second 
+most-visited surface and should load instantly.
+Public homepage (logged-out): a curated feed of community content — reviews, 
+reading diary entries, library builder essays, BookTok-style video. This 
+communicates what the platform is before someone commits to signing up. 
+Books and reading as a living culture, not a database.
+
+--- PAGE 3 ---
+3. The Library
+The personal library is the heart of the product. Every book a user adds exists in 
+a structured record with a rich set of possible states and metadata.
+3.1 Shelves
+Default shelves (always present, cannot be deleted):
+● Reading Now — with progress tracking, start date, session log
+● Read — with finish date, rating (optional), reread count
+● Want to Read (TBR) — priority-ranked, with notes on who recommended 
+it and why
+● Owned But Unread — the guilt pile, separate from TBR
+● Wishlist — want to buy, do not yet own
+● Not For Me — decided against, with optional reason
+● DNF (Did Not Finish) — abandoned, with note on page abandoned and 
+why
+● Interested / Watching — on the radar, not committed
+● Lent Out — who has the copy and when it was lent
+● Reference — books used non-linearly
+Custom shelves: unlimited, user-defined. Examples include Favourites, Beach 
+Reads, Book Club, Research, Gifts Received, Dad's Recommendations, Reread 
+Candidates. Custom shelves can be private, friends-only, or public.
+3.2 Gift Lists
+Gift lists are a distinct shelf type tied to a named contact rather than the user 
+themselves. Each contact in the user's reading circle has a profile: name, taste 
+notes, genres they enjoy, authors they have mentioned, and — critically — 
+books they already own, so the AI never recommends duplicates.
+Gift list features:
+● AI expansion: describe the person in natural language and the AI builds a 
+ranked recommendation list, explains why each fits, and flags which are 
+available in special or nice editions
+● Priority tiers: perfect fit / might like / wildcard
+● Occasion tagging: birthday, Christmas, graduation, new baby, etc.
+● Claimed markers: shared lists show who has committed to buying which 
+book, preventing duplicates across family members
+● Shareable: users can share their own wishlist with a link so others can 
+buy for them
+● Budget-aware: AI filters and sorts by price, flags sales, finds secondhand 
+copies
+● Nice editions: separate mode for finding Folio Society, Penguin 
+Clothbound, Everyman's Library, signed firsts, or illustrated editions of a 
+specific title
+
+--- PAGE 4 ---
+3.3 Birthday & Occasion Reminders
+Each contact in the reading circle can have a birthday or recurring occasion 
+date. The platform:
+● Sends a configurable reminder (2 to 8 weeks before, user-set)
+● Opens a pre-populated suggestion from the contact's gift list filtered by 
+current prices and stock
+● Links directly to purchase, or flags for local collection
+● In November and December: Christmas mode consolidates all upcoming 
+gift lists into a single gift-planning view with total budget tracking and 
+claimed/unclaimed status across all contacts
+3.4 Book Records
+Each book in the library carries a rich record:
+● Edition and format owned (hardback, paperback, ebook, audiobook, large 
+print)
+● Where purchased or acquired
+● Condition (for physical copies)
+● Price paid
+● Cover image (auto-fetched, user-replaceable)
+● Tags, moods, themes (AI-suggested, user-editable)
+● Private notes
+● Public review (linked to profile)
+● Reading journal entries (private, per session)
+● Linked books (same series, same author, same theme)
+● Translation and edition metadata (see section 3.5)
+3.5 Editions, Translations & Versions
+Translations and editions are first-class objects in the data model, not footnotes. 
+The hierarchy is:
+Work  →  Translation  →  Edition  →  Physical Copy
+A user's relationship can attach at any level: loved the work, disliked the Fagles 
+translation, want to try the Wilson, own the Lattimore, want a Folio Society 
+edition. The AI understands these distinctions and uses them in 
+recommendations.
+Translator preferences are stored and used as recommendation inputs: "same 
+translator I read for Anna Karenina" is a valid query. Edition contributors are 
+tracked beyond translator: illustrator, editor, introduction writer, annotator, 
+audiobook narrator.
+Translation-aware queries the AI can handle:
+● Which translation of Crime and Punishment would suit me?
+● I found this translation too archaic — find me something more 
+contemporary
+● Which translation preserves the humour best?
+
+--- PAGE 5 ---
+● Show me what people on the platform who disliked my translation 
+preferred
+4. Reading Diary & Session Tracking
+Reading progress is tracked at the session level, not just the page level. Each 
+reading session is a logged record: book, start page, end page, date, and 
+optionally time. The AI can log sessions from natural language: "Read another 
+42 pages before bed" — because it knows what the user is currently reading, no 
+title is needed.
+4.1 Automatically calculated analytics
+● Pages read today / this week / this month / this year
+● Average pages per reading day
+● Average session size
+● Days spent on each book
+● Books finished per month and per year
+● Current reading streak
+● Pages remaining and estimated completion date
+● Fastest and slowest reads
+● Average time to finish a novel
+● Abandoned-book statistics
+4.2 Tone
+The diary interface should feel like a beautiful record, not a fitness app. No 
+aggressive streak notifications. The system might say "You've read 420 pages 
+this week, mostly in three long weekend sessions." It does not say "YOU BROKE 
+YOUR 137-DAY STREAK." Nudges are gentle and framed as observations, not 
+performance metrics.
+4.3 Time-aware recommendations
+Once pace is established per genre, the AI can answer: "I've got about 45 
+minutes — what could I read?" It knows this user reads literary fiction at 
+roughly 28 pages per hour and can recommend something achievable, or 
+suggest a good stopping point in their current read.
+5. The Chat Interface
+The AI reading companion is built on Claude and has full access to the user's 
+library, reading diary, private context profile, local bookshops, and external 
+data sources. It is the primary interface for most interactions — not a feature 
+within the app, but the entry point.
+5.1 Core capabilities
+● Recommend — personalised, aware of what has already been read, never 
+recommends duplicates
+
+--- PAGE 6 ---
+● Remind — flags abandoned books, series continuations, preorders for 
+followed authors
+● Find — locates books at local libraries, nearby bookshops, online 
+retailers, in digital formats
+● Contextualise — author background, publication history, awards, 
+adaptations, historical context
+● Compare — translations, editions, an author's earlier vs later work
+● Plan — TBR lists for holidays, reading goals, themed reading paths
+● Research — draws from Wikipedia, Internet Archive, publisher sites, 
+literary databases
+● Track — logs reading sessions from natural language input
+● Discuss — talks through themes, characters, structure; spoiler-aware
+● Gift — builds and refines gift lists for named contacts, finds editions, 
+tracks prices
+● Plan an afternoon — synthesises page count, pace, weather, local shops, 
+TBR into a suggested reading day
+5.2 Example queries the system handles
+● "I want something like Jonathan Strange but shorter and less dense"
+● "I've read all of Le Guin — what's next?"
+● "Where can I buy a first edition of this?"
+● "Is this available at my local library?"
+● "Log 37 pages — I stopped at 214"
+● "My mum's birthday is in three weeks. She loves cosy crime and has all 
+the Osman"
+● "Find me a beautiful edition of Middlemarch"
+● "I'd like to have a really good reading afternoon tomorrow"
+● "I've got £50 — help me make a corner of my bedroom into somewhere 
+nice to read"
+● "Build me a six-book reading path into Russian literature"
+● "Which translation of The Odyssey should I read?"
+6. Private Context Profile
+The private context profile is information a user shares with the AI that shapes 
+its behaviour silently and indefinitely. It is entirely separate from the public 
+profile. No other user, no advertiser, and no platform analytics system can 
+access it. The user has complete visibility and control over every item in it.
+The design principle: the AI uses this information without referencing it unless 
+the user brings it up first. If someone has recorded a bereavement, the AI 
+simply does not recommend books featuring that kind of loss. It does not say "I 
+know you've been through a difficult time." It just knows.
+
+--- PAGE 7 ---
+6.1 Life context
+● Bereavement — who, and recency (a loss six weeks ago is different to six 
+months ago)
+● Illness — their own or someone close
+● Pregnancy, miscarriage, or fertility difficulties
+● Relationship breakdown
+● Major stress (job loss, financial difficulty, caring responsibilities)
+● Recovery (addiction, mental health, trauma)
+6.2 Life structure
+● Daily schedule and when they typically read
+● Realistic uninterrupted reading time
+● Whether they have children and roughly what age
+● Work pattern (shift worker, 9-to-5, freelance, irregular)
+● Commute type and whether they read on it
+6.3 Taste and personality
+● Whether they use reading to escape or to engage
+● Whether they want to be challenged or comforted right now (can be 
+updated)
+● Whether they read for emotion, ideas, story, or language
+● Their relationship with rereading
+● How they feel about difficult or dark content — not a blanket filter, a 
+calibration
+6.4 Biography
+● Where they grew up and have lived (affects how they read books set in 
+those places)
+● Languages they speak (relevant to translation vs original)
+● Educational and professional background (affects what needs explaining)
+● Family — children's ages for co-reading suggestions, partner's reading 
+habits if shared
+6.5 The Diary Layer
+An open-ended private diary the user can write in freely. The AI reads entries as 
+context, not instructions. Someone might write: "My dad died last Tuesday. I 
+don't know what I want to read." The AI does not respond to this as a query. It 
+simply knows, and the next recommendation is shaped accordingly — shorter, 
+gentler, less demanding — without explanation.
+Time-awareness: a bereavement flag does not mean permanent exclusion of 
+grief from recommendations. The AI softens its avoidance gradually. If the user 
+writes that they feel ready to engage with harder material, the AI responds to 
+that.
+6.6 Privacy architecture
+● Total user control — every item visible, editable, deletable
+
+--- PAGE 8 ---
+● Not used for advertising, analytics, or any commercial purpose
+● Local-first option: sensitive context stored on-device, sent to AI at session 
+time only
+● Diary entries encrypted at rest; not readable by the platform
+● Completely separate from the public-facing social profile
+7. Bookshops & Places
+Bookshops are a third major entity in the platform, alongside books and people. 
+The Places layer connects the digital reading life to physical locations.
+7.1 Bookshop discovery
+● Location-aware search: find independent bookshops near me, secondhand 
+within 20 miles, antiquarian dealers, charity shops with book 
+departments, specialist subject dealers
+● Type classification: independent general, chain, secondhand, 
+antiquarian/rare, specialist, academic, children's, comic/graphic novel, 
+charity, market stall, online-only, publisher bookshop
+● Bookshop profile pages: shops can claim their own listing, add stock 
+information, post events, feature recommendations from their staff
+● Saved shops: users save their home bookshops and favourite shops to 
+visit
+7.2 TBR-to-location connection
+When a user is near a saved or relevant bookshop, the AI can flag books from 
+their TBR that are likely stocked there. Advanced: shops that integrate stock 
+data can enable exact inventory matching.
+7.3 Reading places
+Beyond bookshops: users can save cafés, libraries, parks, and other reading 
+spots. The planning AI uses these: "You're in Oxford tomorrow — here are three 
+bookshops worth visiting and a café nearby that works well for reading."
+7.4 The GET THIS BOOK panel
+On every book page, a unified acquisition panel:
+● Borrow: local library availability, request from network
+● Buy locally: nearby independent bookshops, chains
+● Buy new online: Bookshop.org, publisher direct, Amazon
+● Buy used: AbeBooks, Biblio, World of Books, local sellers
+● Digital: ebook retailers, Internet Archive, Project Gutenberg
+● Listen: Libro.fm (with local bookshop revenue share), Audible, LibriVox
+
+--- PAGE 9 ---
+8. Community Features
+8.1 Profiles
+● Public reading identity: shelves (user-selected which are visible), reviews, 
+reading stats, favourite quotes
+● Reading Year in Review: annual Wrapped-style summary, shareable
+● Reading taste fingerprint: genre breakdown, favourite themes, pace, 
+breadth vs depth
+● Follow / following system
+8.2 Book clubs
+● Create or join a club with shared library, reading schedule, and private 
+discussion
+● AI facilitates: generates discussion questions, moderates, summarises 
+group consensus
+● Public clubs anyone can join, or private invite-only
+● Reading Together: a private two-person space for partners, friends, or 
+family to share a reading relationship — see each other's shelves, 
+recommend to each other, read a book simultaneously and share notes
+8.3 Reading challenges
+● Custom personal challenges ("Read 52 books in 2026") or community 
+challenges
+● Genre bingo cards, themed challenges
+● Charity read-a-thons with sponsorship tracking
+8.4 Forums & discussion
+● Per-book discussion boards with spoiler / no-spoiler sections
+● Genre communities (crime, SF, literary fiction, etc.)
+● Author communities and topic threads
+● Translation discussions: per-work threads about which translation to read 
+and why
+8.5 Reading paths
+A reading path is a curated sequence: an introduction to Ursula Le Guin, a 
+journey through Russian literature, the complete Discworld in publication order, 
+five books to understand the financial crisis. Paths can be AI-generated, 
+community-created, or authored by verified experts. They are shareable, 
+followable, and a primary discovery mechanism for readers entering a genre or 
+author.
+8.6 Quotes
+● Save and share favourite passages
+● Community quote database, searchable by book, author, theme, or mood
+● Quote cards: rendered beautifully for sharing to social media
+
+--- PAGE 10 ---
+9. Creator Layer & Public Presence
+9.1 Creator types
+The community accommodates a full taxonomy of book-related creators, each 
+with different content formats and monetisation models:
+● Reader / reviewer
+● Bookseller
+● Publisher
+● Bookbinder
+● Collector
+● Library builder
+● Interior creator (reading spaces)
+● Translator
+● Academic / critic
+● Author
+9.2 Blogs
+● Every user can have an optional blog (off by default)
+● Rich text with image support; book cards from collection can be 
+embedded
+● Private reading journal → public review → full essay: a natural 
+progression
+● Monetisable: subscription or pay-per-post; platform takes a commission
+● RSS feed for followers to read in their preferred reader
+9.3 Video
+● Native video upload or recording, attached to a book record or shelf
+● BookTok / BookTube style; video lives in context on the book's page, not 
+just a feed
+● Cross-posting to TikTok, Instagram Reels, YouTube, Reddit, Bluesky, 
+Mastodon, Threads, X
+● Per-platform customisation: different caption, format, and framing; not 
+identical blasts
+● Engagement data feeds back: TikTok view counts and highlights appear 
+on the Folio profile
+9.4 Shareable assets
+● Book cards: cover, rating, short review — one tap to share to Instagram 
+Story or social post
+● Reading Wrapped cards: annual summary formatted for sharing
+● Shelf aesthetics: digital shelfie rendered as shareable image
+● Quote cards: passage rendered with cover art
+● Gift list cards: "Here's what I'd love for Christmas" as a shareable visual
+
+--- PAGE 11 ---
+9.5 Personalised shops
+● Every public user gets an optional shop page: curated recommendations 
+with affiliate purchase links
+● Readers who trust a curator's taste buy through their shop; curator earns 
+commission
+● "My 10 favourite crime novels" becomes a shoppable, shareable page
+9.6 Translator profiles
+● Translators can claim verified profiles linked to all their translated works
+● Followers receive new translation notifications
+● Translators can write about their process, choices, and relationship with 
+the source text
+● A community that no platform currently serves
+10. The Reading Life Marketplace
+Not merchandise. A marketplace for the objects, spaces, and rituals that make 
+reading life enjoyable. The AI always offers two paths: buy something, or use 
+what you already have. The second option prevents the marketplace from 
+becoming lifestyle consumerism.
+10.1 Categories
+● Books & collecting: books, beautiful editions, secondhand books, 
+bookplates, book restoration, rebinding
+● Reading objects: bookmarks, book stands, reading lights, notebooks, 
+commonplace books
+● Atmosphere: candles, tea, coffee, hot chocolate, mugs, blankets, cushions
+● Furniture: shelves, reading chairs, lamps, side tables, book carts
+● Library building: carpenters, shelving makers, interior designers, 
+bookbinders
+10.2 Budget slider
+A core UX feature: Make Do → Comfortable → Collector → Dream Library. 
+Adjusts recommendations across all categories. "I've got £50 — help me make a 
+corner of my bedroom into somewhere nice to read" is a valid and well-served 
+query.
+10.3 Reading Kits
+Curated themed packages: a book, atmospheric items, a short essay, a playlist, 
+a suggested reading order. Examples: Victorian Ghost Story Evening (The 
+Signal-Man, candle, tea, bookmark, essay on Victorian ghost stories), Russian 
+Winter (The Death of Ivan Ilyich, black tea, dark chocolate, pine candle, 
+notebook). Kits can be AI-generated, community-created, or assembled by 
+creators and sold through the marketplace.
+
+--- PAGE 12 ---
+10.4 Library Builder as creator
+A distinct creator category. Someone builds a beautiful home library and 
+publishes: photos, room dimensions, shelf plans, furniture list, sources, books 
+displayed, total cost, DIY instructions. Other users follow them. This is a content 
+format that belongs here and nowhere else.
+11. External Integrations
+11.1 Import (migration)
+● Goodreads — critical; must be seamless to drive adoption
+● LibraryThing, StoryGraph, Kindle library, Audible listening history
+11.2 Purchase & retail
+● Bookshop.org (primary ethical recommendation; affiliate revenue shared 
+with indie bookshops)
+● Amazon, Waterstones, Blackwell's, Hive, AbeBooks, eBay, World of 
+Books, ThriftBooks
+● Libro.fm (audiobooks with indie bookshop revenue sharing)
+11.3 Libraries
+● WorldCat / OCLC — global catalogue; check holdings at any library 
+worldwide
+● UK public library APIs (Axiell, Koha, Symphony — varies by council)
+● Internet Archive / Open Library — legally borrowable digital copies
+● British Library catalogue
+11.4 Data & metadata
+● Open Library (Internet Archive book database)
+● Google Books (metadata, previews, snippet search)
+● Wikidata (structured translator and edition data)
+● ISBNdb (barcode and ISBN lookup)
+11.5 Discovery & literary
+● Wikipedia (author pages, book articles, contextual information)
+● Award databases: Booker, Pulitzer, Clarke, Hugo, Nebula, Costa, 
+Women's Prize
+● NetGalley and Edelweiss (advance reader copies)
+● Literary Hub, The Millions, Kirkus (review aggregation where API 
+accessible)
+11.6 Places
+● Google Places API (bookshop and location discovery)
+● AbeBooks affiliate inventory search (used and rare book availability)
+
+--- PAGE 13 ---
+11.7 Social media cross-posting
+● TikTok, Instagram, YouTube, Reddit, Bluesky, Mastodon, Threads, X
+● OAuth account linking; per-platform caption and format customisation
+● Engagement data feed-back to Folio profile analytics
+
+--- PAGE 14 ---
+PART TWO
+Engineering Architecture
+This section covers the technical systems required to deliver the product 
+described in Part One. It is organised by domain: data models, AI systems, 
+external integrations, privacy infrastructure, and the build sequence.
+12. Technology Stack
+12.1 Frontend
+● Framework: Next.js (React) with TypeScript — SSR for SEO on book and 
+profile pages, CSR for interactive app surfaces
+● Styling: Tailwind CSS with a custom design system; typography-led, 
+warm palette
+● Mobile: React Native (shared logic layer) for iOS and Android apps; or 
+PWA-first with native wrapper if budget-constrained
+● Rich text: TipTap (blog editor, journal entries); Markdown support 
+throughout
+● Video: native HTML5 player; FFmpeg for server-side transcoding
+12.2 Backend
+● API: Next.js API routes or a dedicated Node.js / Express service for 
+heavier processing
+● Database: PostgreSQL (primary relational store) — managed via 
+Supabase or DigitalOcean Managed Databases
+● Search: Typesense (self-hosted, fast, typo-tolerant) or Algolia for book, 
+author, and community search
+● Cache: Redis for session data, rate limiting, and hot query caching
+● Queue: BullMQ (Redis-backed) for background jobs: import processing, 
+notification dispatch, AI enrichment, price alerts
+● File storage: AWS S3 (eu-west-2) for cover images, user uploads, video
+● CDN: Cloudflare — static assets, edge caching, DDoS protection
+12.3 AI
+● Primary model: Claude via Anthropic API (chat interface, 
+recommendations, session logging, gift suggestions, reading path 
+generation, kit building)
+● Embeddings: text-embedding-3-small (OpenAI) or equivalent for semantic 
+similarity in recommendations
+● Vector store: pgvector (Postgres extension) for embedding storage and 
+similarity search
+● Prompt management: structured system prompts with user context 
+injection at query time
+
+--- PAGE 15 ---
+12.4 Infrastructure
+● Hosting: Vercel (frontend + API routes) with edge functions for latency-
+sensitive operations
+● CI/CD: GitHub Actions — test on PR, deploy on merge to main
+● Monitoring: Sentry (errors), UptimeRobot (availability), PostHog (product 
+analytics, self-hosted)
+● Email: Resend or Postmark for transactional email; notification batching 
+via queue
+13. Core Data Model
+Three primary entity graphs underpin everything: Books (with their hierarchy), 
+People (users and their relationships), and Places (bookshops, libraries, reading 
+spots).
+13.1 Book hierarchy
+works   id, title, original_language, wikidata_id, openlibrary_id   
+publication_year, description, genres[], themes[], moods[]  translations   id, 
+work_id, language, translator_id[], title_in_language  editions   id, 
+translation_id (or work_id for originals)   publisher_id, publication_year, 
+isbn_13, isbn_10   format (hardback|paperback|ebook|audiobook|large_print)   
+cover_url, page_count, illustrator_id, narrator_id   editor_id, 
+introduction_author_id  series   id, name, work_ids[], position_map  
+contributors   id, type (author|translator|illustrator|narrator|editor)   name, 
+bio, wikidata_id, openlibrary_id
+13.2 User library
+user_books   id, user_id, edition_id, work_id   shelf (reading_now|read|tbr|
+owned_unread|wishlist|          not_for_me|dnf|interested|lent_out|reference)   
+custom_shelf_ids[], priority, date_added   date_started, date_finished, 
+date_abandoned   page_abandoned, rating, private_notes   format_owned, 
+condition, price_paid, purchase_source  reading_sessions   id, user_book_id, 
+date   page_start, page_end, pages_read   time_start, time_end (optional)   
+notes (optional)  custom_shelves   id, user_id, name, visibility (private|
+friends|public)  gift_contacts   id, user_id, name, birthday, taste_notes   
+known_owned_isbns[], occasion_dates[]  gift_lists   id, contact_id, edition_id, 
+priority   claimed_by_user_id, notes
+13.3 Places
+places   id, name, type (bookshop|library|cafe|reading_spot)   subtype 
+(independent|chain|secondhand|antiquarian|            specialist|academic|
+charity|etc)   address, lat, lng, google_place_id   claimed (boolean), 
+claimed_by_user_id   description, opening_hours, website  user_saved_places   
+user_id, place_id, label (home_bookshop|favourite|want_to_visit)  place_stock  
+(advanced, opt-in by bookshop)   place_id, isbn_13, in_stock, last_checked
+13.4 Private context profile
+user_context_profile   user_id   life_context (encrypted JSON)   life_structure 
+(encrypted JSON)   taste_profile (encrypted JSON)   biography (encrypted JSON) 
+stored_locally (boolean)   last_updated  context_diary_entries   id, user_id   
+content (encrypted at rest)   created_at   -- never readable by platform; 
+decrypted client-side   -- or at AI inference time via user session key
+
+--- PAGE 16 ---
+14. AI Systems
+14.1 Context injection architecture
+Every AI query assembles a structured context object before calling the API. 
+This is the core of what makes the system work — the AI is never queried cold.
+AI context object (assembled per query):    user.library_summary     -- shelves, 
+recent reads, current book + page     -- reading pace per genre, average session 
+length     -- TBR list (top 20 by priority)     -- DNF patterns, abandoned books 
+user.taste_profile     -- genre weights, theme preferences     -- translator 
+preferences     -- mood preferences (current vs historical)     -- explicit 
+dislikes and avoidances    user.private_context  [encrypted, injected at 
+runtime]     -- life context flags     -- recent diary entries (last 5, 
+summarised)     -- current reading mode (comfort|challenge|escape)    
+user.location_context     -- saved bookshops and libraries     -- current 
+location (if permitted)     -- upcoming travel (if entered)    
+user.social_context     -- gift contacts and their profiles     -- active book 
+clubs and current reads     -- Reading Together partners
+14.2 Recommendation engine
+Recommendations use a hybrid approach: semantic similarity via embeddings, 
+collaborative filtering from anonymised community data, and constraint-based 
+filtering from the user's context.
+● Step 1: Candidate generation — retrieve semantically similar works via 
+pgvector from books the user has rated highly
+● Step 2: Collaborative filter — weight candidates that users with similar 
+taste profiles also read and enjoyed
+● Step 3: Constraint filtering — remove already-read, already-owned, on 
+TBR, not-for-me, and context-excluded titles
+● Step 4: Claude ranking — the filtered candidate list is passed to Claude 
+with the full context object; Claude re-ranks and writes natural-language 
+explanations
+● Step 5: Diversity check — ensure the final set spans authors, 
+nationalities, publication periods, and tones
+14.3 Translation recommendation
+A specialist sub-system for recommending translations of specific works:
+● Retrieves all known translations with their translator's other work
+● Pulls community sentiment by translation (translation-specific review 
+threads)
+● Applies user's stored translator preferences
+● Considers user's stated reading goals (literary fidelity, readability, 
+contemporary voice, humour)
+● Can cross-reference what users who disliked a given translation read 
+instead
+14.4 Reading session logging (NLP)
+Natural language session logging requires reliable entity extraction:
+● Current book detection: because the system knows what the user is 
+actively reading, no title is needed in most log queries
+
+--- PAGE 17 ---
+● Page extraction: handles "read to page 214", "stopped at 214", "another 
+42 pages", "finished chapter 12"
+● Time extraction: "before bed", "this morning", "21:10 to 22:05"
+● Ambiguity resolution: if the user has two active books, the system asks 
+which
+● Confirmation: always confirms the logged session before committing
+14.5 Planning and scheduling AI
+The "reading afternoon" feature and related planning queries require 
+synthesising multiple data sources:
+● Reading pace database (per user, per genre)
+● Pages remaining in current book
+● Weather API (with permission)
+● Saved places (bookshops, cafés, libraries)
+● TBR list (what comes next, local availability)
+● User schedule from private context profile
+● Output: a natural language suggested plan, not a rigid itinerary
+14.6 Gift recommendation AI
+Gift queries inject the contact's profile rather than (or in addition to) the user's 
+own taste:
+● Contact taste notes, known owned books, occasion, budget
+● Platform community data: what readers with similar profiles to the 
+contact enjoyed
+● Edition and price data: nice editions, current prices, secondhand 
+availability
+● Deduplication: cross-references all past gift lists for that contact
+14.7 Sensory reading kit generation
+Kit generation is a creative synthesis task:
+● Book metadata: setting, period, mood, themes, nationality
+● User inventory (from private context): what they already own that could 
+be incorporated
+● Marketplace inventory: available items that fit the theme and the user's 
+budget
+● Always generates a "use what you have" version before offering a 
+purchase path
+15. Privacy & Security Architecture
+15.1 Data tiers
+● Tier 1 — Public: shelves, reviews, reading stats, profile. Standard web 
+security practices.
+
+--- PAGE 18 ---
+● Tier 2 — Private (server-side): library data, session logs, gift lists. User-
+only access, server-side encryption at rest.
+● Tier 3 — Sensitive (encrypted): private context profile, diary entries. 
+Encrypted with user-derived key. Platform cannot read in plaintext.
+15.2 Encryption for Tier 3
+● User diary entries and context profile fields encrypted client-side before 
+transmission using AES-256-GCM
+● Encryption key derived from user password + server-side salt via 
+PBKDF2 or Argon2; server never sees the key
+● At AI inference time: client decrypts context, constructs the AI payload 
+locally or via a sealed server function that cannot log the plaintext
+● Local-first option: Tier 3 data stored only in device secure storage (iOS 
+Keychain, Android Keystore); never sent to the server except as 
+encrypted payload at inference time
+15.3 Private context — what it is never used for
+● Advertising targeting — hard prohibition, enforced architecturally (it is 
+never accessible to the ad or analytics system)
+● Platform analytics or aggregate reporting
+● Visible to any other user
+● Accessible by platform staff without explicit user consent and legal 
+process
+15.4 Authentication
+● Auth.js (NextAuth) — email/password, OAuth (Google, Apple)
+● Two-factor authentication: TOTP via authenticator app
+● HTTP-only cookies, CSRF protection, secure flags
+● SSO/SAML available for institutional accounts (libraries, publishers)
+16. Integration Engineering
+16.1 Book metadata pipeline
+Book metadata is assembled from multiple sources and merged into the 
+canonical data model. Priority order for conflicts: manual platform edits > Open 
+Library > Google Books > Wikidata > publisher-submitted data.
+● ISBN lookup: ISBNdb or Open Library API on book add; triggers full 
+metadata fetch
+● Barcode scanning: mobile camera → ISBN → metadata fetch (500ms 
+target)
+● Wikidata: translator data, edition relationships, award data via SPARQL 
+queries
+● Open Library: work/edition/translation hierarchy, cover images
+● Google Books: supplementary metadata, preview links
+
+--- PAGE 19 ---
+● Enrichment queue: after initial add, background job enriches with full 
+metadata, generates embeddings, tags with AI-suggested themes and 
+moods
+16.2 Goodreads import
+The most critical import path. Goodreads provides a CSV export. The importer:
+● Parses the CSV, maps Goodreads shelves to Folio shelf structure
+● Resolves each book to the canonical work via ISBN or title/author 
+matching
+● Preserves ratings, dates, review text, and custom shelf assignments
+● Runs as a background job; user sees progress and can continue using the 
+platform
+● Handles duplicates and ambiguous matches with a review queue
+● Target: full import of a 500-book library in under 2 minutes
+16.3 Library integration
+● WorldCat Z39.50 or WorldCat Search API: availability check at any 
+library by ISBN
+● UK library APIs: Axiell Arena, Koha REST API, SirsiDynix Symphony — 
+varies by council; requires partnership agreements
+● Availability displayed in the GET THIS BOOK panel with direct 
+hold/reserve links where API supports it
+● Internet Archive: Open Library Loans API for legally borrowable digital 
+copies
+16.4 Retail & affiliate
+● Bookshop.org API: search, pricing, affiliate link generation, indie 
+bookshop attribution
+● Amazon Product Advertising API: pricing, availability, affiliate links
+● AbeBooks affiliate API: used and rare book search by ISBN
+● Libro.fm: audiobook search, indie bookshop association, affiliate links
+● Price alert system: background job polls prices for wishlisted books, 
+queues notification when threshold met
+16.5 Places & bookshops
+● Google Places API (Nearby Search): bookshop, library, and café discovery 
+by location and type
+● Claimed bookshop profiles: verified shops get an authenticated API key to 
+post stock updates, events, and staff picks
+● Manual curation: editorial team maintains a quality-checked independent 
+bookshop database as a supplement to Places API results
+16.6 Social media cross-posting
+● TikTok: Content Posting API — OAuth, video upload, caption, hashtags
+● Instagram: Graph API — Reels video posting, Stories image posting
+● YouTube: Data API v3 — video upload, description, tags, thumbnail
+
+--- PAGE 20 ---
+● Reddit: OAuth API — text or link post to selected subreddits
+● Bluesky: AT Protocol — post with embedded book card
+● Mastodon: Mastodon API — federated posting via user's chosen instance
+● Per-platform content adaptation: video transcoding to platform specs 
+(aspect ratio, length, bitrate) via FFmpeg job queue
+● Engagement data retrieval: scheduled background job fetches 
+view/like/comment counts for posted content
+17. Build Sequence
+Phase 1 — Core (MVP)
+Target: a working product that immediately differentiates from Goodreads.
+● Hosting, database, auth (Next.js, Postgres, Auth.js on Vercel)
+● Core data model: works, editions, translations, user_books, 
+reading_sessions
+● Library UI: default shelves, book add (ISBN lookup + barcode), basic 
+search
+● Reading diary: session logging, basic analytics (pages/week, streak, ETA)
+● Chat interface: Claude integration with library context injection
+● Goodreads import
+● GET THIS BOOK panel: Bookshop.org + Amazon affiliate links
+● Basic public profile
+Phase 2 — Discovery & Places
+● Translation and edition hierarchy in UI
+● Translator preference profiles
+● WorldCat library availability in GET THIS BOOK panel
+● Bookshop discovery (Google Places integration)
+● Price tracking and alerts
+● Series detection and reading order
+● Reading paths (AI-generated and community-created)
+Phase 3 — Community
+● Gift lists, gift contacts, birthday reminders
+● Public profiles, follows, reading stats
+● Reviews, quotes, community quote database
+● Book club creation and management
+● Reading Together (private two-person spaces)
+● Per-book discussion forums
+● Reading challenges
+
+--- PAGE 21 ---
+Phase 4 — Creator Layer
+● Blogs (TipTap editor, public posts, RSS)
+● Video upload and per-book video attachment
+● Social media cross-posting (TikTok, Instagram, YouTube first)
+● Shareable asset generation (book cards, quote cards, Wrapped)
+● Personalised shops with affiliate links
+● Translator verified profiles
+Phase 5 — Marketplace & Platform
+● Reading Life marketplace (Reading Objects and Books & Collecting first)
+● Sensory reading kit generation
+● Budget slider and "use what you have" kit mode
+● Library builder creator type and photo essay format
+● NetGalley / ARC distribution integration
+● Publisher verified accounts
+● Monetisation: blog subscriptions, creator commissions, platform fees
+● Private context profile encryption (Tier 3)
+● Local-first context storage option
+● Reading afternoon planning (full synthesis: weather, places, pace, TBR)
+18. Connection to Novelish / Ghost Books
+Folio and the Novelish writer platform are complementary products sharing an 
+underlying literary identity. The seam between them:
+● Authors on Novelish can claim verified author profiles on Folio
+● Publication of a new book flows from Novelish → Folio: announced, 
+available to pre-order, discussed in community
+● Ghost Books (the literary imprint) operates as a verified publisher on 
+Folio: manages ARC distribution, maintains community around its titles
+● A reader becoming a writer has an onramp: Folio → Novelish
+● Shared authentication: one account works across both platforms
+● Translator profiles on Folio can link to the production side of translation 
+projects on Novelish
+End of document.

@@ -1,4 +1,6 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { normalizeIsbn } from "@/lib/isbn";
 
 export interface ResolvableBook {
   title: string;
@@ -6,46 +8,67 @@ export interface ResolvableBook {
   isbn13?: string | null;
   year?: number | null;
   openLibraryWorkId?: string | null;
+  coverUrl?: string | null;
+  pageCount?: number | null;
+  format?: string;
 }
 
-// Resolves a search/import result to a canonical Edition, creating the
-// Work/Edition rows if they don't exist yet. Priority for matching an
-// existing record: ISBN, then Open Library work id, then title+author.
-export async function findOrCreateEdition(book: ResolvableBook) {
-  if (book.isbn13) {
-    const existing = await prisma.edition.findUnique({
-      where: { isbn13: book.isbn13 },
+export async function findOrCreateEdition(
+  book: ResolvableBook,
+  db: Prisma.TransactionClient = prisma,
+) {
+  const isbn13 = normalizeIsbn(book.isbn13);
+  if (isbn13) {
+    const existing = await db.edition.findUnique({
+      where: { isbn13 },
       include: { work: true },
     });
     if (existing) return existing;
   }
-
-  let work = book.openLibraryWorkId
-    ? await prisma.work.findUnique({ where: { openLibraryId: book.openLibraryWorkId } })
-    : await prisma.work.findFirst({ where: { title: book.title, authorName: book.author } });
-
-  if (!work) {
-    work = await prisma.work.create({
-      data: {
-        title: book.title,
-        authorName: book.author,
-        openLibraryId: book.openLibraryWorkId ?? undefined,
-        genres: [],
-        themes: [],
-        embedding: [],
+  const data = {
+    title: book.title.trim(),
+    authorName: book.author.trim(),
+    genres: [],
+    themes: [],
+    embedding: [],
+  };
+  const work = book.openLibraryWorkId
+    ? await db.work.upsert({
+        where: { openLibraryId: book.openLibraryWorkId },
+        update: {},
+        create: { ...data, openLibraryId: book.openLibraryWorkId },
+      })
+    : ((await db.work.findFirst({
+        where: {
+          title: { equals: data.title, mode: "insensitive" },
+          authorName: { equals: data.authorName, mode: "insensitive" },
+        },
+      })) ?? (await db.work.create({ data })));
+  if (!isbn13) {
+    const existing = await db.edition.findFirst({
+      where: {
+        workId: work.id,
+        isbn13: null,
+        format: book.format ?? "paperback",
       },
+      include: { work: true },
     });
+    if (existing) return existing;
   }
-
-  const edition = await prisma.edition.create({
-    data: {
-      workId: work.id,
-      isbn13: book.isbn13 ?? undefined,
-      year: book.year ?? undefined,
-      format: "paperback",
-    },
-    include: { work: true },
-  });
-
-  return edition;
+  const editionData = {
+    workId: work.id,
+    isbn13,
+    year: book.year,
+    format: book.format ?? "paperback",
+    coverUrl: book.coverUrl,
+    pageCount: book.pageCount,
+  };
+  return isbn13
+    ? db.edition.upsert({
+        where: { isbn13 },
+        update: {},
+        create: editionData,
+        include: { work: true },
+      })
+    : db.edition.create({ data: editionData, include: { work: true } });
 }

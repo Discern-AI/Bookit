@@ -18,14 +18,24 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const result = await signIn("credentials", { email, password, redirect: false });
-    setLoading(false);
-    if (result?.error) {
-      setError("That didn't work. Check your email and password.");
-      return;
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+      setLoading(false);
+      if (result?.error) {
+        setError("That didn't work. Check your email and password.");
+        return;
+      }
+      router.push("/chat");
+      router.refresh();
+    } catch {
+      setError("The connection was interrupted. Try again.");
+    } finally {
+      setLoading(false);
     }
-    router.push("/chat");
-    router.refresh();
   }
 
   return (
