@@ -1,0 +1,15 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: folio
+      POSTGRES_PASSWORD: folio
+      POSTGRES_DB: folio
+    ports:
+      - "5432:5432"
+    volumes:
+      - folio_db_data:/var/lib/postgresql/data
+
+volumes:
+  folio_db_data:

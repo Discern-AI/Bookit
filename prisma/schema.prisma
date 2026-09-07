@@ -1,0 +1,177 @@
+// Folio — Phase 1 schema.
+// Scope limited to the models named in the Implementation Brief's
+// "Phase 1 — Foundation" build-order bullet. Gift lists, private context
+// profile, and other later-phase models are added when those phases start.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Auth.js ----------
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  // bcrypt hash, used by the Credentials provider (email/password sign-up)
+  password      String?
+  createdAt     DateTime  @default(now())
+
+  accounts        Account[]
+  sessions        Session[]
+  userBooks       UserBook[]
+  readingSessions ReadingSession[]
+}
+
+// ---------- Book hierarchy ----------
+
+model Work {
+  id             String   @id @default(cuid())
+  title          String
+  // Denormalized primary author display name. The full Contributor /
+  // AuthorWork relational model (multiple authors, translators, etc.) is
+  // later-phase per the brief's §15.1 full schema — this is the minimal
+  // field Phase 1's BookCard/Library/Chat screens need to show an author.
+  authorName     String
+  openLibraryId  String?  @unique
+  wikidataId     String?
+  originalLang   String   @default("en")
+  description    String?
+  genres         String[]
+  themes         String[]
+  // Similarity search input for Phase 2's recommendation engine.
+  // Kept as a plain float array for now; migrate to pgvector's native
+  // `vector` type via a raw-SQL migration once embeddings are populated.
+  embedding      Float[]
+  createdAt      DateTime @default(now())
+
+  translations Translation[]
+  editions     Edition[]
+}
+
+model Translation {
+  id       String @id @default(cuid())
+  workId   String
+  language String
+
+  work     Work      @relation(fields: [workId], references: [id], onDelete: Cascade)
+  editions Edition[]
+
+  @@index([workId])
+}
+
+model Edition {
+  id            String   @id @default(cuid())
+  workId        String
+  translationId String?
+  publisher     String?
+  year          Int?
+  isbn13        String?  @unique
+  isbn10        String?
+  format        String // hardback | paperback | ebook | audiobook | large_print
+  coverUrl      String?
+  pageCount     Int?
+  createdAt     DateTime @default(now())
+
+  work        Work         @relation(fields: [workId], references: [id], onDelete: Cascade)
+  translation Translation? @relation(fields: [translationId], references: [id])
+  userBooks   UserBook[]
+
+  @@index([workId])
+}
+
+// ---------- User library ----------
+
+enum Shelf {
+  reading_now
+  read
+  tbr
+  owned_unread
+  wishlist
+  not_for_me
+  dnf
+  interested
+  lent_out
+  reference
+}
+
+model UserBook {
+  id             String    @id @default(cuid())
+  userId         String
+  editionId      String
+  shelf          Shelf
+  priority       Int       @default(0)
+  dateAdded      DateTime  @default(now())
+  dateStarted    DateTime?
+  dateFinished   DateTime?
+  pageAbandoned  Int?
+  rating         Float?
+  privateNotes   String?
+  formatOwned    String?
+  purchaseSource String?
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  edition         Edition          @relation(fields: [editionId], references: [id])
+  readingSessions ReadingSession[]
+
+  @@index([userId, shelf])
+}
+
+model ReadingSession {
+  id         String    @id @default(cuid())
+  userId     String
+  userBookId String
+  date       DateTime  @default(now())
+  pageStart  Int
+  pageEnd    Int
+  timeStart  DateTime?
+  timeEnd    DateTime?
+  note       String?
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userBook UserBook @relation(fields: [userBookId], references: [id], onDelete: Cascade)
+
+  @@index([userBookId])
+}
