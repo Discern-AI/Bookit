@@ -373,3 +373,111 @@ test("custom shelves rename and delete safely; ambiguous imports require a choic
     ),
   ).toBe(true);
 });
+
+test("detail drawer saves notes and adds editions without changing reading history", async ({
+  page,
+  browser,
+}) => {
+  const userId = await login(page, "drawer");
+  const original = await makeBook(userId, "Edition drawer");
+  const translation = await db.translation.create({
+    data: { workId: original.edition.workId, language: "French" },
+  });
+  const edition = await db.edition.create({
+    data: {
+      workId: original.edition.workId,
+      translationId: translation.id,
+      format: "hardback",
+      publisher: "Test Press",
+      year: 2020,
+      pageCount: 240,
+    },
+  });
+  await db.readingSession.create({
+    data: {
+      userId,
+      userBookId: original.id,
+      pageStart: 0,
+      pageEnd: 20,
+      note: "Original copy note",
+    },
+  });
+  await page.goto("/library");
+  await page.getByText(original.edition.work.title, { exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  expect(Math.round((await dialog.boundingBox())!.width)).toBe(480);
+  await page.getByRole("tab", { name: "Details", exact: true }).focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(
+    page.getByRole("tab", { name: "Notes", exact: true }),
+  ).toBeFocused();
+  await page.route(`**/api/library/${original.id}`, (route) =>
+    route.fulfill({
+      status: 500,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "Temporary failure" }),
+    }),
+  );
+  await page
+    .getByRole("textbox", { name: "Private notes", exact: true })
+    .fill("Keep with the original edition");
+  await page.getByRole("tab", { name: "Details", exact: true }).click();
+  await expect(
+    page.getByText("That didn't save. Try again.", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(dialog).toBeVisible();
+  await page.getByRole("tab", { name: "Notes", exact: true }).click();
+  await expect(
+    page.getByRole("textbox", { name: "Private notes", exact: true }),
+  ).toHaveValue("Keep with the original edition");
+  await page.unroute(`**/api/library/${original.id}`);
+  await page.getByRole("button", { name: "Save notes", exact: true }).click();
+
+  await page.getByRole("tab", { name: "Sessions", exact: true }).click();
+  await expect(
+    page.getByText("Original copy note", { exact: true }),
+  ).toBeVisible();
+  await expect
+    .poll(
+      async () =>
+        (await db.userBook.findUniqueOrThrow({ where: { id: original.id } }))
+          .privateNotes,
+    )
+    .toBe("Keep with the original edition");
+  await page.getByRole("tab", { name: "Editions", exact: true }).click();
+  await expect(
+    page.getByText("Test Press / 2020 / French / 240 pages"),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Add this edition", exact: true })
+    .click();
+  await expect
+    .poll(async () => db.userBook.count({ where: { userId } }))
+    .toBe(2);
+  const saved = await db.userBook.findUniqueOrThrow({
+    where: { id: original.id },
+    include: { readingSessions: true },
+  });
+  expect(saved.editionId).toBe(original.editionId);
+  expect(saved.readingSessions).toHaveLength(1);
+  expect(saved.privateNotes).toBe("Keep with the original edition");
+  const added = await db.userBook.findUniqueOrThrow({
+    where: { userId_editionId: { userId, editionId: edition.id } },
+  });
+  expect(added.shelf).toBe("tbr");
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(Math.round((await dialog.boundingBox())!.width)).toBe(390);
+  await page.keyboard.press("Escape");
+  await expect(dialog).not.toBeVisible();
+  const other = await browser.newContext();
+  const otherPage = await other.newPage();
+  await login(otherPage, "drawer-other");
+  expect(
+    (
+      await otherPage.request.get(`/api/library/${original.id}/editions`)
+    ).status(),
+  ).toBe(404);
+  await other.close();
+});

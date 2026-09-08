@@ -28,7 +28,17 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Session writes use request IDs, ownership checks and transactions. Retries do not duplicate logs. Invalid ranges, page counts, dates and durations are rejected; stale progress asks the reader to refresh. Backdated sessions do not replace more recent progress.
 - Reading diary shows a monthly timeline, session notes/times, finished books, yearly page/book totals, seven-day pages, reading streaks and average session size. Optional yearly goals persist. Completion estimates use recent calendar-day pace and need at least two reading days.
 
+## Book detail continuation
+
+- Desktop book details now open in a 480px right-hand drawer, with a full-width mobile layout and sticky close header. Details, Notes, Sessions and Editions tabs support arrow, Home and End keys.
+- Details show recorded publisher, language, year, page count, format, ISBN, description and genres. Missing metadata is labelled rather than inferred.
+- Private notes save on blur, retain their draft after a failed request, and must save before closing or choosing another edition. Ratings and custom shelves remain editable.
+- Editions lists other saved editions of the same work, including recorded translation language. Readers can add a separate edition to Want to read or open an existing copy. Notes and reading sessions remain attached to the original copy. The authenticated endpoint enforces book ownership.
+- Find another edition opens catalogue/ISBN search. Remote edition enumeration, translator credits and translation enrichment remain to be built; the edition list currently uses saved catalogue records.
+
 ## Validation
+
+- Drawer continuation: production build (including TypeScript and lint) and unit tests pass. All five browser scenarios pass across the final suite and focused rerun; the new scenario covers keyboard tabs, failed-note retry, desktop/mobile sizing, edition addition without changing history, and cross-account protection.
 
 - ISBN/CSV parser tests pass, including invalid checksums, multiline quotes, invalid dates and malformed rows.
 - TypeScript, ESLint and production build pass. A clean build may emit Auth.js/jose Edge warnings for CompressionStream/DecompressionStream; exercised login and protected routes work locally.
@@ -46,6 +56,6 @@ A verified npm audit reported nine high-severity dependency entries in the retai
 
 Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provider verification. Import matching uses the local canonical catalogue without external metadata enrichment. Shelf sharing, imported public reviews, editing/deleting existing sessions and separate reread cycles are not implemented. Chat history and unconfirmed log proposals remain in the open page only.
 
-Next Phase 2 work: full book detail drawer, edition/translation browsing, acquisition/availability links, Browse discovery and public book pages. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
+Next Phase 2 work: remote edition/translation enrichment, acquisition/availability links, Browse discovery and public book pages. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
 
 Later phases: gifts, community, public profiles, creator publishing, social connections, encrypted private context and marketplace. Browse and Community remain explicit placeholders. No deployment or remote push has been performed.

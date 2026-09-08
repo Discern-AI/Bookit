@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
@@ -12,6 +12,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { LogSession } from "./LogSession";
 import { SessionHistory } from "./SessionHistory";
 import { ManageShelf } from "./ManageShelf";
+import { EditionList } from "./EditionList";
 import { AddBook } from "./AddBook";
 import {
   SHELVES,
@@ -38,6 +39,16 @@ export function LibraryView({
   const [newShelf, setNewShelf] = useState<string | null>(null);
   const [logging, setLogging] = useState<string | null>(null);
   const [managing, setManaging] = useState(false);
+  const [tab, setTab] = useState("Details");
+  const [notes, setNotes] = useState("");
+  const booksRef = useRef(books);
+  booksRef.current = books;
+  useEffect(() => {
+    setTab("Details");
+    setNotes(
+      booksRef.current.find((b) => b.id === selected)?.privateNotes ?? "",
+    );
+  }, [selected]);
   const [busy, setBusy] = useState(false);
   const { toast } = useToast();
   useEffect(() => setBooks(initialBooks), [initialBooks]);
@@ -87,16 +98,19 @@ export function LibraryView({
   ) {
     if (!book) return;
     const previous = book;
-    const { customShelfIds, ...fields } = patch;
-    update({
-      ...book,
-      ...fields,
-      ...(customShelfIds
-        ? {
-            customShelves: shelves.filter((s) => customShelfIds.includes(s.id)),
-          }
-        : {}),
-    });
+    const { customShelfIds, privateNotes: pendingNotes, ...fields } = patch;
+    if (pendingNotes === undefined)
+      update({
+        ...book,
+        ...fields,
+        ...(customShelfIds
+          ? {
+              customShelves: shelves.filter((s) =>
+                customShelfIds.includes(s.id),
+              ),
+            }
+          : {}),
+      });
     setBusy(true);
     try {
       const res = await fetch(`/api/library/${book.id}`, {
@@ -108,9 +122,11 @@ export function LibraryView({
       if (!res.ok) throw new Error();
       update(data.book);
       toast("Saved.", "success");
+      return true;
     } catch {
       update(previous);
       toast("That didn't save. Try again.", "error");
+      return false;
     } finally {
       setBusy(false);
     }
@@ -361,8 +377,15 @@ export function LibraryView({
       {book && (
         <Modal
           open
-          onClose={() => {
-            if (!busy) setSelected(null);
+          drawer
+          onClose={async () => {
+            if (busy) return;
+            if (
+              notes !== (book.privateNotes ?? "") &&
+              !(await save({ privateNotes: notes }))
+            )
+              return;
+            setSelected(null);
           }}
           title={book.title}
         >
@@ -375,6 +398,7 @@ export function LibraryView({
             <Button
               size="sm"
               variant="secondary"
+              disabled={busy || notes !== (book.privateNotes ?? "")}
               onClick={() => {
                 setSelected(null);
                 setLogging(book.id);
@@ -402,47 +426,175 @@ export function LibraryView({
               disabled={busy}
               onChange={(rating) => save({ rating })}
             />
-            <label className="block text-sm">
-              Private notes
-              <Textarea
-                key={book.id}
-                rows={5}
-                maxLength={20000}
-                defaultValue={book.privateNotes ?? ""}
-                onBlur={(e) => {
-                  if (e.target.value !== (book.privateNotes ?? ""))
-                    void save({ privateNotes: e.target.value });
-                }}
-                className="mt-1"
-              />
-            </label>
-            <SessionHistory bookId={book.id} latestId={book.lastSessionId} />
-            {shelves.length > 0 && (
-              <fieldset>
-                <legend className="text-sm font-medium mb-2">
-                  Also on your shelves
-                </legend>
-                {shelves.map((s) => (
-                  <label key={s.id} className="flex gap-2 text-sm py-1">
-                    <input
-                      type="checkbox"
-                      disabled={busy}
-                      checked={book.customShelves.some((c) => c.id === s.id)}
-                      onChange={(e) =>
-                        save({
-                          customShelfIds: e.target.checked
-                            ? [...book.customShelves.map((c) => c.id), s.id]
-                            : book.customShelves
-                                .filter((c) => c.id !== s.id)
-                                .map((c) => c.id),
-                        })
+            <div
+              role="tablist"
+              aria-label="Book details"
+              className="flex border-b border-ink-200"
+            >
+              {["Details", "Notes", "Sessions", "Editions"].map(
+                (name, index, tabs) => (
+                  <button
+                    key={name}
+                    id={`book-tab-${name}`}
+                    role="tab"
+                    aria-selected={tab === name}
+                    aria-controls={`book-panel-${name}`}
+                    tabIndex={tab === name ? 0 : -1}
+                    className={`flex-1 py-2 text-sm ${tab === name ? "border-b-2 border-shelf-700 text-shelf-700" : "text-ink-500"}`}
+                    onClick={() => setTab(name)}
+                    onKeyDown={(e) => {
+                      const next =
+                        e.key === "ArrowRight"
+                          ? (index + 1) % 4
+                          : e.key === "ArrowLeft"
+                            ? (index + 3) % 4
+                            : e.key === "Home"
+                              ? 0
+                              : e.key === "End"
+                                ? 3
+                                : -1;
+                      if (next >= 0) {
+                        e.preventDefault();
+                        setTab(tabs[next]);
+                        document
+                          .getElementById(`book-tab-${tabs[next]}`)
+                          ?.focus();
                       }
-                    />
-                    {s.name}
-                  </label>
-                ))}
-              </fieldset>
-            )}
+                    }}
+                  >
+                    {name}
+                  </button>
+                ),
+              )}
+            </div>
+            <section
+              role="tabpanel"
+              id="book-panel-Notes"
+              aria-labelledby="book-tab-Notes"
+              hidden={tab !== "Notes"}
+            >
+              <label className="block text-sm">
+                Private notes
+                <Textarea
+                  disabled={busy}
+                  rows={5}
+                  maxLength={20000}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  onBlur={() => {
+                    if (!busy && notes !== (book.privateNotes ?? ""))
+                      void save({ privateNotes: notes });
+                  }}
+                  className="mt-1"
+                />
+              </label>
+              <p className="text-xs text-ink-500 mt-2">
+                Private to you. Saves when you leave the field.
+              </p>
+              {notes !== (book.privateNotes ?? "") && (
+                <Button
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => save({ privateNotes: notes })}
+                >
+                  {busy ? "Saving..." : "Save notes"}
+                </Button>
+              )}
+            </section>
+            <section
+              role="tabpanel"
+              id="book-panel-Sessions"
+              aria-labelledby="book-tab-Sessions"
+              hidden={tab !== "Sessions"}
+            >
+              <SessionHistory bookId={book.id} latestId={book.lastSessionId} />
+            </section>
+            <section
+              role="tabpanel"
+              id="book-panel-Editions"
+              aria-labelledby="book-tab-Editions"
+              hidden={tab !== "Editions"}
+            >
+              {tab === "Editions" && notes !== (book.privateNotes ?? "") && (
+                <p role="status">
+                  Save your notes in the Notes tab before choosing another
+                  edition.
+                </p>
+              )}
+              {tab === "Editions" &&
+                !busy &&
+                notes === (book.privateNotes ?? "") && (
+                  <EditionList
+                    book={book}
+                    onAdded={(b) => {
+                      update(b);
+                      setSelected(b.id);
+                    }}
+                    onFind={() => {
+                      setSelected(null);
+                      setAdding(true);
+                    }}
+                  />
+                )}
+            </section>
+            <section
+              role="tabpanel"
+              id="book-panel-Details"
+              aria-labelledby="book-tab-Details"
+              hidden={tab !== "Details"}
+              className="space-y-4"
+            >
+              <dl className="grid grid-cols-2 gap-2 text-sm">
+                <dt>Publisher</dt>
+                <dd>{book.publisher ?? "Unknown"}</dd>
+                <dt>Language</dt>
+                <dd>{book.language ?? "Not recorded"}</dd>
+                <dt>Published</dt>
+                <dd>{book.year ?? "Unknown"}</dd>
+                <dt>Pages</dt>
+                <dd>{book.pageCount ?? "Unknown"}</dd>
+                <dt>Format</dt>
+                <dd className="capitalize">
+                  {book.format.replaceAll("_", " ")}
+                </dd>
+                <dt>ISBN</dt>
+                <dd>{book.isbn13 ?? "Not recorded"}</dd>
+              </dl>
+              {book.description && (
+                <p className="text-sm whitespace-pre-wrap">
+                  {book.description}
+                </p>
+              )}
+              {!!book.genres?.length && (
+                <p className="text-sm text-ink-500">{book.genres.join(", ")}</p>
+              )}
+              {shelves.length > 0 && (
+                <fieldset>
+                  <legend className="text-sm font-medium mb-2">
+                    Also on your shelves
+                  </legend>
+                  {shelves.map((s) => (
+                    <label key={s.id} className="flex gap-2 text-sm py-1">
+                      <input
+                        type="checkbox"
+                        disabled={busy}
+                        checked={book.customShelves.some((c) => c.id === s.id)}
+                        onChange={(e) =>
+                          save({
+                            customShelfIds: e.target.checked
+                              ? [...book.customShelves.map((c) => c.id), s.id]
+                              : book.customShelves
+                                  .filter((c) => c.id !== s.id)
+                                  .map((c) => c.id),
+                          })
+                        }
+                      />
+                      {s.name}
+                    </label>
+                  ))}
+                </fieldset>
+              )}
+            </section>
           </div>
         </Modal>
       )}

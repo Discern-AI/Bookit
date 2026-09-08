@@ -2,7 +2,7 @@ import type { Prisma } from "@prisma/client";
 import type { ShelfKey } from "@/lib/shelves";
 
 export const libraryInclude = {
-  edition: { include: { work: true } },
+  edition: { include: { work: true, translation: true } },
   customShelves: true,
   readingSessions: {
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
@@ -23,6 +23,10 @@ export interface LibraryBook {
   coverUrl: string | null;
   year: number | null;
   pageCount: number | null;
+  publisher?: string | null;
+  language?: string | null;
+  description?: string | null;
+  genres?: string[];
   format: string;
   rating: number | null;
   dateAdded: string;
@@ -42,6 +46,10 @@ export function serializeBook(book: StoredBook): LibraryBook {
     coverUrl: book.edition.coverUrl,
     year: book.edition.year,
     pageCount: book.edition.pageCount,
+    publisher: book.edition.publisher,
+    language: book.edition.translation?.language ?? null,
+    description: book.edition.work.description,
+    genres: book.edition.work.genres,
     format: book.edition.format,
     rating: book.rating,
     dateAdded: book.dateAdded.toISOString(),

@@ -14,7 +14,7 @@ const config: Config = {
 
       gridTemplateColumns: { library: "240px minmax(0, 1fr)" },
       maxHeight: { dialog: "85dvh" },
-      maxWidth: { message: "85%", 40: "10rem" },
+      maxWidth: { drawer: "480px", message: "85%", 40: "10rem" },
       colors: {
         ink: {
           100: "#E4EAF0",

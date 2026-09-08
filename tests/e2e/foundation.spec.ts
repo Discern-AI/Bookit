@@ -34,13 +34,11 @@ test("signup, resumable import, shelves, private edits, add, chat and isolation"
   ).toBeVisible();
   await page.goto("/settings");
   const csv = `Title,Author,Exclusive Shelf,My Rating,Date Read,Date Added,Bookshelves,My Review\n"${prefix} First book",Test Writer,read,4,2026/09/01,2026/08/01,"read, favourites","A review, with a comma"\n"${prefix} Second book",Test Writer,currently-reading,0,,2026/09/01,currently-reading,\n"${prefix} First book",Test Writer,read,4,,,,\n`;
-  await page
-    .getByLabel("Goodreads CSV")
-    .setInputFiles({
-      name: "goodreads.csv",
-      mimeType: "text/csv",
-      buffer: Buffer.from(csv),
-    });
+  await page.getByLabel("Goodreads CSV").setInputFiles({
+    name: "goodreads.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(csv),
+  });
   await page.getByRole("button", { name: "Import from Goodreads" }).click();
   await expect(
     page.getByText("Import complete", { exact: false }),
@@ -65,10 +63,11 @@ test("signup, resumable import, shelves, private edits, add, chat and isolation"
   await expect(
     page.getByRole("group", { name: "Rating: 4.5 out of 5" }),
   ).toBeVisible();
+  await page.getByRole("tab", { name: "Notes", exact: true }).click();
   await page
     .getByLabel("Private notes", { exact: true })
     .fill("A private thought that should persist.");
-  await page.getByRole("dialog").getByText("Also on your shelves").click();
+  await page.getByRole("tab", { name: "Details", exact: true }).click();
   await expect
     .poll(
       async () =>
