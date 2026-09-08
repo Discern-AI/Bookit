@@ -9,13 +9,17 @@ import { BookCard, BookCardVertical } from "@/components/ui/BookCard";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { AddBook } from "@/components/library/AddBook";
 import { LogSession } from "@/components/library/LogSession";
+import { PathCard } from "@/components/paths/PathCard";
+import type { PathCardData } from "@/lib/path-data";
 import type { LibraryBook } from "@/lib/book-data";
 import type { OpenLibrarySearchResult } from "@/lib/openLibrary";
 export function BrowseView({
   currentBooks,
   authors,
   catalogue,
+  paths,
 }: {
+  paths: PathCardData[];
   currentBooks: LibraryBook[];
   authors: string[];
   catalogue: OpenLibrarySearchResult[];
@@ -95,6 +99,32 @@ export function BrowseView({
             ))}
         </section>
       )}
+      <section className="space-y-4">
+        <header className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 className="font-display text-2xl">Reading paths</h2>
+          <Link href="/browse/paths" className="text-sm text-shelf-700">
+            Explore paths
+          </Link>
+        </header>
+        <p className="text-sm text-ink-500">
+          Follow a sequence of books into a subject or author.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {paths.map((path) => (
+            <PathCard key={path.id} path={path} />
+          ))}
+        </div>
+        {!paths.length && (
+          <p className="text-sm text-ink-500">
+            No public paths yet. Yours could be the first.
+          </p>
+        )}
+        <div className="flex gap-4 text-sm text-shelf-700">
+          <Link href="/browse/paths/new">Create a path</Link>
+          <Link href="/browse/paths?view=mine">Your paths</Link>
+          <Link href="/browse/paths?view=following">Following</Link>
+        </div>
+      </section>
       <section className="space-y-4">
         <h2 className="font-display text-2xl">Find a book</h2>
         <form

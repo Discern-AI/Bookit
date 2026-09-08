@@ -108,3 +108,14 @@ assert.equal(parseReadingIntent("Finished chapter 12").pageEnd, undefined);
 console.log(
   "Passed reading dates, yearly totals, streaks, pace and logging-intent tests.",
 );
+
+const { pathSchema } = require("../lib/path-schema.ts");
+const draftPath = { title: "  Into a subject  ", description: "", isPublic: false, entries: [] };
+assert.equal(pathSchema.parse(draftPath).title, "Into a subject");
+assert.equal(pathSchema.safeParse({ ...draftPath, isPublic: true }).success, false);
+assert.equal(pathSchema.safeParse({ ...draftPath, entries: [{ workId: "a", note: "" }, { workId: "a", note: "again" }] }).success, false);
+const pathEntries = Array.from({ length: 100 }, (_, i) => ({ workId: `work-${i}`, note: "" }));
+assert.equal(pathSchema.safeParse({ ...draftPath, isPublic: true, entries: pathEntries }).success, true);
+assert.equal(pathSchema.safeParse({ ...draftPath, entries: [...pathEntries, { workId: "extra", note: "" }] }).success, false);
+assert.equal(pathSchema.safeParse({ ...draftPath, entries: [{ workId: "a", note: "x".repeat(2001) }] }).success, false);
+console.log("Passed reading-path publishing, duplicate-work and size validation.");

@@ -43,9 +43,21 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Signed-in readers choose an exact edition and shelf, then land in that copy's library drawer. Existing editions remain deduplicated by the existing add endpoint. Signed-out readers can view catalogue pages and are offered sign-in to add books.
 - Book pages and library details provide external search links to WorldCat, Bookshop.org UK and Open Library, using ISBN when known. These are searches, not stock, price or borrowing availability claims.
 - Catalogue search results include work IDs for public-page navigation. Remote results can be added through the existing flow; their public page becomes available after cataloguing.
-- Reading paths, followed-author new-release feeds, nearby shops, community lists, public reviews, translator enrichment and live availability are still outstanding. The Browse author controls are catalogue searches, not a new-release feed.
+- Followed-author new-release feeds, nearby shops, community lists, public reviews, translator enrichment and live availability are still outstanding. The Browse author controls are catalogue searches, not a new-release feed.
+
+## Reading paths continuation
+
+- Added ReadingPath, ordered ReadingPathEntry and ReadingPathFollow models through an additive migration. User deletion cascades to owned paths/follows; deleting a path does not delete books or library records.
+- Readers create and edit paths from saved catalogue works, reorder books with labelled buttons, remove steps and add a rationale for each book. Paths support up to 100 unique works. Missing catalogue books can be found and added in a separate Browse tab.
+- Paths start private. An explicit publish checkbox explains that the title, description, step notes and display name become public on saving. Published paths appear in Browse, a paginated path directory and relevant book pages. Unpublishing removes them from discovery and makes the share URL inaccessible to other readers.
+- `/path/[pathId]` renders published paths for signed-out readers and private paths only for their owner. Owner edit/delete APIs enforce ownership; private path titles/notes are not returned in public-page responses.
+- Public paths can be followed/unfollowed and revisited from Following. Follows are idempotent and do not alter the reader's library. Book links lead to edition selection on the existing public book page.
+- Creation retries reuse a client request ID. Version checks reject stale edits/deletes; the editor retains the unsaved draft and links to the saved copy. Deletion and discarding edits require explicit UI confirmation. Form validation and network errors preserve edits.
+- AI path generation, expert verification and automatic progress through a path remain outstanding. No Claude key is needed for authoring or following paths.
 
 ## Validation
+
+- Reading-path continuation: production build, TypeScript, lint and unit tests pass. Seven integration scenarios passed in the full production run; the eighth (stale-edit protection) passed on a focused rerun after fixing an ambiguous test selector. Coverage includes ordered private saves, explicit publishing, anonymous/other-account isolation, follows, unpublishing, library-preserving deletion, idempotent creation, invalid inputs and stale-edit draft retention. The mobile path screenshot was inspected.
 
 - Browse/public-page continuation: all six production browser scenarios passed in 36.5 seconds. The added scenario verifies public SSR metadata, absence of private notes/user-book IDs, protected private routes/APIs, missing-work 404s, Browse logging, search retry, exact-edition addition and mobile width. The mobile screenshot was inspected. Production build (including lint/type checks) and unit tests pass.
 
@@ -67,6 +79,6 @@ A verified npm audit reported nine high-severity dependency entries in the retai
 
 Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provider verification. Import matching uses the local canonical catalogue without external metadata enrichment. Shelf sharing, imported public reviews, editing/deleting existing sessions and separate reread cycles are not implemented. Chat history and unconfirmed log proposals remain in the open page only.
 
-Next Phase 2 work: remote edition/translation enrichment, reading paths and live acquisition/availability integrations. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
+Next Phase 2 work: remote edition/translation enrichment and live acquisition/availability integrations. Reading paths now support manual creation, publishing and following. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
 
 Later phases: gifts, community, public profiles, creator publishing, social connections, encrypted private context and marketplace. Community remains an explicit placeholder. No deployment or remote push has been performed.

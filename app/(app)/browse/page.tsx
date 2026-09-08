@@ -1,11 +1,12 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { libraryInclude, serializeBook } from "@/lib/book-data";
+import { pathCardSelect } from "@/lib/path-data";
 import { BrowseView } from "@/components/books/BrowseView";
 export default async function BrowsePage() {
   const session = await auth();
   if (!session?.user) return null;
-  const [current, read, works] = await Promise.all([
+  const [current, read, works, paths] = await Promise.all([
     prisma.userBook.findMany({
       where: { userId: session.user.id, shelf: "reading_now" },
       include: libraryInclude,
@@ -42,9 +43,16 @@ export default async function BrowsePage() {
         },
       },
     }),
+    prisma.readingPath.findMany({
+      where: { isPublic: true },
+      select: pathCardSelect,
+      orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
+      take: 6,
+    }),
   ]);
   return (
     <BrowseView
+      paths={paths}
       currentBooks={current.map(serializeBook)}
       authors={Array.from(
         new Set(read.map((b) => b.edition.work.authorName)),

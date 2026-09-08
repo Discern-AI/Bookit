@@ -6,6 +6,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { BookCardVertical } from "@/components/ui/BookCard";
 import { GetBook } from "@/components/books/GetBook";
+import { pathCardSelect } from "@/lib/path-data";
+import { PathCard } from "@/components/paths/PathCard";
 import { AddEdition } from "@/components/books/AddEdition";
 export const dynamic = "force-dynamic";
 const getWork = cache((id: string) =>
@@ -56,6 +58,12 @@ export default async function BookPage({
   const [work, session] = await Promise.all([getWork(params.workId), auth()]);
   if (!work) notFound();
   const first = work.editions[0];
+  const paths = await prisma.readingPath.findMany({
+    where: { isPublic: true, entries: { some: { workId: work.id } } },
+    select: pathCardSelect,
+    orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
+    take: 6,
+  });
   return (
     <main className="max-w-4xl mx-auto px-4 sm:px-8 py-8 space-y-8">
       <nav
@@ -152,6 +160,18 @@ export default async function BookPage({
           </article>
         ))}
       </section>
+      {!!paths.length && (
+        <section className="space-y-4">
+          <h2 className="font-display text-2xl">
+            Reading paths with this book
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {paths.map((path) => (
+              <PathCard key={path.id} path={path} />
+            ))}
+          </div>
+        </section>
+      )}
     </main>
   );
 }
