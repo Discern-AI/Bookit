@@ -6,6 +6,7 @@ import { findOrCreateEdition } from "@/lib/library";
 import { SHELVES } from "@/lib/shelves";
 import { libraryInclude, serializeBook } from "@/lib/book-data";
 const schema = z.object({
+  editionId: z.string().min(1).max(100).optional(),
   title: z.string().trim().min(1).max(500),
   author: z.string().trim().min(1).max(500),
   isbn13: z.string().max(30).optional(),
@@ -34,7 +35,17 @@ export async function POST(request: Request) {
     );
   const result = await prisma.$transaction(async (db) => {
     await db.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${session.user.id}))`;
-    const edition = await findOrCreateEdition(parsed.data, db);
+    const edition = parsed.data.editionId
+      ? await db.edition.findUnique({
+          where: { id: parsed.data.editionId },
+          include: { work: true },
+        })
+      : await findOrCreateEdition(parsed.data, db);
+    if (!edition)
+      return {
+        error: "That edition is no longer available. Search again.",
+        status: 404,
+      };
     const existing = await db.userBook.findUnique({
       where: {
         userId_editionId: { userId: session.user.id, editionId: edition.id },
@@ -54,5 +65,7 @@ export async function POST(request: Request) {
     });
     return { book: serializeBook(book), duplicate: false };
   });
-  return NextResponse.json(result);
+  return NextResponse.json(result, {
+    status: "status" in result ? result.status : 200,
+  });
 }

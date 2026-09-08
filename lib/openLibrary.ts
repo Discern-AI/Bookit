@@ -1,6 +1,9 @@
 import { normalizeIsbn } from "@/lib/isbn";
 const BASE = process.env.OPEN_LIBRARY_BASE ?? "https://openlibrary.org";
 export interface OpenLibrarySearchResult {
+  editionId?: string;
+  format?: string;
+  publisher?: string;
   title: string;
   author: string;
   isbn13?: string;

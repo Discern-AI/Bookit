@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { ImportReviews } from "./ImportReviews";
 import { useImport } from "./ImportProvider";
 export function ImportSettings() {
   const { job, setJob, error: progressError, retry } = useImport();
@@ -63,7 +64,9 @@ export function ImportSettings() {
         <div className="space-y-2" role="status">
           <p className="text-sm">
             {job.status === "complete"
-              ? "Import complete"
+              ? job._count?.reviews
+                ? "Import ready for review"
+                : "Import complete"
               : "Importing your library"}{" "}
             &middot; {job.processed} of {job.total} books
           </p>
@@ -76,6 +79,11 @@ export function ImportSettings() {
           <p className="text-sm text-ink-500">
             {job.imported} added &middot; {job.skipped} already in your library
           </p>
+          {!!job._count?.reviews && (
+            <p className="text-sm text-ink-500">
+              {job._count.reviews} books need an edition choice below.
+            </p>
+          )}
           {job.status !== "complete" && (
             <p className="text-sm text-ink-500">
               You can keep using Folio. If you close the app, the import resumes
@@ -110,6 +118,7 @@ export function ImportSettings() {
           Resume import
         </Button>
       )}
+      <ImportReviews />
       <div className="pt-4 border-t border-ink-200">
         <h3 className="font-display text-lg mb-2">Keep a copy</h3>
         <a

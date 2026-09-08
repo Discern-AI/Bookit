@@ -4,11 +4,17 @@ import type { ShelfKey } from "@/lib/shelves";
 export const libraryInclude = {
   edition: { include: { work: true } },
   customShelves: true,
+  readingSessions: {
+    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+    take: 1,
+  },
 } satisfies Prisma.UserBookInclude;
 export type StoredBook = Prisma.UserBookGetPayload<{
   include: typeof libraryInclude;
 }>;
 export interface LibraryBook {
+  currentPage: number;
+  lastSessionId: string | null;
   id: string;
   title: string;
   author: string;
@@ -26,6 +32,8 @@ export interface LibraryBook {
 }
 export function serializeBook(book: StoredBook): LibraryBook {
   return {
+    currentPage: book.readingSessions[0]?.pageEnd ?? 0,
+    lastSessionId: book.readingSessions[0]?.id ?? null,
     id: book.id,
     title: book.edition.work.title,
     author: book.edition.work.authorName,

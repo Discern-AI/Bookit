@@ -1,6 +1,10 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { LogSession } from "@/components/library/LogSession";
+import { LibraryBook } from "@/lib/book-data";
+import { localDate, ReadingIntent } from "@/lib/reading";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Input";
@@ -58,6 +62,13 @@ export function ChatView({
 }: {
   currentBook: { title: string; author: string; page: number } | null;
 }) {
+  const router = useRouter();
+  const [proposal, setProposal] = useState<{
+    books: LibraryBook[];
+    intent: ReadingIntent;
+    date: string;
+  } | null>(null);
+  const [proposalBook, setProposalBook] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -71,7 +82,7 @@ export function ChatView({
   }, [messages]);
   async function send(event?: React.FormEvent) {
     event?.preventDefault();
-    if (!input.trim() || busy) return;
+    if (!input.trim() || busy || proposal) return;
     const text = input.trim();
     const next: Message[] = [
       ...messages.filter((m) => m.complete !== false),
@@ -83,6 +94,34 @@ export function ChatView({
     setBusy(true);
     controller.current = new AbortController();
     try {
+      const preview = await fetch("/api/chat/log-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.current.signal,
+        body: JSON.stringify({ message: text, today: localDate() }),
+      });
+      const parsed = await preview.json();
+      if (!preview.ok)
+        throw new Error(
+          parsed.error ?? "The message could not be checked. Try again.",
+        );
+      if (parsed.handled) {
+        setMessages([
+          ...next,
+          {
+            role: "assistant",
+            content:
+              parsed.message ??
+              "Check the book and pages below. Nothing is saved until you confirm.",
+            complete: true,
+          },
+        ]);
+        if (parsed.books) {
+          setProposal(parsed);
+          setProposalBook(parsed.books.length === 1 ? parsed.books[0].id : "");
+        }
+        return;
+      }
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -155,7 +194,7 @@ export function ChatView({
         <Button
           variant="ghost"
           size="sm"
-          disabled={busy || !messages.length}
+          disabled={busy || !!proposal || !messages.length}
           onClick={() => {
             setMessages([]);
             setError("");
@@ -249,6 +288,53 @@ export function ChatView({
             )}
           </div>
         ))}
+        {proposal && (
+          <section
+            className="bg-paper-100 rounded-md p-4 space-y-4"
+            aria-label="Confirm reading session"
+          >
+            <label className="block text-sm">
+              Which book?
+              <select
+                value={proposalBook}
+                onChange={(e) => setProposalBook(e.target.value)}
+                className="block w-full p-2 bg-paper-50 border border-ink-200 rounded mt-1"
+              >
+                <option value="">Choose your current read</option>
+                {proposal.books.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.title} (page {b.currentPage})
+                  </option>
+                ))}
+              </select>
+            </label>
+            {proposal.books.find((b) => b.id === proposalBook) ? (
+              <LogSession
+                key={proposalBook}
+                book={proposal.books.find((b) => b.id === proposalBook)!}
+                intent={proposal.intent}
+                defaultDate={proposal.date}
+                onCancel={() => setProposal(null)}
+                onSaved={(book, pages) => {
+                  setProposal(null);
+                  setMessages((current) => [
+                    ...current,
+                    {
+                      role: "assistant",
+                      content: `${pages} pages logged for ${book.title}. You are on page ${book.currentPage}.`,
+                      complete: true,
+                    },
+                  ]);
+                  router.refresh();
+                }}
+              />
+            ) : (
+              <Button variant="ghost" onClick={() => setProposal(null)}>
+                Cancel logging
+              </Button>
+            )}
+          </section>
+        )}
         <div ref={end} />
       </div>
       <div className="border-t border-ink-200 px-4 py-3">
@@ -282,7 +368,11 @@ export function ChatView({
               }
             }}
           />
-          <Button type="submit" size="sm" disabled={!input.trim() || busy}>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={!input.trim() || busy || !!proposal}
+          >
             Send
           </Button>
           {busy && (

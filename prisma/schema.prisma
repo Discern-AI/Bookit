@@ -53,6 +53,8 @@ model User {
   id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
+  yearlyGoal Int?
+  goalYear Int?
   emailVerified DateTime?
   image         String?
   // bcrypt hash, used by the Credentials provider (email/password sign-up)
@@ -182,6 +184,7 @@ model ImportJob {
   processed Int @default(0)
   imported Int @default(0)
   skipped Int @default(0)
+  reviews ImportReview[]
   errors Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -194,6 +197,9 @@ model ReadingSession {
   userId     String
   userBookId String
   date       DateTime  @default(now())
+  finished Boolean @default(false)
+  requestId String? @unique
+  createdAt DateTime @default(now())
   pageStart  Int
   pageEnd    Int
   timeStart  DateTime?
@@ -204,4 +210,15 @@ model ReadingSession {
   userBook UserBook @relation(fields: [userBookId], references: [id], onDelete: Cascade)
 
   @@index([userBookId])
+}
+
+model ImportReview {
+  id String @id @default(cuid())
+  jobId String
+  rowIndex Int
+  row Json
+  candidateIds String[]
+  status String @default("pending")
+  job ImportJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  @@unique([jobId, rowIndex])
 }

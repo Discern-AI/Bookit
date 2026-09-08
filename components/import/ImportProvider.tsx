@@ -16,6 +16,7 @@ export interface ImportStatus {
   imported: number;
   skipped: number;
   errors: string[];
+  _count?: { reviews: number };
 }
 const Context = createContext<{
   job: ImportStatus | null;

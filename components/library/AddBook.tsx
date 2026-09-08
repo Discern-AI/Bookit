@@ -25,10 +25,12 @@ export function AddBook({
   const [shelf, setShelf] = useState(defaultShelf);
   const [searching, setSearching] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [warning, setWarning] = useState("");
   const [error, setError] = useState("");
   const { toast } = useToast();
   useEffect(() => {
     setResults([]);
+    setWarning("");
     setError("");
     if (query.trim().length < 2) {
       setSearching(false);
@@ -45,6 +47,7 @@ export function AddBook({
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Search is unavailable.");
         setResults(data.results);
+        setWarning(data.warning ?? "");
       } catch (e) {
         if (!controller.signal.aborted)
           setError(e instanceof Error ? e.message : "Search is unavailable.");
@@ -152,6 +155,13 @@ export function AddBook({
                   onClick={() => setSelected(book)}
                 >
                   <BookCardVertical book={book} />
+                  {book.editionId && (
+                    <p className="text-xs text-ink-500 mt-1">
+                      {[book.format, book.publisher, book.year]
+                        .filter(Boolean)
+                        .join(" / ")}
+                    </p>
+                  )}
                 </button>
               ))}
             </div>
@@ -165,6 +175,11 @@ export function AddBook({
               </p>
             )}
         </div>
+      )}
+      {warning && (
+        <p role="status" className="text-sm text-ink-500 mt-4">
+          {warning}
+        </p>
       )}
       {error && (
         <p role="alert" className="text-rose-600 text-sm mt-4">

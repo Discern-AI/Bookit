@@ -8,6 +8,10 @@ import { BookCard, BookCardVertical } from "@/components/ui/BookCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { RatingStars } from "@/components/ui/RatingStars";
 import { useToast } from "@/components/ui/Toast";
+import { ProgressBar } from "@/components/ui/ProgressBar";
+import { LogSession } from "./LogSession";
+import { SessionHistory } from "./SessionHistory";
+import { ManageShelf } from "./ManageShelf";
 import { AddBook } from "./AddBook";
 import {
   SHELVES,
@@ -32,6 +36,8 @@ export function LibraryView({
   const [adding, setAdding] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [newShelf, setNewShelf] = useState<string | null>(null);
+  const [logging, setLogging] = useState<string | null>(null);
+  const [managing, setManaging] = useState(false);
   const [busy, setBusy] = useState(false);
   const { toast } = useToast();
   useEffect(() => setBooks(initialBooks), [initialBooks]);
@@ -54,6 +60,11 @@ export function LibraryView({
         .sort((a, b) => {
           if (sort === "title") return a.title.localeCompare(b.title);
           if (sort === "author") return a.author.localeCompare(b.author);
+          if (sort === "progress")
+            return (
+              (b.pageCount ? b.currentPage / b.pageCount : 0) -
+              (a.pageCount ? a.currentPage / a.pageCount : 0)
+            );
           if (sort === "rating") return (b.rating ?? -1) - (a.rating ?? -1);
           if (sort === "finished")
             return (b.dateFinished ?? "").localeCompare(a.dateFinished ?? "");
@@ -178,6 +189,17 @@ export function LibraryView({
           <Button variant="ghost" size="sm" onClick={() => setNewShelf("")}>
             + New shelf
           </Button>
+          {!isDefault && shelf !== "all" && (
+            <Button size="sm" variant="ghost" onClick={() => setManaging(true)}>
+              Manage shelf
+            </Button>
+          )}
+          <Link
+            href="/library/diary"
+            className="block text-sm text-shelf-700 mt-4 px-3"
+          >
+            Reading diary
+          </Link>
           <Link
             href="/settings"
             className="block text-sm text-shelf-700 mt-4 px-3"
@@ -207,6 +229,7 @@ export function LibraryView({
                 <option value="title">Title A-Z</option>
                 <option value="author">Author A-Z</option>
                 <option value="rating">Rating</option>
+                <option value="progress">Progress</option>
                 {shelf === "read" && (
                   <option value="finished">Date read</option>
                 )}
@@ -229,13 +252,34 @@ export function LibraryView({
               }
             >
               {visible.map((b) => (
-                <button
-                  className="block w-full text-left rounded focus-visible:outline-shelf-700"
-                  key={b.id}
-                  onClick={() => setSelected(b.id)}
-                >
-                  {grid ? <BookCardVertical book={b} /> : <BookCard book={b} />}
-                </button>
+                <div key={b.id}>
+                  <button
+                    className="block w-full text-left rounded focus-visible:outline-shelf-700"
+                    key={b.id}
+                    onClick={() => setSelected(b.id)}
+                  >
+                    {grid ? (
+                      <BookCardVertical book={b} />
+                    ) : (
+                      <BookCard book={b} />
+                    )}
+                  </button>
+                  {b.shelf === "reading_now" && (
+                    <div className="px-4 pb-3">
+                      <ProgressBar
+                        currentPage={b.currentPage}
+                        totalPages={b.pageCount}
+                      />
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setLogging(b.id)}
+                      >
+                        Log pages
+                      </Button>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           ) : (
@@ -253,6 +297,56 @@ export function LibraryView({
           )}
         </section>
       </div>
+      {managing && shelves.find((s) => s.id === shelf) && (
+        <ManageShelf
+          shelf={shelves.find((s) => s.id === shelf)!}
+          onClose={() => setManaging(false)}
+          onRenamed={(renamed) => {
+            setShelves((current) =>
+              current.map((s) => (s.id === renamed.id ? renamed : s)),
+            );
+            setBooks((current) =>
+              current.map((b) => ({
+                ...b,
+                customShelves: b.customShelves.map((s) =>
+                  s.id === renamed.id ? renamed : s,
+                ),
+              })),
+            );
+            setManaging(false);
+            toast("Shelf renamed.", "success");
+          }}
+          onDeleted={() => {
+            setShelves((current) => current.filter((s) => s.id !== shelf));
+            setBooks((current) =>
+              current.map((b) => ({
+                ...b,
+                customShelves: b.customShelves.filter((s) => s.id !== shelf),
+              })),
+            );
+            setShelf("all");
+            setManaging(false);
+            toast("Shelf deleted. Your books are still here.", "success");
+          }}
+        />
+      )}
+      {logging && books.find((b) => b.id === logging) && (
+        <Modal open onClose={() => setLogging(null)} title="Log your reading">
+          <LogSession
+            key={logging}
+            book={books.find((b) => b.id === logging)!}
+            onCancel={() => setLogging(null)}
+            onSaved={(book, pages) => {
+              update(book);
+              setLogging(null);
+              toast(
+                `${pages} pages logged. You are on page ${book.currentPage}.`,
+                "success",
+              );
+            }}
+          />
+        </Modal>
+      )}
       {adding && (
         <AddBook
           onClose={() => setAdding(false)}
@@ -274,6 +368,20 @@ export function LibraryView({
         >
           <div className="space-y-5">
             <BookCard book={book} />
+            <ProgressBar
+              currentPage={book.currentPage}
+              totalPages={book.pageCount}
+            />
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                setSelected(null);
+                setLogging(book.id);
+              }}
+            >
+              Log pages
+            </Button>
             <label className="block text-sm">
               Shelf
               <select
@@ -308,6 +416,7 @@ export function LibraryView({
                 className="mt-1"
               />
             </label>
+            <SessionHistory bookId={book.id} latestId={book.lastSessionId} />
             {shelves.length > 0 && (
               <fieldset>
                 <legend className="text-sm font-medium mb-2">

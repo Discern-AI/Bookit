@@ -16,7 +16,7 @@ npm run dev
 
 Set `DATABASE_URL`, a random `NEXTAUTH_SECRET`, and `NEXTAUTH_URL` in `.env` before starting. `AUTH_TRUST_HOST=true` is configured for the local server; hosted environments must supply the correct public origin and trusted proxy configuration. Generate a secret with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
 
-Open http://localhost:3000 and create an account. Settings contains Goodreads import and library export.
+Open http://localhost:3000 and create an account. Settings contains Goodreads import, edition-match reviews and library export. In Library, choose Reading diary for your timeline and goal, or Log pages on a current read. Chat also accepts commands such as "Read another 30 pages" and asks you to confirm before saving. These logging commands work without a Claude API key.
 
 `ANTHROPIC_API_KEY` enables real chat replies. `ANTHROPIC_MODEL` defaults to the brief's `claude-sonnet-4-6`. Keys stay server-side. Without a key, the library still works and chat shows a connection message. Chat history is currently held in the open page, not persisted across reloads.
 
@@ -45,4 +45,4 @@ Browser tests expect a running server on localhost:3000 and a migrated developme
 
 ## Specifications and current scope
 
-Both original PDFs are saved in [docs/specifications](docs/specifications). The implementation brief's Phase 1 build order guides this continuation. See [docs/BUILD_STATUS.md](docs/BUILD_STATUS.md) for what is implemented, validation, limitations, and the next phase.
+Both original PDFs are saved in [docs/specifications](docs/specifications). The current implementation covers the library foundation and the first reading features. See [docs/BUILD_STATUS.md](docs/BUILD_STATUS.md) for what is implemented, validation, limitations, and the next phase.
