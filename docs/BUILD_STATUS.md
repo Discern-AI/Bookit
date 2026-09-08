@@ -36,7 +36,18 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Editions lists other saved editions of the same work, including recorded translation language. Readers can add a separate edition to Want to read or open an existing copy. Notes and reading sessions remain attached to the original copy. The authenticated endpoint enforces book ownership.
 - Find another edition opens catalogue/ISBN search. Remote edition enumeration, translator credits and translation enrichment remain to be built; the edition list currently uses saved catalogue records.
 
+## Browse and public book continuation
+
+- Browse replaces its placeholder with Continue reading (including page logging), title/author/ISBN search, author exploration from the reader's finished books, and up to 24 recently catalogued works. Search has loading, retry, clear and empty states and cancels stale requests.
+- Public server-rendered `/book/[workId]` pages show catalogue descriptions, genres and editions with page metadata. An explicit database field selection excludes user associations, notes, ratings, reviews, shelves and reading sessions. Only this public route bypasses the existing page login guard.
+- Signed-in readers choose an exact edition and shelf, then land in that copy's library drawer. Existing editions remain deduplicated by the existing add endpoint. Signed-out readers can view catalogue pages and are offered sign-in to add books.
+- Book pages and library details provide external search links to WorldCat, Bookshop.org UK and Open Library, using ISBN when known. These are searches, not stock, price or borrowing availability claims.
+- Catalogue search results include work IDs for public-page navigation. Remote results can be added through the existing flow; their public page becomes available after cataloguing.
+- Reading paths, followed-author new-release feeds, nearby shops, community lists, public reviews, translator enrichment and live availability are still outstanding. The Browse author controls are catalogue searches, not a new-release feed.
+
 ## Validation
+
+- Browse/public-page continuation: all six production browser scenarios passed in 36.5 seconds. The added scenario verifies public SSR metadata, absence of private notes/user-book IDs, protected private routes/APIs, missing-work 404s, Browse logging, search retry, exact-edition addition and mobile width. The mobile screenshot was inspected. Production build (including lint/type checks) and unit tests pass.
 
 - Drawer continuation: production build (including TypeScript and lint) and unit tests pass. All five browser scenarios pass across the final suite and focused rerun; the new scenario covers keyboard tabs, failed-note retry, desktop/mobile sizing, edition addition without changing history, and cross-account protection.
 
@@ -56,6 +67,6 @@ A verified npm audit reported nine high-severity dependency entries in the retai
 
 Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provider verification. Import matching uses the local canonical catalogue without external metadata enrichment. Shelf sharing, imported public reviews, editing/deleting existing sessions and separate reread cycles are not implemented. Chat history and unconfirmed log proposals remain in the open page only.
 
-Next Phase 2 work: remote edition/translation enrichment, acquisition/availability links, Browse discovery and public book pages. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
+Next Phase 2 work: remote edition/translation enrichment, reading paths and live acquisition/availability integrations. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
 
-Later phases: gifts, community, public profiles, creator publishing, social connections, encrypted private context and marketplace. Browse and Community remain explicit placeholders. No deployment or remote push has been performed.
+Later phases: gifts, community, public profiles, creator publishing, social connections, encrypted private context and marketplace. Community remains an explicit placeholder. No deployment or remote push has been performed.

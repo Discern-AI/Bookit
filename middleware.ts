@@ -10,7 +10,8 @@ export default auth((req) => {
     req.nextUrl.pathname.startsWith("/login") ||
     req.nextUrl.pathname.startsWith("/signup");
 
-  if (!isLoggedIn && !isAuthRoute) {
+  const isPublicBook = /^\/book\/[^/]+\/?$/.test(req.nextUrl.pathname);
+  if (!isLoggedIn && !isAuthRoute && !isPublicBook) {
     const loginUrl = new URL("/login", req.nextUrl.origin);
     return NextResponse.redirect(loginUrl);
   }

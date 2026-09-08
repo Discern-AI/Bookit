@@ -481,3 +481,140 @@ test("detail drawer saves notes and adds editions without changing reading histo
   ).toBe(404);
   await other.close();
 });
+
+test("browse connects discovery, public book pages and exact edition addition", async ({
+  page,
+  browser,
+}) => {
+  test.setTimeout(120000);
+  const userId = await login(page, "browse");
+  const original = await makeBook(userId, "Public discovery");
+  await db.userBook.update({
+    where: { id: original.id },
+    data: { privateNotes: "SECRET_PRIVATE_READER_NOTE", rating: 4.5 },
+  });
+  await db.work.update({
+    where: { id: original.edition.workId },
+    data: {
+      description: "A catalogue description for discovery.",
+      genres: ["Fiction"],
+    },
+  });
+  const alternate = await db.edition.create({
+    data: {
+      workId: original.edition.workId,
+      format: "hardback",
+      publisher: "Discovery Press",
+      pageCount: 250,
+      year: 2024,
+    },
+  });
+  const anon = await browser.newContext();
+  const publicPage = await anon.newPage();
+  const response = await publicPage.goto(`/book/${original.edition.workId}`);
+  expect(response?.status()).toBe(200);
+  await expect(
+    publicPage.getByRole("heading", {
+      name: original.edition.work.title,
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(publicPage).toHaveTitle(
+    `${original.edition.work.title} by Test Writer | Folio`,
+  );
+  const html = await response!.text();
+  expect(html).toContain("A catalogue description for discovery.");
+  expect(html).not.toContain("SECRET_PRIVATE_READER_NOTE");
+  expect(html).not.toContain(original.id);
+  await expect(
+    publicPage
+      .getByRole("link", { name: "Sign in to add to your library" })
+      .first(),
+  ).toBeVisible();
+  await expect(
+    publicPage
+      .getByRole("link", { name: "Search libraries on WorldCat" })
+      .first(),
+  ).toHaveAttribute("href", /https:\/\/search.worldcat.org\/search\?q=/);
+  await publicPage.goto("/library");
+  await expect(publicPage).toHaveURL(/\/login$/);
+  expect(
+    (
+      await publicPage.request.get(`/api/library/${original.id}/editions`)
+    ).status(),
+  ).toBe(401);
+  expect((await publicPage.goto("/book/not-a-real-work"))?.status()).toBe(404);
+  await anon.close();
+  await page.goto("/browse");
+  await expect(
+    page.getByRole("heading", { name: "Continue reading", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Log pages", exact: true }).click();
+  await page.getByLabel("End page", { exact: true }).fill("12");
+  await page.getByRole("button", { name: "Log session", exact: true }).click();
+  await expect(
+    page.getByText("12 of 120 pages", { exact: true }),
+  ).toBeVisible();
+  let unavailable = true;
+  await page.route("**/api/books/search?*", (route) =>
+    unavailable
+      ? route.fulfill({
+          status: 502,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "Search fixture unavailable" }),
+        })
+      : route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({
+            results: [
+              {
+                workId: original.edition.workId,
+                editionId: alternate.id,
+                title: original.edition.work.title,
+                author: "Test Writer",
+                format: "hardback",
+              },
+            ],
+          }),
+        }),
+  );
+  await page
+    .getByRole("textbox", { name: "Title, author, or ISBN" })
+    .fill("Discovery");
+  await page.getByRole("button", { name: "Search books", exact: true }).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Search fixture unavailable" }),
+  ).toBeVisible();
+  unavailable = false;
+  await page.getByRole("button", { name: "Retry search", exact: true }).click();
+  await page.getByRole("link", { name: "View book", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/book/${original.edition.workId}$`));
+  await page
+    .getByRole("article")
+    .filter({ hasText: "Discovery Press" })
+    .getByRole("button", { name: "Add to library", exact: true })
+    .click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Add to library", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/library\?book=/);
+  await expect(
+    page.getByRole("dialog", { name: original.edition.work.title }),
+  ).toBeVisible();
+  const added = await db.userBook.findUniqueOrThrow({
+    where: { userId_editionId: { userId, editionId: alternate.id } },
+  });
+  expect(added.shelf).toBe("tbr");
+  expect(added.privateNotes).toBeNull();
+  expect(await db.userBook.count({ where: { userId } })).toBe(2);
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/browse");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({ path: ".local/browse-mobile.png", fullPage: true });
+});

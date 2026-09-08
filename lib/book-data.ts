@@ -13,6 +13,7 @@ export type StoredBook = Prisma.UserBookGetPayload<{
   include: typeof libraryInclude;
 }>;
 export interface LibraryBook {
+  workId?: string;
   currentPage: number;
   lastSessionId: string | null;
   id: string;
@@ -36,6 +37,7 @@ export interface LibraryBook {
 }
 export function serializeBook(book: StoredBook): LibraryBook {
   return {
+    workId: book.edition.workId,
     currentPage: book.readingSessions[0]?.pageEnd ?? 0,
     lastSessionId: book.readingSessions[0]?.id ?? null,
     id: book.id,

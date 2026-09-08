@@ -12,6 +12,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { LogSession } from "./LogSession";
 import { SessionHistory } from "./SessionHistory";
 import { ManageShelf } from "./ManageShelf";
+import { GetBook } from "@/components/books/GetBook";
 import { EditionList } from "./EditionList";
 import { AddBook } from "./AddBook";
 import {
@@ -24,7 +25,9 @@ import type { LibraryBook } from "@/lib/book-data";
 export function LibraryView({
   initialBooks,
   initialShelves,
+  initialSelected,
 }: {
+  initialSelected?: string;
   initialBooks: LibraryBook[];
   initialShelves: { id: string; name: string }[];
 }) {
@@ -35,7 +38,9 @@ export function LibraryView({
   const [sort, setSort] = useState("recent");
   const [grid, setGrid] = useState(false);
   const [adding, setAdding] = useState(false);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(
+    initialSelected ?? null,
+  );
   const [newShelf, setNewShelf] = useState<string | null>(null);
   const [logging, setLogging] = useState<string | null>(null);
   const [managing, setManaging] = useState(false);
@@ -560,6 +565,19 @@ export function LibraryView({
                 <dt>ISBN</dt>
                 <dd>{book.isbn13 ?? "Not recorded"}</dd>
               </dl>
+              {book.workId && !busy && notes === (book.privateNotes ?? "") && (
+                <Link
+                  href={`/book/${book.workId}`}
+                  className="text-sm text-shelf-700 hover:underline"
+                >
+                  View public book page
+                </Link>
+              )}
+              <GetBook
+                title={book.title}
+                author={book.author}
+                isbn13={book.isbn13}
+              />
               {book.description && (
                 <p className="text-sm whitespace-pre-wrap">
                   {book.description}

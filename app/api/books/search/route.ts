@@ -36,6 +36,7 @@ export async function GET(request: Request) {
   ]);
   const results: OpenLibrarySearchResult[] = local.map((e) => ({
     editionId: e.id,
+    workId: e.workId,
     format: e.format,
     publisher: e.publisher ?? undefined,
     title: e.work.title,

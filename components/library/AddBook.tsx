@@ -12,15 +12,17 @@ export function AddBook({
   onClose,
   onAdded,
   defaultShelf,
+  initialBook,
 }: {
   onClose: () => void;
   onAdded: (book: LibraryBook) => void;
   defaultShelf: ShelfKey;
+  initialBook?: OpenLibrarySearchResult;
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<OpenLibrarySearchResult[]>([]);
   const [selected, setSelected] = useState<OpenLibrarySearchResult | null>(
-    null,
+    initialBook ?? null,
   );
   const [shelf, setShelf] = useState(defaultShelf);
   const [searching, setSearching] = useState(false);
