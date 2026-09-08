@@ -554,6 +554,12 @@ export function LibraryView({
                 <dd>{book.publisher ?? "Unknown"}</dd>
                 <dt>Language</dt>
                 <dd>{book.language ?? "Not recorded"}</dd>
+                {!!book.translators?.length && (
+                  <>
+                    <dt>Translator</dt>
+                    <dd>{book.translators.join(", ")}</dd>
+                  </>
+                )}
                 <dt>Published</dt>
                 <dd>{book.year ?? "Unknown"}</dd>
                 <dt>Pages</dt>

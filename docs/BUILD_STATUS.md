@@ -34,7 +34,7 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Details show recorded publisher, language, year, page count, format, ISBN, description and genres. Missing metadata is labelled rather than inferred.
 - Private notes save on blur, retain their draft after a failed request, and must save before closing or choosing another edition. Ratings and custom shelves remain editable.
 - Editions lists other saved editions of the same work, including recorded translation language. Readers can add a separate edition to Want to read or open an existing copy. Notes and reading sessions remain attached to the original copy. The authenticated endpoint enforces book ownership.
-- Find another edition opens catalogue/ISBN search. Remote edition enumeration, translator credits and translation enrichment remain to be built; the edition list currently uses saved catalogue records.
+- Find another edition opens catalogue/ISBN search. The later metadata continuation below extends the saved list with remote edition browsing and recorded translator credits.
 
 ## Browse and public book continuation
 
@@ -43,7 +43,7 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Signed-in readers choose an exact edition and shelf, then land in that copy's library drawer. Existing editions remain deduplicated by the existing add endpoint. Signed-out readers can view catalogue pages and are offered sign-in to add books.
 - Book pages and library details provide external search links to WorldCat, Bookshop.org UK and Open Library, using ISBN when known. These are searches, not stock, price or borrowing availability claims.
 - Catalogue search results include work IDs for public-page navigation. Remote results can be added through the existing flow; their public page becomes available after cataloguing.
-- Followed-author new-release feeds, nearby shops, community lists, public reviews, translator enrichment and live availability are still outstanding. The Browse author controls are catalogue searches, not a new-release feed.
+- Followed-author new-release feeds, nearby shops, community lists, public reviews, canonical translator profiles and live availability are still outstanding. The Browse author controls are catalogue searches, not a new-release feed.
 
 ## Reading paths continuation
 
@@ -55,7 +55,18 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Creation retries reuse a client request ID. Version checks reject stale edits/deletes; the editor retains the unsaved draft and links to the saved copy. Deletion and discarding edits require explicit UI confirmation. Form validation and network errors preserve edits.
 - AI path generation, expert verification and automatic progress through a path remain outstanding. No Claude key is needed for authoring or following paths.
 
+## Edition metadata continuation
+
+- Added source edition IDs, translated edition titles, language arrays, translator credit arrays and a metadata timestamp through an additive migration. Credits remain edition-level source data; canonical translator profiles and grouped translation entities are not inferred.
+- Book pages and the private Editions tab can explicitly load Open Library editions, 20 per page, and filter loaded records by language or text. Missing formats remain unknown. Source links accompany imported credits. Search and library cards support saved edition titles.
+- The server resolves a work through its Open Library ID or a checksum-valid ISBN with one unambiguous work reference. Selection fetches the exact source edition again and validates identifiers and work membership; client-supplied metadata is not trusted.
+- Importing catalogue metadata is separate from choosing a private library shelf. Existing source/ISBN matches are reused; conflicting identifiers or work associations are rejected. Enrichment fills missing publisher/language/credit fields but preserves existing titles, formats, page counts, notes, shelves and sessions.
+- The provider integration uses the documented [Open Library edition endpoints](https://openlibrary.org/dev/docs/restful_api). Requests are cached for one hour and time out after eight seconds. Live provider calls timed out during this continuation; successful integration was verified with controlled provider responses, not live data.
+- `npm run test:metadata` starts isolated local provider/app servers and closes them after the test. It does not change `.env` or the normal running app's provider configuration.
+
 ## Validation
+
+- Edition metadata continuation: production build (including lint/type checks), unit tests and all eight regular integration scenarios pass. The fixture-only metadata scenario is skipped by the regular suite and passed separately via `npm run test:metadata` (9.6 seconds). Coverage includes provider failure/retry, ISBN work resolution, pagination, language filtering, translator-role filtering, exact-ID imports, forged payloads, source/ISBN conflicts and unchanged saved reading progress. The mobile drawer screenshot was inspected. Live Open Library calls timed out and remain unverified.
 
 - Reading-path continuation: production build, TypeScript, lint and unit tests pass. Seven integration scenarios passed in the full production run; the eighth (stale-edit protection) passed on a focused rerun after fixing an ambiguous test selector. Coverage includes ordered private saves, explicit publishing, anonymous/other-account isolation, follows, unpublishing, library-preserving deletion, idempotent creation, invalid inputs and stale-edit draft retention. The mobile path screenshot was inspected.
 
@@ -79,6 +90,6 @@ A verified npm audit reported nine high-severity dependency entries in the retai
 
 Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provider verification. Import matching uses the local canonical catalogue without external metadata enrichment. Shelf sharing, imported public reviews, editing/deleting existing sessions and separate reread cycles are not implemented. Chat history and unconfirmed log proposals remain in the open page only.
 
-Next Phase 2 work: remote edition/translation enrichment and live acquisition/availability integrations. Reading paths now support manual creation, publishing and following. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
+Next Phase 2 work: live acquisition/availability integrations, plus a successful live-provider check of the edition metadata flow. Reading paths now support manual creation, publishing and following. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
 
 Later phases: gifts, community, public profiles, creator publishing, social connections, encrypted private context and marketplace. Community remains an explicit placeholder. No deployment or remote push has been performed.

@@ -8,6 +8,8 @@ import { BookCardVertical } from "@/components/ui/BookCard";
 import { GetBook } from "@/components/books/GetBook";
 import { pathCardSelect } from "@/lib/path-data";
 import { PathCard } from "@/components/paths/PathCard";
+import { RemoteEditions } from "@/components/books/RemoteEditions";
+import { languageName } from "@/lib/edition-metadata";
 import { AddEdition } from "@/components/books/AddEdition";
 export const dynamic = "force-dynamic";
 const getWork = cache((id: string) =>
@@ -23,6 +25,10 @@ const getWork = cache((id: string) =>
         orderBy: [{ year: "desc" }, { id: "asc" }],
         select: {
           id: true,
+          editionTitle: true,
+          openLibraryId: true,
+          languages: true,
+          translators: true,
           isbn13: true,
           publisher: true,
           year: true,
@@ -118,6 +124,7 @@ export default async function BookPage({
         {!work.editions.length && <p>No editions recorded yet.</p>}
         {work.editions.map((e) => (
           <article key={e.id} className="bg-paper-100 rounded-md p-5 space-y-3">
+            {e.editionTitle && <p className="font-medium">{e.editionTitle}</p>}
             <h3 className="font-medium capitalize">
               {e.format.replaceAll("_", " ")}
             </h3>
@@ -125,12 +132,29 @@ export default async function BookPage({
               {[
                 e.publisher,
                 e.year,
-                e.translation?.language,
+                e.languages.length
+                  ? e.languages.map(languageName).join(", ")
+                  : e.translation?.language,
                 e.pageCount ? `${e.pageCount} pages` : null,
               ]
                 .filter(Boolean)
                 .join(" / ") || "Publication details unavailable"}
             </p>
+            {!!e.translators.length && (
+              <p className="text-sm">
+                Translated by {e.translators.join(", ")}
+              </p>
+            )}
+            {e.openLibraryId && (
+              <a
+                href={`https://openlibrary.org/books/${e.openLibraryId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-xs text-shelf-700 underline"
+              >
+                Source: Open Library
+              </a>
+            )}
             {e.isbn13 && (
               <p className="text-xs text-ink-500">ISBN {e.isbn13}</p>
             )}
@@ -138,7 +162,7 @@ export default async function BookPage({
               <AddEdition
                 book={{
                   editionId: e.id,
-                  title: work.title,
+                  title: e.editionTitle ?? work.title,
                   author: work.authorName,
                   format: e.format,
                   year: e.year ?? undefined,
@@ -160,6 +184,7 @@ export default async function BookPage({
           </article>
         ))}
       </section>
+      {session?.user && <RemoteEditions workId={work.id} />}
       {!!paths.length && (
         <section className="space-y-4">
           <h2 className="font-display text-2xl">

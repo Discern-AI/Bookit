@@ -108,6 +108,11 @@ model Translation {
 }
 
 model Edition {
+  openLibraryId String? @unique
+  editionTitle String?
+  languages String[] @default([])
+  translators String[] @default([])
+  metadataUpdatedAt DateTime?
   id            String   @id @default(cuid())
   workId        String
   translationId String?

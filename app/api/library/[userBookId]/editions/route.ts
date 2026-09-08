@@ -26,6 +26,10 @@ export async function GET(
     genres: book.edition.work.genres,
     editions: editions.map((e) => ({
       id: e.id,
+      editionTitle: e.editionTitle,
+      openLibraryId: e.openLibraryId,
+      languages: e.languages,
+      translators: e.translators,
       current: e.id === book.editionId,
       userBookId: e.userBooks[0]?.id ?? null,
       publisher: e.publisher,

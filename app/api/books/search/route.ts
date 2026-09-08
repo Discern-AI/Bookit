@@ -19,6 +19,7 @@ export async function GET(request: Request) {
       where: {
         OR: [
           ...(isbn ? [{ isbn13: isbn }] : []),
+          { editionTitle: { contains: q, mode: "insensitive" } },
           { work: { title: { contains: q, mode: "insensitive" } } },
           { work: { authorName: { contains: q, mode: "insensitive" } } },
         ],
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
     workId: e.workId,
     format: e.format,
     publisher: e.publisher ?? undefined,
-    title: e.work.title,
+    title: e.editionTitle ?? e.work.title,
     author: e.work.authorName,
     isbn13: e.isbn13 ?? undefined,
     year: e.year ?? undefined,

@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { languageName } from "./edition-metadata";
 import type { ShelfKey } from "@/lib/shelves";
 
 export const libraryInclude = {
@@ -26,6 +27,7 @@ export interface LibraryBook {
   pageCount: number | null;
   publisher?: string | null;
   language?: string | null;
+  translators?: string[];
   description?: string | null;
   genres?: string[];
   format: string;
@@ -41,7 +43,7 @@ export function serializeBook(book: StoredBook): LibraryBook {
     currentPage: book.readingSessions[0]?.pageEnd ?? 0,
     lastSessionId: book.readingSessions[0]?.id ?? null,
     id: book.id,
-    title: book.edition.work.title,
+    title: book.edition.editionTitle ?? book.edition.work.title,
     author: book.edition.work.authorName,
     shelf: book.shelf,
     isbn13: book.edition.isbn13,
@@ -49,7 +51,10 @@ export function serializeBook(book: StoredBook): LibraryBook {
     year: book.edition.year,
     pageCount: book.edition.pageCount,
     publisher: book.edition.publisher,
-    language: book.edition.translation?.language ?? null,
+    language: book.edition.languages.length
+      ? book.edition.languages.map(languageName).join(", ")
+      : (book.edition.translation?.language ?? null),
+    translators: book.edition.translators,
     description: book.edition.work.description,
     genres: book.edition.work.genres,
     format: book.edition.format,

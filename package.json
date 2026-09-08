@@ -11,7 +11,8 @@
     "test": "node scripts/test-unit.cjs",
     "test:e2e": "playwright test",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate deploy"
+    "db:migrate": "prisma migrate deploy",
+    "test:metadata": "node scripts/test-edition-metadata.cjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.124.0",

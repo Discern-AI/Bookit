@@ -1,9 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
+import { RemoteEditions } from "@/components/books/RemoteEditions";
+import { languageName } from "@/lib/edition-metadata";
 import { Button } from "@/components/ui/Button";
 import type { LibraryBook } from "@/lib/book-data";
 type Edition = {
   id: string;
+  editionTitle: string | null;
+  openLibraryId: string | null;
+  languages: string[];
+  translators: string[];
   current: boolean;
   userBookId: string | null;
   publisher: string | null;
@@ -84,6 +90,7 @@ export function EditionList({
           key={e.id}
           className="rounded border border-ink-200 p-4 space-y-2"
         >
+          {e.editionTitle && <p className="font-medium">{e.editionTitle}</p>}
           <h3 className="font-medium capitalize">
             {e.format.replaceAll("_", " ")}
             {e.current ? " - This edition" : ""}
@@ -92,12 +99,27 @@ export function EditionList({
             {[
               e.publisher,
               e.year,
-              e.language,
+              e.languages.length
+                ? e.languages.map(languageName).join(", ")
+                : e.language,
               e.pageCount ? `${e.pageCount} pages` : null,
             ]
               .filter(Boolean)
               .join(" / ") || "Publication details unavailable"}
           </p>
+          {!!e.translators.length && (
+            <p className="text-sm">Translated by {e.translators.join(", ")}</p>
+          )}
+          {e.openLibraryId && (
+            <a
+              href={`https://openlibrary.org/books/${e.openLibraryId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-shelf-700 underline"
+            >
+              Source: Open Library
+            </a>
+          )}
           {e.isbn13 && <p className="text-xs text-ink-500">ISBN {e.isbn13}</p>}
           {!e.current && (
             <Button
@@ -114,9 +136,10 @@ export function EditionList({
       <Button variant="secondary" onClick={onFind} disabled={busy}>
         Find another edition
       </Button>
+      {book.workId && <RemoteEditions workId={book.workId} onAdded={onAdded} />}
       <p className="text-xs text-ink-500">
-        Search by ISBN for an exact edition. Language is shown only where it is
-        recorded; translator information is not yet available.
+        Languages and translator credits are shown only where recorded in the
+        source.
       </p>
     </section>
   );

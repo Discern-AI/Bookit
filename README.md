@@ -22,6 +22,8 @@ Browse now includes catalogue search, current reads and author exploration. Save
 
 Reading paths are available from Browse. Create an ordered path from saved catalogue books, add notes, and save it privately or publish it. Published paths have shareable `/path/[pathId]` pages, appear on their book pages, and can be followed. Publishing exposes only the path content and your display name; library notes remain private.
 
+Book pages and the library Editions tab can load Open Library editions in pages of 20, filter loaded records by language or text, and import an exact edition. Recorded translator credits and language metadata include source links. A saved copy keeps its existing page count and reading history. Source lookup needs an Open Library work ID or a matching ISBN; provider failures leave saved data available.
+
 `ANTHROPIC_API_KEY` enables real chat replies. `ANTHROPIC_MODEL` defaults to the brief's `claude-sonnet-4-6`. Keys stay server-side. Without a key, the library still works and chat shows a connection message. Chat history is currently held in the open page, not persisted across reloads.
 
 ### Database on this Windows machine
@@ -43,9 +45,12 @@ npm run lint
 npm run build
 npx playwright install chromium
 npm run test:e2e
+npm run test:metadata
 ```
 
 Browser tests expect a running server on localhost:3000 and a migrated development database. They create and remove temporary test accounts/books. Search and successful chat UI responses use fixtures; the missing-key response uses the real API. The chat test currently expects an empty `ANTHROPIC_API_KEY` in the test server. Use a development database, not live user data.
+
+`npm run test:metadata` runs a separate production server and local provider fixture on temporary ports, then closes both. It verifies provider failure/retry, pagination, language filters, translator roles, source identity conflicts, idempotent import and preserved reading progress. Build first. The ordinary browser suite skips this fixture-only scenario; live Open Library responses are a separate verification.
 
 ## Specifications and current scope
 

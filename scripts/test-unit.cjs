@@ -119,3 +119,12 @@ assert.equal(pathSchema.safeParse({ ...draftPath, isPublic: true, entries: pathE
 assert.equal(pathSchema.safeParse({ ...draftPath, entries: [...pathEntries, { workId: "extra", note: "" }] }).success, false);
 assert.equal(pathSchema.safeParse({ ...draftPath, entries: [{ workId: "a", note: "x".repeat(2001) }] }).success, false);
 console.log("Passed reading-path publishing, duplicate-work and size validation.");
+
+const { parseEdition, languageName } = require("../lib/edition-metadata.ts");
+const sourceEdition = { key: "/books/OL123M", title: "A translated edition", works: [{ key: "/works/OL123W" }], languages: [{ key: "/languages/fre" }, { key: "/languages/fre" }], isbn_10: ["0-14-032872-6"], physical_format: "Hardcover", number_of_pages: 200, contributors: [{ name: "A Translator", role: "Translator" }, { name: "An Editor", role: "Editor" }] };
+const metadata = parseEdition(sourceEdition);
+assert.equal(metadata.isbn13, "9780140328721");assert.deepEqual(metadata.languages, ["fre"]);assert.deepEqual(metadata.translators, ["A Translator"]);assert.equal(metadata.format, "hardback");assert.equal(languageName("fre"), "French");
+assert.equal(parseEdition({ ...sourceEdition, physical_format: "Unrecognised", number_of_pages: -1 }).format, "unknown");assert.equal(parseEdition({ ...sourceEdition, number_of_pages: -1 }).pageCount, null);
+assert.equal(parseEdition({ key: "/books/../../secret", title: "Bad" }), null);assert.equal(parseEdition(null), null);
+assert.deepEqual(parseEdition({ ...sourceEdition, languages: [{ key: "eng" }], contributors: [{ name: "Editor", role: "Translation editor" }] }).translators, []);
+console.log("Passed edition identifiers, ISBNs, languages, translator roles and unknown metadata checks.");
