@@ -64,7 +64,18 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - The provider integration uses the documented [Open Library edition endpoints](https://openlibrary.org/dev/docs/restful_api). Requests are cached for one hour and time out after eight seconds. Live provider calls timed out during this continuation; successful integration was verified with controlled provider responses, not live data.
 - `npm run test:metadata` starts isolated local provider/app servers and closes them after the test. It does not change `.env` or the normal running app's provider configuration.
 
+## Private gift planning continuation
+
+- Added private GiftContact and GiftItem models with an additive migration. The Library sidebar links to paginated Gift lists, a recipient editor and a detail page. Recipient names, preferences, occasions, budgets and gift notes are restricted to the signed-in owner.
+- Readers record up to 20 occasions and 100 unique book ideas per person. Annual dates recur; 29 February uses 28 February in non-leap years. The Gift lists page shows upcoming reminders for the people displayed on that page. Dismissal persists for that occurrence and does not suppress next year's reminder.
+- Gift ideas use saved catalogue works and link to public edition comparisons and external shop searches. Each idea has planned/bought/given status, Perfect fit/Might like/Wildcard, an optional private note and a manually entered GBP price estimate. Budgets and estimates use integer pence; no live-price claims are made.
+- Recipient pages flag estimates over budget. Reminders show up to three planned ideas whose recorded estimates fit the budget. These statuses are planning records; no purchase, message or notification is sent.
+- Creation retries reuse a client request ID. Mutations and reminder dismissals enforce ownership. Version checks prevent stale edits/deletes; unsaved drafts survive failures. Deleting a recipient requires UI confirmation and leaves library/catalogue books untouched.
+- Gift list sharing, claims, AI suggestions, chat reminders, multiple currencies and selecting a specific edition directly on a gift item remain outstanding.
+
 ## Validation
+
+- Gift planning continuation: production build (including lint/type checks) and unit tests pass. Nine regular browser scenarios passed in the full run; both gift scenarios passed on a focused rerun after replacing an HTTP-status-only assertion with rendered access-denial and private-data checks (Next.js can stream a 200 shell before rendering not-found). The separate metadata fixture scenario remains intentionally skipped in the regular suite. Gift coverage includes preferences, integer-pence estimates, annual dates, persisted reminder dismissal, budget filtering, bought/given status, account isolation, invalid input, idempotent creation, stale drafts and deletion that preserves library books. The mobile gift page was inspected.
 
 - Edition metadata continuation: production build (including lint/type checks), unit tests and all eight regular integration scenarios pass. The fixture-only metadata scenario is skipped by the regular suite and passed separately via `npm run test:metadata` (9.6 seconds). Coverage includes provider failure/retry, ISBN work resolution, pagination, language filtering, translator-role filtering, exact-ID imports, forged payloads, source/ISBN conflicts and unchanged saved reading progress. The mobile drawer screenshot was inspected. Live Open Library calls timed out and remain unverified.
 
@@ -92,4 +103,4 @@ Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provid
 
 Next Phase 2 work: live acquisition/availability integrations, plus a successful live-provider check of the edition metadata flow. Reading paths now support manual creation, publishing and following. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
 
-Later phases: gifts, community, public profiles, creator publishing, social connections, encrypted private context and marketplace. Community remains an explicit placeholder. No deployment or remote push has been performed.
+Later phases: gift sharing/claims and AI expansion, community, public profiles, creator publishing, social connections, encrypted private context and marketplace. Community remains an explicit placeholder. No deployment or remote push has been performed.

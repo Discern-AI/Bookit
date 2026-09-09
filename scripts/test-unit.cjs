@@ -128,3 +128,11 @@ assert.equal(parseEdition({ ...sourceEdition, physical_format: "Unrecognised", n
 assert.equal(parseEdition({ key: "/books/../../secret", title: "Bad" }), null);assert.equal(parseEdition(null), null);
 assert.deepEqual(parseEdition({ ...sourceEdition, languages: [{ key: "eng" }], contributors: [{ name: "Editor", role: "Translation editor" }] }).translators, []);
 console.log("Passed edition identifiers, ISBNs, languages, translator roles and unknown metadata checks.");
+
+const { parsePounds, nextOccasion, giftSchema } = require("../lib/gifts.ts");
+assert.equal(parsePounds("12.34"),1234);assert.equal(parsePounds("0"),0);assert.equal(parsePounds(""),null);assert.equal(parsePounds("1.234"),undefined);assert.equal(parsePounds("-1"),undefined);assert.equal(parsePounds("1e2"),undefined);
+const leapOccasion={id:"00000000-0000-4000-8000-000000000001",label:"Birthday",date:"2000-02-29",annual:true,dismissedFor:null};
+assert.equal(nextOccasion(leapOccasion,"2027-02-27").occurrence,"2027-02-28");assert.equal(nextOccasion(leapOccasion,"2028-02-28").occurrence,"2028-02-29");assert.equal(nextOccasion(leapOccasion,"2027-03-01").occurrence,"2028-02-29");assert.equal(nextOccasion({...leapOccasion,annual:false},"2026-09-09"),null);
+assert.equal(nextOccasion({...leapOccasion,date:"2027-12-25"},"2026-01-01").occurrence,"2027-12-25");
+assert.equal(giftSchema.safeParse({name:"Recipient",tasteNotes:"",budgetPence:100,occasions:[],items:[]}).success,true);assert.equal(giftSchema.safeParse({name:"Recipient",tasteNotes:"",budgetPence:0.5,occasions:[],items:[]}).success,false);
+console.log("Passed gift money, recurring occasions, leap dates and validation checks.");

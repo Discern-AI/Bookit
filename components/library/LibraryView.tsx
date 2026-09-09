@@ -216,6 +216,12 @@ export function LibraryView({
             </Button>
           )}
           <Link
+            href="/library/gifts"
+            className="block text-sm text-shelf-700 mt-4 px-3"
+          >
+            Gift lists
+          </Link>
+          <Link
             href="/library/diary"
             className="block text-sm text-shelf-700 mt-4 px-3"
           >

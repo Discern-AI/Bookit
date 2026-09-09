@@ -24,6 +24,8 @@ Reading paths are available from Browse. Create an ordered path from saved catal
 
 Book pages and the library Editions tab can load Open Library editions in pages of 20, filter loaded records by language or text, and import an exact edition. Recorded translator credits and language metadata include source links. A saved copy keeps its existing page count and reading history. Source lookup needs an Open Library work ID or a matching ISBN; provider failures leave saved data available.
 
+Library now links to private Gift lists. Record recipient preferences, a GBP budget, occasions and candidate books. Track planned/bought/given status, fit and your own price estimates. Annual occasions recur, and upcoming dates have dismissible in-app reminders. Gift ideas link to edition comparisons and external shop searches.
+
 `ANTHROPIC_API_KEY` enables real chat replies. `ANTHROPIC_MODEL` defaults to the brief's `claude-sonnet-4-6`. Keys stay server-side. Without a key, the library still works and chat shows a connection message. Chat history is currently held in the open page, not persisted across reloads.
 
 ### Database on this Windows machine
