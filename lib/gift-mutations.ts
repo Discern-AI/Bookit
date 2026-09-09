@@ -84,15 +84,52 @@ export async function mutateGift(
         error: "A selected book is no longer in the catalogue.",
         status: 400,
       };
-    if (contactId) await db.giftItem.deleteMany({ where: { contactId } });
-    const data = { ...fields, giftItems: { create: items } };
+    if (contactId && existing) {
+      const retained = new Set(items.map((item) => item.workId));
+      if (
+        existing.giftItems.some(
+          (item) => !retained.has(item.workId) && item.claimedById,
+        )
+      )
+        return {
+          error: "Release the claim before removing a claimed book idea.",
+          status: 409,
+        };
+      await db.giftItem.deleteMany({
+        where: {
+          contactId,
+          workId: { notIn: items.map((item) => item.workId) },
+        },
+      });
+      for (const item of items) {
+        const previous = existing.giftItems.find(
+          (saved) => saved.workId === item.workId,
+        );
+        if (previous)
+          await db.giftItem.update({
+            where: { id: previous.id },
+            data: {
+              ...item,
+              ...(previous.status !== item.status
+                ? { claimVersion: { increment: 1 } }
+                : {}),
+            },
+          });
+        else await db.giftItem.create({ data: { contactId, ...item } });
+      }
+    }
     const saved = contactId
       ? await db.giftContact.update({
           where: { id },
-          data: { ...data, version: { increment: 1 } },
+          data: { ...fields, version: { increment: 1 } },
         })
       : await db.giftContact.create({
-          data: { id, userId: session.user.id, ...data },
+          data: {
+            id,
+            userId: session.user.id,
+            ...fields,
+            giftItems: { create: items },
+          },
         });
     return { id: saved.id, version: saved.version };
   });

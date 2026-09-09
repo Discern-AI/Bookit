@@ -65,6 +65,7 @@ model User {
   readingSessions ReadingSession[]
   customShelves   CustomShelf[]
   importJobs      ImportJob[]
+  giftClaims GiftItem[] @relation("GiftClaims")
   giftContacts GiftContact[]
   readingPaths ReadingPath[]
   followedPaths ReadingPathFollow[]
@@ -269,6 +270,7 @@ model ReadingPathFollow {
 }
 
 model GiftContact {
+ shareToken String? @unique
  id String @id @default(cuid())
  userId String
  name String
@@ -283,6 +285,10 @@ model GiftContact {
  @@index([userId, name])
 }
 model GiftItem {
+ claimedById String?
+ claimedAt DateTime?
+ claimVersion Int @default(0)
+ claimedBy User? @relation("GiftClaims", fields: [claimedById], references: [id], onDelete: SetNull)
  id String @id @default(cuid())
  contactId String
  workId String

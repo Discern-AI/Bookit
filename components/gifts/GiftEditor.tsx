@@ -557,7 +557,7 @@ export function GiftEditor({ initial }: { initial?: GiftData }) {
         >
           <p className="mb-4">
             {confirm === "delete"
-              ? "Their private planning details and gift ideas will be removed. Your library books will stay there."
+              ? "Their planning details, gift ideas, claims and shared link will be removed. Your library books will stay there."
               : "Your changes have not been saved."}
           </p>
           <div className="flex gap-3">

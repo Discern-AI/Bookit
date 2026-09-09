@@ -136,3 +136,9 @@ assert.equal(nextOccasion(leapOccasion,"2027-02-27").occurrence,"2027-02-28");as
 assert.equal(nextOccasion({...leapOccasion,date:"2027-12-25"},"2026-01-01").occurrence,"2027-12-25");
 assert.equal(giftSchema.safeParse({name:"Recipient",tasteNotes:"",budgetPence:100,occasions:[],items:[]}).success,true);assert.equal(giftSchema.safeParse({name:"Recipient",tasteNotes:"",budgetPence:0.5,occasions:[],items:[]}).success,false);
 console.log("Passed gift money, recurring occasions, leap dates and validation checks.");
+
+const { giftReturnPath } = require("../lib/auth-return.ts");
+const sharePath = "/gift/" + "a".repeat(64);
+assert.equal(giftReturnPath("?next=" + encodeURIComponent(sharePath)), sharePath);
+for (const unsafe of ["https://example.com", "//example.com", "/gift/../admin", "/chat", sharePath + "?next=https://example.com"]) assert.equal(giftReturnPath("?next=" + encodeURIComponent(unsafe)), "/chat");
+console.log("Passed shared-gift sign-in return validation.");

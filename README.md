@@ -26,6 +26,8 @@ Book pages and the library Editions tab can load Open Library editions in pages 
 
 Library now links to private Gift lists. Record recipient preferences, a GBP budget, occasions and candidate books. Track planned/bought/given status, fit and your own price estimates. Annual occasions recur, and upcoming dates have dismissible in-app reminders. Gift ideas link to edition comparisons and external shop searches.
 
+Gift-list owners can create a revocable shared link. The shared view shows the recipient name, books, availability and claim state; preferences, occasions, budgets, price estimates and notes remain private. Signed-in gift-givers can claim and release their own gifts. Owners can release any claim and replace or disable the link. A shared-link sign-in or signup returns to that list.
+
 `ANTHROPIC_API_KEY` enables real chat replies. `ANTHROPIC_MODEL` defaults to the brief's `claude-sonnet-4-6`. Keys stay server-side. Without a key, the library still works and chat shows a connection message. Chat history is currently held in the open page, not persisted across reloads.
 
 ### Database on this Windows machine

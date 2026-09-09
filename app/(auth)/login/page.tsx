@@ -1,14 +1,17 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { giftReturnPath } from "@/lib/auth-return";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [next, setNext] = useState("/chat");
+  useEffect(() => setNext(giftReturnPath(window.location.search)), []);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +32,7 @@ export default function LoginPage() {
         setError("That didn't work. Check your email and password.");
         return;
       }
-      router.push("/chat");
+      router.push(giftReturnPath(window.location.search));
       router.refresh();
     } catch {
       setError("The connection was interrupted. Try again.");
@@ -72,7 +75,14 @@ export default function LoginPage() {
       </Button>
       <p className="text-sm text-ink-500 text-center mt-2">
         New here?{" "}
-        <Link href="/signup" className="text-shelf-700 hover:underline">
+        <Link
+          href={
+            next === "/chat"
+              ? "/signup"
+              : `/signup?next=${encodeURIComponent(next)}`
+          }
+          className="text-shelf-700 hover:underline"
+        >
           Create an account
         </Link>
       </p>

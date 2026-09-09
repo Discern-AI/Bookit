@@ -4,6 +4,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { giftInclude, serializeGift } from "@/lib/gift-data";
 import { GIFT_PRIORITY, nextOccasion, pounds } from "@/lib/gifts";
+import { GiftSharing } from "@/components/gifts/GiftSharing";
+import { GiftClaim } from "@/components/gifts/GiftClaim";
 import { GetBook } from "@/components/books/GetBook";
 export default async function GiftPage({
   params,
@@ -37,6 +39,38 @@ export default async function GiftPage({
       <p className="text-sm text-ink-500">
         Private to you. Changing a gift status does not buy or send anything.
       </p>
+      <GiftSharing
+        key={stored.version}
+        contactId={contact.id}
+        name={contact.name}
+        token={stored.shareToken}
+        version={stored.version}
+      />
+      {stored.giftItems.some((item) => item.claimedById) && (
+        <section className="space-y-3">
+          <h2 className="font-display text-xl">Gift claims</h2>
+          {stored.giftItems
+            .filter((item) => item.claimedById)
+            .map((item) => (
+              <div key={item.id} className="bg-shelf-100 rounded p-4 space-y-2">
+                <p className="text-sm break-words">
+                  {item.work.title}: claimed by{" "}
+                  {item.claimedBy?.name || "a Folio reader"}
+                </p>
+                <GiftClaim
+                  key={`${item.id}-${item.claimVersion}`}
+                  endpoint={`/api/gifts/${contact.id}/claims/${item.id}`}
+                  version={item.claimVersion}
+                  claimed
+                  mine={item.claimedById === session.user.id}
+                  canRelease
+                  available={item.status === "planned"}
+                  ownerControl
+                />
+              </div>
+            ))}
+        </section>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-library gap-8">
         <aside className="space-y-5">
           <section>

@@ -1,3 +1,4 @@
+import { giftReturnPath } from "@/lib/auth-return";
 import NextAuth from "next-auth";
 import authConfig from "@/auth.config";
 import { NextResponse } from "next/server";
@@ -11,13 +12,23 @@ export default auth((req) => {
     req.nextUrl.pathname.startsWith("/signup");
 
   const isPublicBook = /^\/(?:book|path)\/[^/]+\/?$/.test(req.nextUrl.pathname);
-  if (!isLoggedIn && !isAuthRoute && !isPublicBook) {
+  const isSharedGift = /^\/gift\/[a-f0-9]{64}\/?$/.test(req.nextUrl.pathname);
+  if (!isLoggedIn && !isAuthRoute && !isPublicBook && !isSharedGift) {
     const loginUrl = new URL("/login", req.nextUrl.origin);
     return NextResponse.redirect(loginUrl);
   }
 
+  if (isSharedGift) {
+    const response = NextResponse.next();
+    response.headers.set("Cache-Control", "private, no-store");
+    response.headers.set("Referrer-Policy", "no-referrer");
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return response;
+  }
   if (isLoggedIn && isAuthRoute) {
-    return NextResponse.redirect(new URL("/chat", req.nextUrl.origin));
+    return NextResponse.redirect(
+      new URL(giftReturnPath(req.nextUrl.search), req.nextUrl.origin),
+    );
   }
 });
 

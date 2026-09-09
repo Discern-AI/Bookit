@@ -3,7 +3,10 @@ import { readOccasions } from "./gifts";
 export const giftInclude = {
   giftItems: {
     orderBy: { id: "asc" },
-    include: { work: { select: { id: true, title: true, authorName: true } } },
+    include: {
+      claimedBy: { select: { name: true } },
+      work: { select: { id: true, title: true, authorName: true } },
+    },
   },
 } satisfies Prisma.GiftContactInclude;
 export function serializeGift(

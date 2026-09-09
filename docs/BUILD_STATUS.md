@@ -1,4 +1,4 @@
-# Build status - 8 September 2026
+# Build status - 9 September 2026
 
 ## Recovery checkpoint
 
@@ -71,9 +71,20 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Gift ideas use saved catalogue works and link to public edition comparisons and external shop searches. Each idea has planned/bought/given status, Perfect fit/Might like/Wildcard, an optional private note and a manually entered GBP price estimate. Budgets and estimates use integer pence; no live-price claims are made.
 - Recipient pages flag estimates over budget. Reminders show up to three planned ideas whose recorded estimates fit the budget. These statuses are planning records; no purchase, message or notification is sent.
 - Creation retries reuse a client request ID. Mutations and reminder dismissals enforce ownership. Version checks prevent stale edits/deletes; unsaved drafts survive failures. Deleting a recipient requires UI confirmation and leaves library/catalogue books untouched.
-- Gift list sharing, claims, AI suggestions, chat reminders, multiple currencies and selecting a specific edition directly on a gift item remain outstanding.
+- AI suggestions, chat reminders, multiple currencies and selecting a specific edition directly on a gift item remain outstanding. Gift sharing and claims are covered by the continuation below.
+
+## Gift sharing and claims continuation
+
+- Owners explicitly create, replace or disable a random 256-bit shared link. The shared `/gift/[token]` page is excluded from Browse, uses no-store/no-referrer headers and requests no indexing. Revocation and replacement invalidate the old URL; existing claims remain available to the owner.
+- The shared page uses a separate explicit data selection. It reveals only recipient name, book titles/authors, availability and claim state. It omits preferences, occasions, budget, estimates, fit, private notes, contact/owner IDs and other claimants' names/IDs. The owner can see claimant display names on their private page.
+- Claims require sign-in. Login/signup preserve a strictly validated local shared-list return URL. No external redirect target is accepted by this flow.
+- Claim/release operations lock the contact transactionally and recheck the current share token. One simultaneous claimant wins; repeat requests are idempotent. Only the claimant or list owner can release a claim. Item versions reject stale actions; bought/given gifts cannot be newly claimed.
+- Gift edits now update existing book ideas in place, preserving claims and item identity. Removing a claimed idea is rejected until the claim is released. Status changes update claim versions. Contact versions also change when claims or sharing change, protecting open editors against stale saves.
+- Owners can release claims after sharing is disabled. Deleting the recipient removes the link and gift claims while retaining library books. Links are copied or opened only by explicit user action; no messages are sent.
 
 ## Validation
+
+- Gift sharing continuation: production build (including lint/type checks), unit tests and all 12 regular browser scenarios pass (1.2 minutes). The metadata fixture scenario remains intentionally separate. New checks verify explicit sharing, private-field/claimant exclusion, no-store/no-referrer/noindex responses, return after signup, stable item identity, claims surviving edits, blocked removal of claimed items, link rotation/revocation, owner release after revocation, simultaneous claim exclusion, idempotent claims/releases and stale-action rejection. The mobile shared page was inspected.
 
 - Gift planning continuation: production build (including lint/type checks) and unit tests pass. Nine regular browser scenarios passed in the full run; both gift scenarios passed on a focused rerun after replacing an HTTP-status-only assertion with rendered access-denial and private-data checks (Next.js can stream a 200 shell before rendering not-found). The separate metadata fixture scenario remains intentionally skipped in the regular suite. Gift coverage includes preferences, integer-pence estimates, annual dates, persisted reminder dismissal, budget filtering, bought/given status, account isolation, invalid input, idempotent creation, stale drafts and deletion that preserves library books. The mobile gift page was inspected.
 
@@ -103,4 +114,4 @@ Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provid
 
 Next Phase 2 work: live acquisition/availability integrations, plus a successful live-provider check of the edition metadata flow. Reading paths now support manual creation, publishing and following. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
 
-Later phases: gift sharing/claims and AI expansion, community, public profiles, creator publishing, social connections, encrypted private context and marketplace. Community remains an explicit placeholder. No deployment or remote push has been performed.
+Later phases: AI gift expansion, community, public profiles, creator publishing, social connections, encrypted private context and marketplace. Community remains an explicit placeholder. No deployment or remote push has been performed.

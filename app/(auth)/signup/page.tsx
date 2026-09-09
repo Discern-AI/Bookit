@@ -1,14 +1,17 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { giftReturnPath } from "@/lib/auth-return";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
 export default function SignupPage() {
   const router = useRouter();
+  const [next, setNext] = useState("/chat");
+  useEffect(() => setNext(giftReturnPath(window.location.search)), []);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,10 +44,14 @@ export default function SignupPage() {
       setLoading(false);
       if (result?.error) {
         setError("Account created — log in to continue.");
-        router.push("/login");
+        router.push(
+          next === "/chat"
+            ? "/login"
+            : `/login?next=${encodeURIComponent(next)}`,
+        );
         return;
       }
-      router.push("/chat");
+      router.push(giftReturnPath(window.location.search));
       router.refresh();
     } catch {
       setError("The connection was interrupted. Try again.");
@@ -100,7 +107,14 @@ export default function SignupPage() {
       </Button>
       <p className="text-sm text-ink-500 text-center mt-2">
         Already have an account?{" "}
-        <Link href="/login" className="text-shelf-700 hover:underline">
+        <Link
+          href={
+            next === "/chat"
+              ? "/login"
+              : `/login?next=${encodeURIComponent(next)}`
+          }
+          className="text-shelf-700 hover:underline"
+        >
           Log in
         </Link>
       </p>
