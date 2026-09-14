@@ -32,6 +32,10 @@ Community now shows published book reviews. In Settings > Manage public profile,
 
 Follow a reader from their public profile, then choose Following in Community to see their published reviews. Readers you follow is a private management page, including an unfollow control for profiles that become private. Public profile counts include public accounts only. Hiding a profile hides its reviews from following feeds without deleting existing follows.
 
+Open Discuss this review to like a review, post a public comment or report a review/comment privately. Comments require a public profile and can be removed from Your comments even if the discussion becomes private. Reports are stored for moderator review; they do not automatically hide content or promise an immediate response.
+
+Moderator accounts see a private Moderation reports queue with pending/resolved views, original reported-text snapshots, dismissal and confirmed content hiding. The server-controlled `User.isModerator` database flag defaults to false; signup and profile settings cannot grant it. No existing account was granted moderator access by this build. Assign a trusted moderator through database administration before relying on the queue operationally.
+
 `ANTHROPIC_API_KEY` enables real chat replies. `ANTHROPIC_MODEL` defaults to the brief's `claude-sonnet-4-6`. Keys stay server-side. Without a key, the library still works and chat shows a connection message. Chat history is currently held in the open page, not persisted across reloads.
 
 ### Database on this Windows machine

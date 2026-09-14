@@ -27,6 +27,12 @@ export default async function Page({ params }: { params: { workId: string } }) {
         </Link>
         .
       </p>
+      {review?.isHidden && (
+        <p role="status">
+          This review has been hidden by a moderator. Saving edits will not
+          republish it.
+        </p>
+      )}
       <PublishingForm
         workId={params.workId}
         initial={{

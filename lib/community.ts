@@ -17,6 +17,7 @@ export const reviewSchema = z.object({
   version: z.number().int().min(0),
 });
 export const publishedReviews = {
+  isHidden: false,
   isPublic: true,
   user: { profilePublic: true },
 };
@@ -28,3 +29,13 @@ export const reviewSelect = {
   user: { select: { username: true, publicName: true } },
   work: { select: { id: true, title: true, authorName: true } },
 };
+
+export const commentSchema = z.object({
+  id: z.string().uuid(),
+  body: z.string().trim().min(1).max(2000),
+});
+export const reportSchema = z.object({
+  commentId: z.string().uuid().optional(),
+  reason: z.enum(["spam", "harassment", "spoilers", "other"]),
+  details: z.string().trim().max(2000),
+});

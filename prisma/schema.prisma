@@ -69,6 +69,10 @@ model User {
   giftContacts GiftContact[]
   readingPaths ReadingPath[]
   followedPaths ReadingPathFollow[]
+  isModerator Boolean @default(false)
+  reviewLikes ReviewLike[]
+  reviewComments ReviewComment[]
+  reviewReports ReviewReport[]
   readerFollowing ReaderFollow[] @relation("ReaderFollowing")
   readerFollowers ReaderFollow[] @relation("ReaderFollowers")
   username String? @unique
@@ -312,6 +316,10 @@ model GiftItem {
 }
 
 model BookReview {
+ isHidden Boolean @default(false)
+ likes ReviewLike[]
+ comments ReviewComment[]
+ reports ReviewReport[]
  id String @id @default(cuid())
  userId String
  workId String
@@ -335,4 +343,45 @@ model ReaderFollow {
  @@id([followerId, readerId])
  @@index([readerId])
  @@index([followerId, createdAt])
+}
+
+model ReviewLike {
+ userId String
+ reviewId String
+ user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ review BookReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+ @@id([userId, reviewId])
+ @@index([reviewId])
+}
+model ReviewComment {
+ id String @id
+ userId String
+ reviewId String
+ body String
+ isHidden Boolean @default(false)
+ createdAt DateTime @default(now())
+ user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ review BookReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+ reports ReviewReport[]
+ @@index([reviewId, createdAt])
+ @@index([userId, createdAt])
+}
+model ReviewReport {
+ snapshot String
+ resolvedById String?
+ id String @id @default(cuid())
+ reporterId String
+ reviewId String
+ commentId String?
+ targetKey String
+ reason String
+ details String
+ status String @default("pending")
+ createdAt DateTime @default(now())
+ resolvedAt DateTime?
+ reporter User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+ review BookReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+ comment ReviewComment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+ @@unique([reporterId, targetKey])
+ @@index([status, createdAt])
 }

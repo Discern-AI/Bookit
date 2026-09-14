@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import Link from "next/link";
 import { ReviewList, reviewPage } from "@/components/community/ReviewList";
@@ -7,6 +8,10 @@ export default async function Page({
   searchParams: { page?: string; feed?: string };
 }) {
   const session = await auth();
+  const me = await prisma.user.findUnique({
+    where: { id: session!.user.id },
+    select: { isModerator: true },
+  });
   const following = searchParams.feed === "following";
   return (
     <main className="max-w-2xl mx-auto p-6 space-y-6">
@@ -37,6 +42,16 @@ export default async function Page({
           Readers you follow
         </Link>
       </nav>
+      <div className="flex flex-wrap gap-4">
+        <Link className="underline" href="/community/comments">
+          Your comments
+        </Link>
+        {me?.isModerator && (
+          <Link className="underline" href="/community/moderation">
+            Moderation reports
+          </Link>
+        )}
+      </div>
       <ReviewList
         followedBy={following ? session!.user.id : undefined}
         page={reviewPage(searchParams.page)}

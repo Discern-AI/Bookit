@@ -101,13 +101,13 @@ export function PublishingForm({
                   setDraft({ ...draft, profilePublic: e.target.checked })
                 }
               />
-              Publish my profile. My username, display name, bio and published
-              reviews will be visible to anyone.
+              Publish my profile. My username, display name, bio, public follow
+              counts, comments and published reviews will be visible to anyone.
             </label>
             <p className="text-sm text-ink-500">
-              Turning this off also hides your published reviews. Turning it on
-              again makes them visible again. Library shelves, imported reviews
-              and private notes stay private.
+              Turning this off also hides your published reviews and comments.
+              Turning it on again makes them visible again. Library shelves,
+              imported reviews and private notes stay private.
             </p>
           </>
         ) : (

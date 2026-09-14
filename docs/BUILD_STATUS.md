@@ -88,7 +88,7 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Added one separate review per reader/work, with private drafts, an optional public rating and explicit publishing. A book must be in the writer's library; publishing also requires a public profile. Private library ratings, imported reviews and notes are never copied or aggregated into community data.
 - Community, book pages and profiles show only published reviews from currently public profiles, with 20-row pagination. Unpublishing a review removes it from those views. Hiding a profile hides its reviews; republishing restores them, as explained before saving.
 - Profile version checks and transactionally serialized review updates reject stale saves. Duplicate usernames are handled without losing form input. Failed saves retain the draft. The migration is additive and preserves existing data.
-- This is the initial profile/review slice. Reactions, comments, reporting/moderation, profile shelf/path tabs, avatars, review deletion and a private draft index remain outstanding. Reviews can currently be withdrawn using the publishing checkbox.
+- This is the initial profile/review slice. Profile shelf/path tabs, avatars, review deletion and a private draft index remain outstanding. Reviews can currently be withdrawn using the publishing checkbox.
 
 ## Reader follows and following feed continuation
 
@@ -98,7 +98,18 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Public profiles show follow controls (or an owner edit link) and counts limited to currently public profiles. Private follower identities and their contribution to public counts are excluded. Following lists are not public. Hiding a profile preserves relationships; republishing allows its published reviews to reappear for existing followers.
 - Added an additive ReaderFollow table with a composite primary key, indexes and cascading account cleanup. No library, review or profile records were migrated into public state.
 
+## Review discussions and moderation continuation
+
+- Review cards link to public `/review/[reviewId]` discussions. Signed-in readers can like/unlike reviews; reactions are unique per reader/review and reveal counts only. Discussion mutations reject drafts, hidden reviews and private review authors. Own reactions can still be removed through the API after hiding.
+- Comments require a public profile, explicit posting and 1-2,000 characters. Stable request IDs prevent retry duplicates; failed form submissions preserve text. Public comments paginate by 20 and exclude hidden comments and private commenter profiles. Profile publishing copy explains comment visibility.
+- Authors can confirm removal of their own comments. `/community/comments` provides private, paginated access to their comments even when the review is no longer public. Removal hides the comment; any report snapshot remains available to moderators. Comment editing, threaded replies and notification delivery are not implemented.
+- Readers can privately report a review or comment using a reason and optional details. Reports are unique per reporter/target; retries do not create more reports or reopen resolved reports. The recorded content snapshot survives later edits. Neither report details nor reporter identities are shown publicly.
+- Server-controlled `User.isModerator` gates the private pending/resolved report queue and mutation API. Moderators can dismiss reports or confirm hiding the target. Resolutions record action, time and moderator ID. Already-resolved reports reject stale actions. Hiding a review also hides its discussion and removes it from all review feeds; author edits cannot clear the moderation flag.
+- The migration adds tables/fields without publishing existing content. No existing account was promoted to moderator. Operational use requires a trusted moderator assigned through database administration; reports are stored locally, with no notification or guaranteed response. Automated anti-abuse limits, block/mute, appeals/restoration and a staffed moderation process remain release work.
+
 ## Validation
+
+- Review discussion continuation: production build (including lint/type checks) and unit tests pass. All 14 existing regular browser scenarios passed in the full run; both new discussion scenarios passed on a focused rerun (11.5 seconds) after correcting a premature text assertion and an exact-label selector. The metadata fixture remains separately skipped. Coverage includes like/unlike retries, comment validation/privacy, saved-draft retry, duplicate comment suppression, pagination, removal ownership, hidden-profile/review denial, private reports, report deduplication, rejected self-promotion, moderator-only actions, dismiss/hide, resolution audit fields and author edits unable to override hiding. The mobile moderation page was inspected.
 
 - Reader follows continuation: production build (including lint/type checks), unit tests and three targeted browser scenarios pass (16 seconds): existing profile/review publishing, the new reader-follow scenario and public-book discovery. New checks cover anonymous/self/private-target denial, failed-request retry, concurrent duplicate follows, private/public follower counts, account isolation, filtered feed pagination, hidden-profile content exclusion and unfollow after hiding. The mobile following page was inspected. The unrelated full regression suite and separate metadata fixture were not rerun for this increment.
 
@@ -134,4 +145,4 @@ Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provid
 
 Next Phase 2 work: live acquisition/availability integrations, plus a successful live-provider check of the edition metadata flow. Reading paths now support manual creation, publishing and following. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
 
-Next community work: review reactions/comments and reporting controls, plus review deletion and private draft management. Later phases include AI gift expansion, creator publishing, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.
+Next community work: review deletion and private draft management. Later phases include AI gift expansion, creator publishing, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.

@@ -65,6 +65,12 @@ export async function ReviewList({
             </p>
           )}
           <p className="whitespace-pre-wrap break-words">{review.body}</p>
+          <Link
+            className="text-shelf-700 underline"
+            href={`/review/${review.id}`}
+          >
+            Discuss this review
+          </Link>
           <p className="text-sm text-ink-500">
             Updated {review.updatedAt.toISOString().slice(0, 10)}
           </p>
