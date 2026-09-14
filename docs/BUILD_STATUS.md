@@ -88,9 +88,19 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Added one separate review per reader/work, with private drafts, an optional public rating and explicit publishing. A book must be in the writer's library; publishing also requires a public profile. Private library ratings, imported reviews and notes are never copied or aggregated into community data.
 - Community, book pages and profiles show only published reviews from currently public profiles, with 20-row pagination. Unpublishing a review removes it from those views. Hiding a profile hides its reviews; republishing restores them, as explained before saving.
 - Profile version checks and transactionally serialized review updates reject stale saves. Duplicate usernames are handled without losing form input. Failed saves retain the draft. The migration is additive and preserves existing data.
-- This is the initial profile/review slice. Following readers, reactions, comments, reporting/moderation, profile shelf/path tabs, avatars, review deletion and a private draft index remain outstanding. Reviews can currently be withdrawn using the publishing checkbox.
+- This is the initial profile/review slice. Reactions, comments, reporting/moderation, profile shelf/path tabs, avatars, review deletion and a private draft index remain outstanding. Reviews can currently be withdrawn using the publishing checkbox.
+
+## Reader follows and following feed continuation
+
+- Signed-in readers can follow/unfollow public profiles; self-follow is rejected. Requests are idempotent, scoped to the authenticated follower, and serialized against target profile visibility changes. Existing follows can be removed after a profile becomes private.
+- Community has All reviews and Following views. The following feed keeps the same explicit review/profile publication filters and preserves its filter through 20-row pagination. Drafts, hidden profiles and unfollowed readers are excluded.
+- The private `/community/following` page lists followed public readers and anonymous placeholders for hidden profiles, with unfollow controls and pagination. Hidden names, usernames and bios are not rendered. Other readers cannot manage or read this list.
+- Public profiles show follow controls (or an owner edit link) and counts limited to currently public profiles. Private follower identities and their contribution to public counts are excluded. Following lists are not public. Hiding a profile preserves relationships; republishing allows its published reviews to reappear for existing followers.
+- Added an additive ReaderFollow table with a composite primary key, indexes and cascading account cleanup. No library, review or profile records were migrated into public state.
 
 ## Validation
+
+- Reader follows continuation: production build (including lint/type checks), unit tests and three targeted browser scenarios pass (16 seconds): existing profile/review publishing, the new reader-follow scenario and public-book discovery. New checks cover anonymous/self/private-target denial, failed-request retry, concurrent duplicate follows, private/public follower counts, account isolation, filtered feed pagination, hidden-profile content exclusion and unfollow after hiding. The mobile following page was inspected. The unrelated full regression suite and separate metadata fixture were not rerun for this increment.
 
 - Public profiles/reviews continuation: production build (including lint and type checks), unit tests and all 13 regular browser scenarios pass (2.2 minutes). The metadata fixture scenario remains intentionally separate. New coverage verifies opt-in publishing, anonymous private-profile denial, private account/library/imported-review exclusion, separate public ratings, community/book/profile rendering, duplicate usernames, account isolation, review withdrawal, profile hiding and stale-save draft retention. The mobile profile editor was inspected.
 
@@ -124,4 +134,4 @@ Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provid
 
 Next Phase 2 work: live acquisition/availability integrations, plus a successful live-provider check of the edition metadata flow. Reading paths now support manual creation, publishing and following. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
 
-Next community work: reader follows and a following feed, then reactions/comments and reporting controls. Later phases include AI gift expansion, creator publishing, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.
+Next community work: review reactions/comments and reporting controls, plus review deletion and private draft management. Later phases include AI gift expansion, creator publishing, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.

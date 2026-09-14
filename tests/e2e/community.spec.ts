@@ -186,3 +186,206 @@ test("explicit publishing, privacy, withdrawal and stale draft protection", asyn
   await anonymous.close();
   await otherContext.close();
 });
+
+test("reader follows filter and paginate reviews, preserve privacy and recover from failures", async ({
+  page,
+  browser,
+}) => {
+  const followerId = await login(page, "follower");
+  const readerContext = await browser.newContext();
+  const reader = await readerContext.newPage();
+  const readerId = await login(reader, "writer");
+  const outsiderContext = await browser.newContext();
+  const outsider = await outsiderContext.newPage();
+  const outsiderId = await login(outsider, "outsider");
+  const username = `writer${stamp}`;
+  await db.user.update({
+    where: { id: readerId },
+    data: {
+      username,
+      publicName: "Followed Writer",
+      bio: "HIDDEN_BIO_SENTINEL",
+      profilePublic: true,
+    },
+  });
+  await db.user.update({
+    where: { id: outsiderId },
+    data: {
+      username: `outsider${stamp}`,
+      publicName: "Other Writer",
+      profilePublic: true,
+    },
+  });
+  for (let index = 0; index < 22; index++)
+    await db.work.create({
+      data: {
+        title: `Community ${stamp} follow ${index}`,
+        authorName: "Author",
+        genres: [],
+        themes: [],
+        embedding: [],
+        reviews: {
+          create: {
+            userId: readerId,
+            body: `FOLLOWED_REVIEW_${index}`,
+            isPublic: index !== 21,
+          },
+        },
+      },
+    });
+  await db.work.create({
+    data: {
+      title: `Community ${stamp} unrelated`,
+      authorName: "Author",
+      genres: [],
+      themes: [],
+      embedding: [],
+      reviews: {
+        create: {
+          userId: outsiderId,
+          body: "UNFOLLOWED_REVIEW_SENTINEL",
+          isPublic: true,
+        },
+      },
+    },
+  });
+  const anonymous = await browser.newContext();
+  const guest = await anonymous.newPage();
+  const url = `/api/readers/${readerId}/follow`;
+  expect((await guest.request.put(url)).status()).toBe(401);
+  expect(
+    (await page.request.put(`/api/readers/${followerId}/follow`)).status(),
+  ).toBe(400);
+  expect(
+    (await page.request.put("/api/readers/missing-reader/follow")).status(),
+  ).toBe(404);
+  await page.goto("/community?feed=following");
+  await expect(
+    page.getByText("No published reviews from readers you follow yet.", {
+      exact: false,
+    }),
+  ).toBeVisible();
+  await page.goto(`/profile/${username}`);
+  await page.route(
+    `**${url}`,
+    (route) =>
+      route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Temporary follow failure. Try again." }),
+      }),
+    { times: 1 },
+  );
+  await page
+    .getByRole("button", { name: "Follow reader", exact: true })
+    .click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Temporary follow failure" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Follow reader", exact: true }),
+  ).toBeEnabled();
+  await page
+    .getByRole("button", { name: "Follow reader", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Unfollow", exact: true }),
+  ).toBeVisible();
+  const retries = await Promise.all([
+    page.request.put(url),
+    page.request.put(url),
+  ]);
+  for (const response of retries) expect(response.ok()).toBe(true);
+  expect(await db.readerFollow.count({ where: { followerId, readerId } })).toBe(
+    1,
+  );
+  await guest.goto(`/profile/${username}`);
+  await expect(
+    guest.getByText("0 public followers", { exact: false }),
+  ).toBeVisible();
+  expect(await guest.content()).not.toContain(followerId);
+  await db.user.update({
+    where: { id: followerId },
+    data: {
+      username: `follower${stamp}`,
+      publicName: "Public Follower",
+      profilePublic: true,
+    },
+  });
+  await guest.reload();
+  await expect(
+    guest.getByText("1 public followers", { exact: false }),
+  ).toBeVisible();
+  await db.user.update({
+    where: { id: followerId },
+    data: { profilePublic: false },
+  });
+  await guest.reload();
+  await expect(
+    guest.getByText("0 public followers", { exact: false }),
+  ).toBeVisible();
+  await page.goto("/community?feed=following");
+  await expect(page.locator("article")).toHaveCount(20);
+  await expect(
+    page.getByText("UNFOLLOWED_REVIEW_SENTINEL", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText("FOLLOWED_REVIEW_21", { exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("link", { name: "Next", exact: true }).click();
+  await expect(page).toHaveURL(/feed=following&page=2/);
+  await expect(page.locator("article")).toHaveCount(1);
+  await page.getByRole("link", { name: "Previous", exact: true }).click();
+  await expect(page.locator("article")).toHaveCount(20);
+  await outsider.goto("/community?feed=following");
+  await expect(outsider.locator("article")).toHaveCount(0);
+  expect((await outsider.request.delete(url)).ok()).toBe(true);
+  expect(await db.readerFollow.count({ where: { followerId, readerId } })).toBe(
+    1,
+  );
+  expect(
+    (
+      await reader.request.put("/api/profile", {
+        data: {
+          username,
+          publicName: "Followed Writer",
+          bio: "HIDDEN_BIO_SENTINEL",
+          profilePublic: false,
+          version: 0,
+        },
+      })
+    ).ok(),
+  ).toBe(true);
+  expect((await page.request.put(url)).status()).toBe(404);
+  await page.goto("/community?feed=following");
+  await expect(page.locator("article")).toHaveCount(0);
+  await page.goto("/community/following");
+  await expect(
+    page.getByText("Private profile", { exact: true }),
+  ).toBeVisible();
+  const hidden = await page.content();
+  expect(hidden).not.toContain("Followed Writer");
+  expect(hidden).not.toContain("HIDDEN_BIO_SENTINEL");
+  expect(hidden).not.toContain(username);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: ".local/following-mobile.png",
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Unfollow", exact: true }).click();
+  await expect(page.getByText("Private profile", { exact: true })).toHaveCount(
+    0,
+  );
+  expect((await page.request.delete(url)).ok()).toBe(true);
+  expect(await db.readerFollow.count({ where: { followerId, readerId } })).toBe(
+    0,
+  );
+  await anonymous.close();
+  await readerContext.close();
+  await outsiderContext.close();
+});

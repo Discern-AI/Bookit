@@ -3,11 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { publishedReviews, reviewSelect } from "@/lib/community";
 export async function ReviewList({
   workId,
+  followedBy,
   userId,
   page = 1,
   basePath,
 }: {
   workId?: string;
+  followedBy?: string;
   userId?: string;
   page?: number;
   basePath: string;
@@ -15,6 +17,14 @@ export async function ReviewList({
   const reviews = await prisma.bookReview.findMany({
     where: {
       ...publishedReviews,
+      ...(followedBy
+        ? {
+            user: {
+              profilePublic: true,
+              readerFollowers: { some: { followerId: followedBy } },
+            },
+          }
+        : {}),
       ...(workId ? { workId } : {}),
       ...(userId ? { userId } : {}),
     },
@@ -26,7 +36,11 @@ export async function ReviewList({
   return (
     <div className="space-y-4">
       {!reviews.length && (
-        <p className="text-ink-500">No published reviews yet.</p>
+        <p className="text-ink-500">
+          {followedBy
+            ? "No published reviews from readers you follow yet. Explore Community to find readers."
+            : "No published reviews yet."}
+        </p>
       )}
       {reviews.slice(0, 20).map((review) => (
         <article
@@ -58,10 +72,18 @@ export async function ReviewList({
       ))}
       <nav className="flex gap-4" aria-label="Review pages">
         {page > 1 && (
-          <Link href={`${basePath}?page=${page - 1}`}>Previous</Link>
+          <Link
+            href={`${basePath}${basePath.includes("?") ? "&" : "?"}page=${page - 1}`}
+          >
+            Previous
+          </Link>
         )}
         {reviews.length > 20 && (
-          <Link href={`${basePath}?page=${page + 1}`}>Next</Link>
+          <Link
+            href={`${basePath}${basePath.includes("?") ? "&" : "?"}page=${page + 1}`}
+          >
+            Next
+          </Link>
         )}
       </nav>
     </div>

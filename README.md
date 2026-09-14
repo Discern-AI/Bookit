@@ -30,6 +30,8 @@ Gift-list owners can create a revocable shared link. The shared view shows the r
 
 Community now shows published book reviews. In Settings > Manage public profile, choose a username, public display name and bio, then explicitly publish your profile. Open a library book's public page to write a separate review and optional rating. Reviews start as private drafts; publishing adds them to Community, your profile and the book page. Hiding your profile also hides its published reviews; republishing restores their visibility. Existing library ratings, imported reviews and notes are never automatically published.
 
+Follow a reader from their public profile, then choose Following in Community to see their published reviews. Readers you follow is a private management page, including an unfollow control for profiles that become private. Public profile counts include public accounts only. Hiding a profile hides its reviews from following feeds without deleting existing follows.
+
 `ANTHROPIC_API_KEY` enables real chat replies. `ANTHROPIC_MODEL` defaults to the brief's `claude-sonnet-4-6`. Keys stay server-side. Without a key, the library still works and chat shows a connection message. Chat history is currently held in the open page, not persisted across reloads.
 
 ### Database on this Windows machine

@@ -1,3 +1,5 @@
+import { auth } from "@/auth";
+import { FollowReader } from "@/components/community/FollowReader";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -19,12 +21,54 @@ export default async function Page({
     select: { id: true, username: true, publicName: true, bio: true },
   });
   if (!user) notFound();
+  const session = await auth();
+  const [following, followersCount, followingCount] = await Promise.all([
+    session?.user?.id
+      ? prisma.readerFollow.findUnique({
+          where: {
+            followerId_readerId: {
+              followerId: session.user.id,
+              readerId: user.id,
+            },
+          },
+          select: { readerId: true },
+        })
+      : null,
+    prisma.readerFollow.count({
+      where: { readerId: user.id, follower: { profilePublic: true } },
+    }),
+    prisma.readerFollow.count({
+      where: { followerId: user.id, reader: { profilePublic: true } },
+    }),
+  ]);
   return (
     <main className="max-w-2xl mx-auto p-6 space-y-6">
       <Link href="/community">Folio</Link>
       <h1 className="font-display text-4xl break-words">{user.publicName}</h1>
       <p>@{user.username}</p>
       <p className="whitespace-pre-wrap break-words">{user.bio}</p>
+      <p className="text-sm text-ink-500">
+        {followersCount} public followers &middot; Following {followingCount}{" "}
+        public readers
+      </p>
+      <p className="text-sm text-ink-500">
+        Counts include public profiles only. Your following list stays private.
+      </p>
+      {session?.user?.id === user.id ? (
+        <Link className="underline" href="/settings/profile">
+          Edit profile
+        </Link>
+      ) : session?.user?.id ? (
+        <FollowReader
+          key={`${user.id}-${!!following}`}
+          readerId={user.id}
+          initialFollowing={!!following}
+        />
+      ) : (
+        <Link className="underline" href="/login">
+          Sign in to follow readers
+        </Link>
+      )}
       <h2 className="font-display text-2xl">Published reviews</h2>
       <ReviewList
         userId={user.id}

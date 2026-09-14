@@ -69,6 +69,8 @@ model User {
   giftContacts GiftContact[]
   readingPaths ReadingPath[]
   followedPaths ReadingPathFollow[]
+  readerFollowing ReaderFollow[] @relation("ReaderFollowing")
+  readerFollowers ReaderFollow[] @relation("ReaderFollowers")
   username String? @unique
   publicName String @default("")
   bio String @default("")
@@ -322,4 +324,15 @@ model BookReview {
  work Work @relation(fields: [workId], references: [id], onDelete: Cascade)
  @@unique([userId, workId])
  @@index([isPublic, updatedAt])
+}
+
+model ReaderFollow {
+ followerId String
+ readerId String
+ createdAt DateTime @default(now())
+ follower User @relation("ReaderFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+ reader User @relation("ReaderFollowers", fields: [readerId], references: [id], onDelete: Cascade)
+ @@id([followerId, readerId])
+ @@index([readerId])
+ @@index([followerId, createdAt])
 }
