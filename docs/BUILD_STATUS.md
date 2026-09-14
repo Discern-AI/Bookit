@@ -43,7 +43,7 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Signed-in readers choose an exact edition and shelf, then land in that copy's library drawer. Existing editions remain deduplicated by the existing add endpoint. Signed-out readers can view catalogue pages and are offered sign-in to add books.
 - Book pages and library details provide external search links to WorldCat, Bookshop.org UK and Open Library, using ISBN when known. These are searches, not stock, price or borrowing availability claims.
 - Catalogue search results include work IDs for public-page navigation. Remote results can be added through the existing flow; their public page becomes available after cataloguing.
-- Followed-author new-release feeds, nearby shops, community lists, public reviews, canonical translator profiles and live availability are still outstanding. The Browse author controls are catalogue searches, not a new-release feed.
+- Followed-author new-release feeds, nearby shops, community lists, canonical translator profiles and live availability are still outstanding. The Browse author controls are catalogue searches, not a new-release feed.
 
 ## Reading paths continuation
 
@@ -82,7 +82,17 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Gift edits now update existing book ideas in place, preserving claims and item identity. Removing a claimed idea is rejected until the claim is released. Status changes update claim versions. Contact versions also change when claims or sharing change, protecting open editors against stale saves.
 - Owners can release claims after sharing is disabled. Deleting the recipient removes the link and gift claims while retaining library books. Links are copied or opened only by explicit user action; no messages are sent.
 
+## Public profiles and community reviews continuation
+
+- Added opt-in profiles at `/profile/[username]`, with a unique normalized username, separate public display name and bio. Existing accounts remain private. Settings links to the profile editor; anonymous visitors cannot view unpublished profiles.
+- Added one separate review per reader/work, with private drafts, an optional public rating and explicit publishing. A book must be in the writer's library; publishing also requires a public profile. Private library ratings, imported reviews and notes are never copied or aggregated into community data.
+- Community, book pages and profiles show only published reviews from currently public profiles, with 20-row pagination. Unpublishing a review removes it from those views. Hiding a profile hides its reviews; republishing restores them, as explained before saving.
+- Profile version checks and transactionally serialized review updates reject stale saves. Duplicate usernames are handled without losing form input. Failed saves retain the draft. The migration is additive and preserves existing data.
+- This is the initial profile/review slice. Following readers, reactions, comments, reporting/moderation, profile shelf/path tabs, avatars, review deletion and a private draft index remain outstanding. Reviews can currently be withdrawn using the publishing checkbox.
+
 ## Validation
+
+- Public profiles/reviews continuation: production build (including lint and type checks), unit tests and all 13 regular browser scenarios pass (2.2 minutes). The metadata fixture scenario remains intentionally separate. New coverage verifies opt-in publishing, anonymous private-profile denial, private account/library/imported-review exclusion, separate public ratings, community/book/profile rendering, duplicate usernames, account isolation, review withdrawal, profile hiding and stale-save draft retention. The mobile profile editor was inspected.
 
 - Gift sharing continuation: production build (including lint/type checks), unit tests and all 12 regular browser scenarios pass (1.2 minutes). The metadata fixture scenario remains intentionally separate. New checks verify explicit sharing, private-field/claimant exclusion, no-store/no-referrer/noindex responses, return after signup, stable item identity, claims surviving edits, blocked removal of claimed items, link rotation/revocation, owner release after revocation, simultaneous claim exclusion, idempotent claims/releases and stale-action rejection. The mobile shared page was inspected.
 
@@ -114,4 +124,4 @@ Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provid
 
 Next Phase 2 work: live acquisition/availability integrations, plus a successful live-provider check of the edition metadata flow. Reading paths now support manual creation, publishing and following. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
 
-Later phases: AI gift expansion, community, public profiles, creator publishing, social connections, encrypted private context and marketplace. Community remains an explicit placeholder. No deployment or remote push has been performed.
+Next community work: reader follows and a following feed, then reactions/comments and reporting controls. Later phases include AI gift expansion, creator publishing, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.

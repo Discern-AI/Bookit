@@ -69,6 +69,12 @@ model User {
   giftContacts GiftContact[]
   readingPaths ReadingPath[]
   followedPaths ReadingPathFollow[]
+  username String? @unique
+  publicName String @default("")
+  bio String @default("")
+  profilePublic Boolean @default(false)
+  profileVersion Int @default(0)
+  reviews BookReview[]
 }
 
 // ---------- Book hierarchy ----------
@@ -93,6 +99,7 @@ model Work {
   embedding      Float[]
   createdAt      DateTime @default(now())
 
+  reviews BookReview[]
   giftItems GiftItem[]
   pathEntries ReadingPathEntry[]
   translations Translation[]
@@ -300,4 +307,19 @@ model GiftItem {
  work Work @relation(fields: [workId], references: [id], onDelete: Cascade)
  @@unique([contactId, workId])
  @@index([workId])
+}
+
+model BookReview {
+ id String @id @default(cuid())
+ userId String
+ workId String
+ body String
+ rating Int?
+ isPublic Boolean @default(false)
+ version Int @default(1)
+ updatedAt DateTime @updatedAt
+ user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ work Work @relation(fields: [workId], references: [id], onDelete: Cascade)
+ @@unique([userId, workId])
+ @@index([isPublic, updatedAt])
 }

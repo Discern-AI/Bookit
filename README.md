@@ -18,7 +18,7 @@ Set `DATABASE_URL`, a random `NEXTAUTH_SECRET`, and `NEXTAUTH_URL` in `.env` bef
 
 Open http://localhost:3000 and create an account. Settings contains Goodreads import, edition-match reviews and library export. In Library, choose Reading diary for your timeline and goal, or Log pages on a current read. Chat also accepts commands such as "Read another 30 pages" and asks you to confirm before saving. These logging commands work without a Claude API key.
 
-Browse now includes catalogue search, current reads and author exploration. Saved catalogue titles link to public `/book/[workId]` pages with descriptions, editions and external library/shop searches. Adding an edition opens its private library drawer. Public pages contain catalogue metadata only.
+Browse now includes catalogue search, current reads and author exploration. Saved catalogue titles link to public `/book/[workId]` pages with descriptions, editions and external library/shop searches. Adding an edition opens its private library drawer. Public book pages contain catalogue metadata, published paths and explicitly published community reviews.
 
 Reading paths are available from Browse. Create an ordered path from saved catalogue books, add notes, and save it privately or publish it. Published paths have shareable `/path/[pathId]` pages, appear on their book pages, and can be followed. Publishing exposes only the path content and your display name; library notes remain private.
 
@@ -27,6 +27,8 @@ Book pages and the library Editions tab can load Open Library editions in pages 
 Library now links to private Gift lists. Record recipient preferences, a GBP budget, occasions and candidate books. Track planned/bought/given status, fit and your own price estimates. Annual occasions recur, and upcoming dates have dismissible in-app reminders. Gift ideas link to edition comparisons and external shop searches.
 
 Gift-list owners can create a revocable shared link. The shared view shows the recipient name, books, availability and claim state; preferences, occasions, budgets, price estimates and notes remain private. Signed-in gift-givers can claim and release their own gifts. Owners can release any claim and replace or disable the link. A shared-link sign-in or signup returns to that list.
+
+Community now shows published book reviews. In Settings > Manage public profile, choose a username, public display name and bio, then explicitly publish your profile. Open a library book's public page to write a separate review and optional rating. Reviews start as private drafts; publishing adds them to Community, your profile and the book page. Hiding your profile also hides its published reviews; republishing restores their visibility. Existing library ratings, imported reviews and notes are never automatically published.
 
 `ANTHROPIC_API_KEY` enables real chat replies. `ANTHROPIC_MODEL` defaults to the brief's `claude-sonnet-4-6`. Keys stay server-side. Without a key, the library still works and chat shows a connection message. Chat history is currently held in the open page, not persisted across reloads.
 

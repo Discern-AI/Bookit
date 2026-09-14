@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { auth } from "@/auth";
 import { ImportSettings } from "@/components/import/ImportSettings";
 export default async function SettingsPage() {
@@ -10,6 +11,9 @@ export default async function SettingsPage() {
         <p>{session?.user.name}</p>
         <p className="text-ink-500">{session?.user.email}</p>
       </section>
+      <Link className="text-shelf-700 underline" href="/settings/profile">
+        Manage public profile
+      </Link>
       <ImportSettings />
     </div>
   );

@@ -1,3 +1,4 @@
+import { ReviewList, reviewPage } from "@/components/community/ReviewList";
 import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -58,8 +59,10 @@ export async function generateMetadata({
 }
 export default async function BookPage({
   params,
+  searchParams,
 }: {
   params: { workId: string };
+  searchParams: { page?: string };
 }) {
   const [work, session] = await Promise.all([getWork(params.workId), auth()]);
   if (!work) notFound();
@@ -183,6 +186,19 @@ export default async function BookPage({
             />
           </article>
         ))}
+      </section>
+      <section className="space-y-4">
+        <h2 className="font-display text-2xl">Community reviews</h2>
+        {session?.user && (
+          <Link className="underline" href={`/community/review/${work.id}`}>
+            Write or edit your review (library books)
+          </Link>
+        )}
+        <ReviewList
+          workId={work.id}
+          page={reviewPage(searchParams.page)}
+          basePath={`/book/${work.id}`}
+        />
       </section>
       {session?.user && <RemoteEditions workId={work.id} />}
       {!!paths.length && (

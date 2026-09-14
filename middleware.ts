@@ -11,7 +11,9 @@ export default auth((req) => {
     req.nextUrl.pathname.startsWith("/login") ||
     req.nextUrl.pathname.startsWith("/signup");
 
-  const isPublicBook = /^\/(?:book|path)\/[^/]+\/?$/.test(req.nextUrl.pathname);
+  const isPublicBook = /^\/(?:book|path|profile)\/[^/]+\/?$/.test(
+    req.nextUrl.pathname,
+  );
   const isSharedGift = /^\/gift\/[a-f0-9]{64}\/?$/.test(req.nextUrl.pathname);
   if (!isLoggedIn && !isAuthRoute && !isPublicBook && !isSharedGift) {
     const loginUrl = new URL("/login", req.nextUrl.origin);
