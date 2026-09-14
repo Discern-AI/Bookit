@@ -287,7 +287,8 @@ export function ModerateReport({ reportId }: { reportId: string }) {
       >
         <p className="mb-4">
           Hide this content from public pages? Hiding a review also hides its
-          discussion.
+          discussion and any replacement review by the same reader for this
+          book.
         </p>
         <Button variant="danger" loading={busy} onClick={() => resolve("hide")}>
           Confirm hide

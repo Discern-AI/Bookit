@@ -43,6 +43,9 @@ export default async function Page({
         </Link>
       </nav>
       <div className="flex flex-wrap gap-4">
+        <Link className="underline" href="/community/reviews">
+          Your reviews
+        </Link>
         <Link className="underline" href="/community/comments">
           Your comments
         </Link>

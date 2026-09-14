@@ -10,13 +10,16 @@ export default async function Page({ params }: { params: { workId: string } }) {
     select: { edition: { select: { work: { select: { title: true } } } } },
   });
   if (!book) notFound();
-  const review = await prisma.bookReview.findUnique({
-    where: {
-      userId_workId: { userId: session!.user.id, workId: params.workId },
-    },
+  const latest = await prisma.bookReview.findFirst({
+    where: { userId: session!.user.id, workId: params.workId },
+    orderBy: { version: "desc" },
   });
+  const review = latest?.active ? latest : null;
   return (
     <main className="max-w-2xl mx-auto p-6 space-y-6">
+      <Link className="underline" href="/community/reviews">
+        Your reviews
+      </Link>
       <h1 className="font-display text-3xl">
         Review {book.edition.work.title}
       </h1>
@@ -27,7 +30,7 @@ export default async function Page({ params }: { params: { workId: string } }) {
         </Link>
         .
       </p>
-      {review?.isHidden && (
+      {latest?.isHidden && (
         <p role="status">
           This review has been hidden by a moderator. Saving edits will not
           republish it.
@@ -39,7 +42,7 @@ export default async function Page({ params }: { params: { workId: string } }) {
           body: review?.body ?? "",
           rating: review?.rating ?? null,
           isPublic: review?.isPublic ?? false,
-          version: review?.version ?? 0,
+          version: latest?.version ?? 0,
         }}
       />
     </main>

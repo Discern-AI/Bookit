@@ -19,9 +19,13 @@ export async function PATCH(
       return { status: 403, error: "Moderator access required." };
     const target = await tx.reviewReport.findUnique({
       where: { id: params.reportId },
-      select: { reviewId: true },
+      select: {
+        reviewId: true,
+        review: { select: { userId: true, workId: true } },
+      },
     });
     if (!target) return { status: 404, error: "Report not found." };
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${target.review.userId} FOR NO KEY UPDATE`;
     await tx.$queryRaw`SELECT id FROM "BookReview" WHERE id = ${target.reviewId} FOR NO KEY UPDATE`;
     await tx.$queryRaw`SELECT id FROM "ReviewReport" WHERE id = ${params.reportId} FOR UPDATE`;
     const report = await tx.reviewReport.findUnique({
@@ -40,8 +44,8 @@ export async function PATCH(
           data: { isHidden: true },
         });
       else
-        await tx.bookReview.update({
-          where: { id: report.reviewId },
+        await tx.bookReview.updateMany({
+          where: { userId: target.review.userId, workId: target.review.workId },
           data: { isHidden: true },
         });
     }

@@ -36,6 +36,8 @@ Open Discuss this review to like a review, post a public comment or report a rev
 
 Moderator accounts see a private Moderation reports queue with pending/resolved views, original reported-text snapshots, dismissal and confirmed content hiding. The server-controlled `User.isModerator` database flag defaults to false; signup and profile settings cannot grant it. No existing account was granted moderator access by this build. Assign a trusted moderator through database administration before relying on the queue operationally.
 
+Your reviews in Community is a private dashboard with draft/published/moderator-hidden filters, title/author search and pagination. Resume a saved draft or confirm deletion there. Deletion clears the review text and rating, removes likes and closes the public discussion, while preserving report snapshots for moderators and comment authors' private management access. Your library stays unchanged. Writing again starts a fresh discussion; moderation restrictions still apply.
+
 `ANTHROPIC_API_KEY` enables real chat replies. `ANTHROPIC_MODEL` defaults to the brief's `claude-sonnet-4-6`. Keys stay server-side. Without a key, the library still works and chat shows a connection message. Chat history is currently held in the open page, not persisted across reloads.
 
 ### Database on this Windows machine

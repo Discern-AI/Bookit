@@ -17,6 +17,8 @@ export const reviewSchema = z.object({
   version: z.number().int().min(0),
 });
 export const publishedReviews = {
+  active: true,
+  deletedAt: null,
   isHidden: false,
   isPublic: true,
   user: { profilePublic: true },
@@ -38,4 +40,9 @@ export const reportSchema = z.object({
   commentId: z.string().uuid().optional(),
   reason: z.enum(["spam", "harassment", "spoilers", "other"]),
   details: z.string().trim().max(2000),
+});
+
+export const deleteReviewSchema = z.object({
+  id: z.string().min(1),
+  version: z.number().int().min(1),
 });
