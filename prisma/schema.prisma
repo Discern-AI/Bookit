@@ -48,6 +48,9 @@ model VerificationToken {
 }
 
 model User {
+  blogEnabled Boolean @default(false)
+  blogVersion Int @default(0)
+  articles Article[]
   authVersion Int @default(0)
   appeals ReviewAppeal[]
   id            String    @id @default(cuid())
@@ -413,4 +416,26 @@ model ReviewAppeal {
  @@unique([userId, workId, moderationVersion])
  @@index([status, createdAt])
  @@index([userId, createdAt])
+}
+
+model Article {
+ id String @id
+ userId String
+ title String
+ excerpt String @default("")
+ content Json
+ version Int @default(1)
+ isPublic Boolean @default(false)
+ publishedTitle String?
+ publishedExcerpt String?
+ publishedContent Json?
+ publishedVersion Int?
+ publishedAt DateTime?
+ publishedReadMinutes Int @default(1)
+ deletedAt DateTime?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ @@index([userId, updatedAt])
+ @@index([isPublic, publishedAt])
 }

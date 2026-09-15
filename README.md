@@ -75,3 +75,5 @@ Browser tests expect a running server on localhost:3000 and a migrated developme
 ## Specifications and current scope
 
 Both original PDFs are saved in [docs/specifications](docs/specifications). The current implementation covers the library foundation and the first reading features. See [docs/BUILD_STATUS.md](docs/BUILD_STATUS.md) for what is implemented, validation, limitations, and the next phase.
+
+Community > Your articles opens the TipTap editor: save private drafts, preview, and explicitly publish a saved version. Enable your optional blog and make your profile public before publishing. Further draft edits stay private until republished. Published articles appear in reader article feeds, the profile Blog tab and RSS. Unpublishing, disabling the blog or hiding the profile removes public access. Images, embedded book cards and article moderation are not implemented yet.

@@ -142,3 +142,41 @@ const sharePath = "/gift/" + "a".repeat(64);
 assert.equal(giftReturnPath("?next=" + encodeURIComponent(sharePath)), sharePath);
 for (const unsafe of ["https://example.com", "//example.com", "/gift/../admin", "/chat", sharePath + "?next=https://example.com"]) assert.equal(giftReturnPath("?next=" + encodeURIComponent(unsafe)), "/chat");
 console.log("Passed shared-gift sign-in return validation.");
+
+const {
+  parseArticleContent,
+  articleText,
+  escapeXml,
+} = require("../lib/articles.ts");
+const articleDoc = {
+  type: "doc",
+  content: [
+    {
+      type: "heading",
+      attrs: { level: 2 },
+      content: [{ type: "text", text: "Title", marks: [{ type: "bold" }] }],
+    },
+    { type: "paragraph", content: [{ type: "text", text: "Body <script>" }] },
+  ],
+};
+assert.equal(
+  articleText(parseArticleContent(articleDoc)),
+  "Title\nBody <script>\n",
+);
+for (const content of [
+  { type: "doc", content: [{ type: "html", text: "<script>" }] },
+  { type: "doc", content: [{ type: "paragraph", attrs: { onclick: "bad" } }] },
+  { type: "doc", content: [{ type: "text", text: "bad nesting" }] },
+  {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: [{ type: "text", text: "a".repeat(50001) }],
+      },
+    ],
+  },
+])
+  assert.throws(() => parseArticleContent(content));
+assert.equal(escapeXml('<a & "b">'), "&lt;a &amp; &quot;b&quot;&gt;");
+console.log("Article validation and XML escaping passed");

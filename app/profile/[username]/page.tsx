@@ -1,3 +1,4 @@
+import { ArticleList } from "@/components/articles/ArticleList";
 import { ProfileCollections } from "@/components/community/ProfileCollections";
 import { auth } from "@/auth";
 import { FollowReader } from "@/components/community/FollowReader";
@@ -19,11 +20,19 @@ export default async function Page({
 }) {
   const user = await prisma.user.findFirst({
     where: { username: params.username, profilePublic: true },
-    select: { id: true, username: true, publicName: true, bio: true },
+    select: {
+      id: true,
+      username: true,
+      publicName: true,
+      bio: true,
+      blogEnabled: true,
+    },
   });
   if (!user) notFound();
   const tab =
-    searchParams.tab === "shelves" || searchParams.tab === "paths"
+    searchParams.tab === "shelves" ||
+    searchParams.tab === "paths" ||
+    (searchParams.tab === "blog" && user.blogEnabled)
       ? searchParams.tab
       : "reviews";
   const session = await auth();
@@ -75,7 +84,12 @@ export default async function Page({
         </Link>
       )}
       <nav aria-label="Profile sections" className="flex flex-wrap gap-4">
-        {["reviews", "shelves", "paths"].map((section) => (
+        {[
+          "reviews",
+          "shelves",
+          "paths",
+          ...(user.blogEnabled ? ["blog"] : []),
+        ].map((section) => (
           <Link
             className="underline"
             key={section}
@@ -86,11 +100,24 @@ export default async function Page({
               ? "Reading paths"
               : section === "shelves"
                 ? "Shelves"
-                : "Reviews"}
+                : section === "blog"
+                  ? "Blog"
+                  : "Reviews"}
           </Link>
         ))}
       </nav>
-      {tab !== "reviews" ? (
+      {tab === "blog" ? (
+        <>
+          <Link className="underline" href={`/blog/${user.username}/rss`}>
+            RSS feed
+          </Link>
+          <ArticleList
+            userId={user.id}
+            page={reviewPage(searchParams.page)}
+            basePath={`/profile/${user.username}?tab=blog`}
+          />
+        </>
+      ) : tab !== "reviews" ? (
         <ProfileCollections
           userId={user.id}
           username={user.username!}

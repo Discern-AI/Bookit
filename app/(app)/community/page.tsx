@@ -16,6 +16,12 @@ export default async function Page({
   return (
     <main className="max-w-2xl mx-auto p-6 space-y-6">
       <h1 className="font-display text-4xl">Community</h1>
+      <Link className="underline" href="/community/articles">
+        Reader articles
+      </Link>
+      <Link className="underline" href="/creator">
+        Your articles
+      </Link>
       <p>
         Reviews shared by Folio readers. Open a book from your library to write
         yours.
