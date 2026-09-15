@@ -14,6 +14,9 @@ export default async function SettingsPage() {
       <Link className="text-shelf-700 underline" href="/settings/profile">
         Manage public profile
       </Link>
+      <Link className="block text-shelf-700 underline" href="/settings/shelves">
+        Manage shelf sharing
+      </Link>
       <ImportSettings />
     </div>
   );

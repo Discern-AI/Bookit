@@ -38,6 +38,8 @@ Moderator accounts see a private Moderation reports queue with pending/resolved 
 
 Your reviews in Community is a private dashboard with draft/published/moderator-hidden filters, title/author search and pagination. Resume a saved draft or confirm deletion there. Deletion clears the review text and rating, removes likes and closes the public discussion, while preserving report snapshots for moderators and comment authors' private management access. Your library stays unchanged. Writing again starts a fresh discussion; moderation restrictions still apply.
 
+Settings > Manage shelf sharing publishes selected custom shelves after confirmation. A public profile is required. Shared `/shelf/[shelfId]` pages show only the shelf name and catalogue/edition details; private ratings, notes and reading history stay private. Published shelves are live: renames and membership changes appear publicly. Unsharing or hiding the profile removes public access; republishing a profile restores still-shared shelves. Profile pages now have Reviews, Shelves and Reading paths tabs, each paginated. Independently published reading paths retain their existing public URLs and publishing controls.
+
 `ANTHROPIC_API_KEY` enables real chat replies. `ANTHROPIC_MODEL` defaults to the brief's `claude-sonnet-4-6`. Keys stay server-side. Without a key, the library still works and chat shows a connection message. Chat history is currently held in the open page, not persisted across reloads.
 
 ### Database on this Windows machine

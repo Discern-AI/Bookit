@@ -1,3 +1,4 @@
+import { ProfileCollections } from "@/components/community/ProfileCollections";
 import { auth } from "@/auth";
 import { FollowReader } from "@/components/community/FollowReader";
 import Link from "next/link";
@@ -14,13 +15,17 @@ export default async function Page({
   searchParams,
 }: {
   params: { username: string };
-  searchParams: { page?: string };
+  searchParams: { page?: string; tab?: string };
 }) {
   const user = await prisma.user.findFirst({
     where: { username: params.username, profilePublic: true },
     select: { id: true, username: true, publicName: true, bio: true },
   });
   if (!user) notFound();
+  const tab =
+    searchParams.tab === "shelves" || searchParams.tab === "paths"
+      ? searchParams.tab
+      : "reviews";
   const session = await auth();
   const [following, followersCount, followingCount] = await Promise.all([
     session?.user?.id
@@ -69,12 +74,39 @@ export default async function Page({
           Sign in to follow readers
         </Link>
       )}
-      <h2 className="font-display text-2xl">Published reviews</h2>
-      <ReviewList
-        userId={user.id}
-        page={reviewPage(searchParams.page)}
-        basePath={`/profile/${user.username}`}
-      />
+      <nav aria-label="Profile sections" className="flex flex-wrap gap-4">
+        {["reviews", "shelves", "paths"].map((section) => (
+          <Link
+            className="underline"
+            key={section}
+            aria-current={tab === section ? "page" : undefined}
+            href={`/profile/${user.username}?tab=${section}`}
+          >
+            {section === "paths"
+              ? "Reading paths"
+              : section === "shelves"
+                ? "Shelves"
+                : "Reviews"}
+          </Link>
+        ))}
+      </nav>
+      {tab !== "reviews" ? (
+        <ProfileCollections
+          userId={user.id}
+          username={user.username!}
+          tab={tab}
+          page={reviewPage(searchParams.page)}
+        />
+      ) : (
+        <>
+          <h2 className="font-display text-2xl">Published reviews</h2>
+          <ReviewList
+            userId={user.id}
+            page={reviewPage(searchParams.page)}
+            basePath={`/profile/${user.username}?tab=reviews`}
+          />
+        </>
+      )}
     </main>
   );
 }

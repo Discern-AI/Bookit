@@ -88,7 +88,7 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Added one separate review per reader/work, with private drafts, an optional public rating and explicit publishing. A book must be in the writer's library; publishing also requires a public profile. Private library ratings, imported reviews and notes are never copied or aggregated into community data.
 - Community, book pages and profiles show only published reviews from currently public profiles, with 20-row pagination. Unpublishing a review removes it from those views. Hiding a profile hides its reviews; republishing restores them, as explained before saving.
 - Profile version checks and transactionally serialized review updates reject stale saves. Duplicate usernames are handled without losing form input. Failed saves retain the draft. The migration is additive and preserves existing data.
-- This is the initial profile/review slice. Profile shelf/path tabs and avatars remain outstanding. Reviews can be withdrawn using the publishing checkbox or deleted from the private review dashboard.
+- This is the initial profile/review slice. Avatars remain outstanding; profile shelf/path tabs are now implemented. Reviews can be withdrawn using the publishing checkbox or deleted from the private review dashboard.
 
 ## Reader follows and following feed continuation
 
@@ -115,7 +115,17 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - The schema now enforces one active review per reader/work while allowing deleted history. Version numbers continue across deletion and replacement, blocking stale saves from recreating deleted text. New reviews get a new discussion ID and start as private drafts in the editor; old comments/likes do not move across.
 - Moderator hiding applies across review replacements for the same reader/book, including when a report is resolved after deletion. Delete/recreate cannot remove the moderation restriction. The moderation confirmation explains the scope. Account/profile deletion, moderation appeals/restoration and local autosave of never-saved drafts remain outstanding.
 
+## Public shelf sharing and profile collections continuation
+
+- Custom shelves start private. Settings and Library's Manage shelf dialog link to a paginated shelf-sharing page. Publishing requires an already-public profile and an explicit confirmation explaining live shelf names/membership, exposed edition details and private-field exclusions. Built-in reading-status shelves cannot be published through this flow.
+- Public `/shelf/[shelfId]` pages gate access on both shelf and profile visibility. They select only shelf/public-name and catalogue fields, with 20-edition pagination. They do not expose UserBook IDs, account names/emails, private ratings/notes/imported reviews, status, dates or other shelves. The query also restricts membership to the shelf owner's library.
+- Sharing updates enforce ownership and optimistic versions. Renaming a shelf advances the sharing version to reject an outdated confirmation. Once shared, library membership changes appear on the public page by design. Unsharing remains available while the profile is private; unsharing and shelf deletion revoke access without deleting library books.
+- Public profiles now have Reviews, Shelves and Reading paths navigation, preserving each section through pagination. Collection selections contain only explicitly published content; profile paths use public titles/descriptions without account-name attribution. Hiding a profile hides these tabs and its shared shelf pages. Existing independently published reading-path URLs retain their separate publishing rules.
+- Public-profile settings explain that shared shelves hide/reappear with profile visibility. No existing shelf was automatically published. Shelf followers, shelf descriptions/manual ordering, built-in shelf sharing and avatars are not implemented.
+
 ## Validation
+
+- Shelf sharing/profile collections continuation: production build (including lint/type checks), unit tests and all ten targeted browser scenarios pass (51.4 seconds). New checks cover private-by-default shelves, public-profile requirement, explicit confirmation/cancel, anonymous/other-account mutation denial, exclusion of private library/account fields, live membership removal, stale confirmation after rename, profile hiding, unsharing while private, shelf deletion preserving books, collection pagination and private-path exclusion. Existing profile, reading-path, drawer and library scenarios also pass. The mobile profile shelves page was inspected. Unrelated regression scenarios and the metadata fixture were not rerun.
 
 - Private review management continuation: production build (including lint/type checks), unit tests and all six targeted community/discussion/review-management browser scenarios pass (29.5 seconds). New checks cover private dashboard isolation, filters/search/pagination, saved-draft resumption, profile-private status, delete cancellation, ownership, stale-delete rejection, preserved library data/report snapshots/comments, removal from public pages, stale-save rejection, fresh discussion IDs, idempotent old deletion retries and moderation restrictions surviving delete/recreate. The mobile review dashboard was inspected. The unrelated regression suite and separate metadata fixture were not rerun.
 
@@ -151,8 +161,8 @@ A verified npm audit reported nine high-severity dependency entries in the retai
 
 ## Remaining work
 
-Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provider verification. Import matching uses the local canonical catalogue without external metadata enrichment. Shelf sharing, imported public reviews, editing/deleting existing sessions and separate reread cycles are not implemented. Chat history and unconfirmed log proposals remain in the open page only.
+Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provider verification. Import matching uses the local canonical catalogue without external metadata enrichment. Imported public reviews, editing/deleting existing sessions and separate reread cycles are not implemented. Chat history and unconfirmed log proposals remain in the open page only.
 
 Next Phase 2 work: live acquisition/availability integrations, plus a successful live-provider check of the edition metadata flow. Reading paths now support manual creation, publishing and following. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
 
-Next community/profile work: explicit public shelf sharing and profile shelf/reading-path tabs. Later phases include AI gift expansion, creator publishing, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.
+Next community/profile work: moderation restoration/appeals and account controls, followed by creator publishing. Later phases include AI gift expansion, creator publishing, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.

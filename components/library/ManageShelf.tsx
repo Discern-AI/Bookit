@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
@@ -47,6 +48,12 @@ export function ManageShelf({
       }}
       title={deleting ? "Delete this shelf?" : "Manage shelf"}
     >
+      <Link
+        className="block text-shelf-700 underline mb-4"
+        href="/settings/shelves"
+      >
+        Manage shelf sharing
+      </Link>
       <form onSubmit={save} className="space-y-4">
         {deleting ? (
           <p>

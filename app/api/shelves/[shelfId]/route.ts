@@ -27,7 +27,7 @@ export async function PATCH(
       return existing
         ? db.customShelf.update({
             where: { id: existing.id },
-            data: { name: parsed.data.name },
+            data: { name: parsed.data.name, shareVersion: { increment: 1 } },
           })
         : null;
     });
