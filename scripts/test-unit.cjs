@@ -180,3 +180,16 @@ for (const content of [
   assert.throws(() => parseArticleContent(content));
 assert.equal(escapeXml('<a & "b">'), "&lt;a &amp; &quot;b&quot;&gt;");
 console.log("Article validation and XML escaping passed");
+
+const validImage={type:"articleImage",attrs:{imageId:"a087c3a8-290c-4aab-bc65-eaa8c5bb10c9",alt:"Description",caption:"Caption"}};
+assert.doesNotThrow(()=>parseArticleContent({type:"doc",content:[validImage]}));
+assert.throws(()=>parseArticleContent({type:"doc",content:[{...validImage,attrs:{...validImage.attrs,src:"https://example.com/tracker"}}]}));
+assert.throws(()=>parseArticleContent({type:"doc",content:[{...validImage,attrs:{...validImage.attrs,alt:" "}}]}));
+assert.throws(()=>parseArticleContent({type:"doc",content:Array(21).fill(validImage)}));
+assert.throws(()=>parseArticleContent({type:"doc",content:[{...validImage,content:[{type:"text",text:"Invalid child"}]}]}));
+assert.throws(()=>parseArticleContent({type:"doc",content:[{type:"bookCard",attrs:{editionId:"abc",workId:"abc",title:"Title",authorName:"Author",coverUrl:"javascript:alert(1)"}}]}));
+console.log("Article image and book-card schema checks passed");
+
+const {articleFingerprint}=require("../lib/articles.ts");
+assert.equal(articleFingerprint({type:"doc",content:[{type:"articleImage",attrs:{alt:"Text",imageId:"id",caption:""}}]}),articleFingerprint({content:[{attrs:{caption:"",imageId:"id",alt:"Text"},type:"articleImage"}],type:"doc"}));
+assert.notEqual(articleFingerprint({content:["a","b"]}),articleFingerprint({content:["b","a"]}));

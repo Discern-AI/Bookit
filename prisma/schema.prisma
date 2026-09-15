@@ -419,6 +419,7 @@ model ReviewAppeal {
 }
 
 model Article {
+  images ArticleImage[]
  id String @id
  userId String
  title String
@@ -438,4 +439,13 @@ model Article {
  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
  @@index([userId, updatedAt])
  @@index([isPublic, publishedAt])
+}
+
+model ArticleImage {
+  id String @id @default(uuid())
+  articleId String
+  data Bytes
+  createdAt DateTime @default(now())
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  @@index([articleId])
 }

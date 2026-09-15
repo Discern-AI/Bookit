@@ -1,4 +1,6 @@
 "use client";
+import { ArticleImageNode, BookCardNode } from "./ArticleNodes";
+import { ArticleEmbeds } from "./ArticleEmbeds";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { EditorContent, useEditor } from "@tiptap/react";
@@ -6,7 +8,11 @@ import StarterKit from "@tiptap/starter-kit";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { ArticleContent, articleTextClass } from "./ArticleContent";
-import { ArticleNode, parseArticleContent } from "@/lib/articles";
+import {
+  ArticleNode,
+  parseArticleContent,
+  articleFingerprint,
+} from "@/lib/articles";
 type Draft = {
   id: string;
   title: string;
@@ -27,7 +33,7 @@ export function ArticleEditor({ initial }: { initial: Draft }) {
     initial.publishedVersion,
   );
   const [baseline, setBaseline] = useState(
-    JSON.stringify([initial.title, initial.excerpt, initial.content]),
+    articleFingerprint([initial.title, initial.excerpt, initial.content]),
   );
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -37,6 +43,8 @@ export function ArticleEditor({ initial }: { initial: Draft }) {
   >(null);
   const editor = useEditor({
     extensions: [
+      ArticleImageNode,
+      BookCardNode,
       StarterKit.configure({
         heading: { levels: [2, 3] },
         codeBlock: false,
@@ -58,7 +66,7 @@ export function ArticleEditor({ initial }: { initial: Draft }) {
   useEffect(() => {
     editor?.setEditable(!busy);
   }, [editor, busy]);
-  const dirty = JSON.stringify([title, excerpt, content]) !== baseline;
+  const dirty = articleFingerprint([title, excerpt, content]) !== baseline;
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
       if (dirty) {
@@ -91,7 +99,12 @@ export function ArticleEditor({ initial }: { initial: Draft }) {
         version,
       });
       setVersion(data.version);
-      setBaseline(JSON.stringify([title, excerpt, content]));
+      const savedContent = data.content
+        ? parseArticleContent(data.content)
+        : normalized;
+      editor?.commands.setContent(savedContent, { emitUpdate: false });
+      setContent(savedContent);
+      setBaseline(articleFingerprint([title, excerpt, savedContent]));
       setMessage("Draft saved. Publish when you are ready.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not save.");
@@ -201,6 +214,12 @@ export function ArticleEditor({ initial }: { initial: Draft }) {
           </Button>
         ))}
       </div>
+      <ArticleEmbeds
+        editor={editor}
+        articleId={initial.id}
+        saved={version > 0}
+        disabled={busy}
+      />
       <div className="border border-ink-200 rounded">
         <EditorContent editor={editor} />
       </div>

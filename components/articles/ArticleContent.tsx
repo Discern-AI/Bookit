@@ -21,6 +21,52 @@ export function ArticleContent({ content }: { content: ArticleNode }) {
         );
       return <Fragment key={key}>{text}</Fragment>;
     }
+    if (node.type === "articleImage")
+      return (
+        <figure key={key} className="space-y-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`/api/article-images/${encodeURIComponent(String(node.attrs!.imageId))}`}
+            alt={String(node.attrs!.alt)}
+            loading="lazy"
+            className="max-w-full max-h-[40rem] mx-auto rounded"
+          />
+          {node.attrs!.caption ? (
+            <figcaption className="text-sm text-ink-500">
+              {String(node.attrs!.caption)}
+            </figcaption>
+          ) : null}
+        </figure>
+      );
+    if (node.type === "bookCard")
+      return (
+        <a
+          key={key}
+          href={`/book/${encodeURIComponent(String(node.attrs!.workId))}`}
+          className="flex gap-4 rounded border border-ink-200 p-4"
+        >
+          {node.attrs!.coverUrl ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={String(node.attrs!.coverUrl)}
+                alt=""
+                loading="lazy"
+                referrerPolicy="no-referrer"
+                className="w-16 h-24 object-contain"
+              />
+            </>
+          ) : null}
+          <span>
+            <span className="block font-display text-xl underline">
+              {String(node.attrs!.title)}
+            </span>
+            <span className="block text-ink-500">
+              {String(node.attrs!.authorName)}
+            </span>
+          </span>
+        </a>
+      );
     const tags: Record<string, string> = {
       doc: "div",
       paragraph: "p",
@@ -47,5 +93,11 @@ export function ArticleContent({ content }: { content: ArticleNode }) {
       ? createElement(tag, props)
       : createElement(tag, props, (node.content ?? []).map(render));
   }
-  return <div className={articleTextClass}>{render(content, 0)}</div>;
+  return (
+    <div className={articleTextClass}>
+      {content.type === "doc"
+        ? (content.content ?? []).map(render)
+        : render(content, 0)}
+    </div>
+  );
 }

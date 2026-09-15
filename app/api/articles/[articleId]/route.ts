@@ -1,3 +1,4 @@
+import { resolveArticleEmbeds } from "@/lib/article-embeds";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
@@ -7,6 +8,7 @@ import {
   articleActionSchema,
   parseArticleContent,
   articleText,
+  articleFingerprint,
 } from "@/lib/articles";
 async function readBody(request: Request) {
   const text = await request.text();
@@ -49,16 +51,25 @@ export async function PUT(
         status: 409,
         error: "This article was deleted. Start a new draft.",
       };
+    try {
+      await resolveArticleEmbeds(tx, userId, params.articleId, draft.content);
+    } catch (error) {
+      return {
+        status: 400,
+        error:
+          error instanceof Error ? error.message : "Invalid article embeds.",
+      };
+    }
     if (
       existing &&
       version === 0 &&
       existing.version === 1 &&
       existing.title === draft.title &&
       existing.excerpt === draft.excerpt &&
-      JSON.stringify(parseArticleContent(existing.content)) ===
-        JSON.stringify(draft.content)
+      articleFingerprint(parseArticleContent(existing.content)) ===
+        articleFingerprint(draft.content)
     )
-      return { status: 200, version: 1 };
+      return { status: 200, version: 1, content: existing.content };
     if ((existing?.version ?? 0) !== version)
       return {
         status: 409,
@@ -74,7 +85,7 @@ export async function PUT(
       : await tx.article.create({
           data: { id: params.articleId, userId, ...draft, content },
         });
-    return { status: 200, version: article.version };
+    return { status: 200, version: article.version, content: article.content };
   });
   return Response.json(result, { status: result.status });
 }
@@ -148,7 +159,8 @@ export async function POST(
         where: { id: article.id },
         data: { isPublic: false, version: { increment: 1 } },
       });
-    else
+    else {
+      await tx.articleImage.deleteMany({ where: { articleId: article.id } });
       await tx.article.update({
         where: { id: article.id },
         data: {
@@ -165,6 +177,7 @@ export async function POST(
           version: { increment: 1 },
         },
       });
+    }
     return {
       status: 200,
       version: version + 1,

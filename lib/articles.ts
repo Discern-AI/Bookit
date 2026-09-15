@@ -23,6 +23,8 @@ const nodeSchema = z
       "bulletList",
       "orderedList",
       "listItem",
+      "articleImage",
+      "bookCard",
     ]),
     text: z.string().optional(),
     attrs: z.record(z.string(), z.unknown()).optional(),
@@ -46,7 +48,32 @@ export function parseArticleContent(input: unknown): ArticleNode {
     const node = nodeSchema.parse(value);
     const attrs = node.attrs ?? {};
     const keys = Object.keys(attrs);
-    if (node.type === "heading") {
+    if (node.type === "articleImage") {
+      z.object({
+        imageId: z.string().uuid(),
+        alt: z.string().trim().min(1).max(300),
+        caption: z.string().max(500),
+      })
+        .strict()
+        .parse(attrs);
+    } else if (node.type === "bookCard") {
+      z.object({
+        editionId: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/),
+        workId: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/),
+        title: z.string().min(1).max(500),
+        authorName: z.string().max(500),
+        coverUrl: z.string().max(500),
+      })
+        .strict()
+        .parse(attrs);
+      if (
+        attrs.coverUrl &&
+        !/^https:\/\/covers\.openlibrary\.org\/[^?#]+$/.test(
+          String(attrs.coverUrl),
+        )
+      )
+        throw new Error("Unsupported book cover.");
+    } else if (node.type === "heading") {
       if (
         keys.some((k) => k !== "level") ||
         ![2, 3].includes(attrs.level as number)
@@ -85,6 +112,8 @@ export function parseArticleContent(input: unknown): ArticleNode {
       "bulletList",
       "orderedList",
       "horizontalRule",
+      "articleImage",
+      "bookCard",
     ];
     if (node.type === "doc" && depth !== 0)
       throw new Error("Nested documents are not supported.");
@@ -108,7 +137,12 @@ export function parseArticleContent(input: unknown): ArticleNode {
       (types[0] !== "paragraph" || types.some((t) => !blocks.includes(t)))
     )
       throw new Error("Invalid list item.");
-    if (["hardBreak", "horizontalRule"].includes(node.type) && children.length)
+    if (
+      ["hardBreak", "horizontalRule", "articleImage", "bookCard"].includes(
+        node.type,
+      ) &&
+      children.length
+    )
       throw new Error("Invalid break.");
     return {
       ...node,
@@ -118,6 +152,11 @@ export function parseArticleContent(input: unknown): ArticleNode {
   const result = visit(input, 0);
   if (result.type !== "doc")
     throw new Error("An article document is required.");
+  if (
+    articleNodes(result, "articleImage").length > 20 ||
+    articleNodes(result, "bookCard").length > 20
+  )
+    throw new Error("Use at most 20 images and 20 book cards per article.");
   return JSON.parse(JSON.stringify(result)) as ArticleNode;
 }
 export function articleText(node: ArticleNode): string {
@@ -157,4 +196,25 @@ export function escapeXml(value: string) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;");
+}
+
+export function articleNodes(node: ArticleNode, type: string): ArticleNode[] {
+  return [
+    ...(node.type === type ? [node] : []),
+    ...(node.content ?? []).flatMap((child) => articleNodes(child, type)),
+  ];
+}
+
+// PostgreSQL JSONB and editor schemas may serialize object keys differently.
+// Compare document values without treating key order as an edit.
+export function articleFingerprint(value: unknown): string {
+  return JSON.stringify(value, (_key, item) =>
+    item && typeof item === "object" && !Array.isArray(item)
+      ? Object.fromEntries(
+          Object.keys(item)
+            .sort()
+            .map((key) => [key, item[key]]),
+        )
+      : item,
+  );
 }
