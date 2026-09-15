@@ -58,6 +58,7 @@ export async function PUT(
             workId: params.workId,
             version: version + 1,
             isHidden: !!latest?.isHidden,
+            moderationVersion: latest?.moderationVersion ?? 0,
           },
         });
     return { version: review.version, status: 200 };

@@ -40,6 +40,10 @@ Your reviews in Community is a private dashboard with draft/published/moderator-
 
 Settings > Manage shelf sharing publishes selected custom shelves after confirmation. A public profile is required. Shared `/shelf/[shelfId]` pages show only the shelf name and catalogue/edition details; private ratings, notes and reading history stay private. Published shelves are live: renames and membership changes appear publicly. Unsharing or hiding the profile removes public access; republishing a profile restores still-shared shelves. Profile pages now have Reviews, Shelves and Reading paths tabs, each paginated. Independently published reading paths retain their existing public URLs and publishing controls.
 
+Hidden reviews can be appealed from Your reviews. Your appeals shows private requests and moderator responses. Moderators have a separate appeal queue with current-review checks, rejection and confirmed lifting of restrictions. Restoration honours publication/profile visibility and cannot recreate deleted reviews. Appeals for comments are not implemented yet.
+
+Settings now has Account security: verify your current password to change it or sign out all devices. Both actions invalidate all existing sessions, including the current browser, and require signing in again. Server-side authentication checks session versions against the database; requests already running may finish. Password recovery and changing the login email are not implemented.
+
 `ANTHROPIC_API_KEY` enables real chat replies. `ANTHROPIC_MODEL` defaults to the brief's `claude-sonnet-4-6`. Keys stay server-side. Without a key, the library still works and chat shows a connection message. Chat history is currently held in the open page, not persisted across reloads.
 
 ### Database on this Windows machine

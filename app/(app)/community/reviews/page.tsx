@@ -1,3 +1,4 @@
+import { AppealReview } from "@/components/community/AppealReview";
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
@@ -57,6 +58,7 @@ export default async function Page({
       isPublic: true,
       isHidden: true,
       version: true,
+      moderationVersion: true,
       work: { select: { title: true, authorName: true } },
     },
   });
@@ -65,6 +67,9 @@ export default async function Page({
     <main className="max-w-2xl mx-auto p-6 space-y-6">
       <Link className="underline" href="/community">
         Community
+      </Link>
+      <Link className="underline" href="/community/appeals">
+        Your appeals
       </Link>
       <h1 className="font-display text-3xl">Your reviews</h1>
       <p>
@@ -144,6 +149,12 @@ export default async function Page({
               <Link className="underline" href={`/review/${review.id}`}>
                 View discussion
               </Link>
+            )}
+            {review.isHidden && (
+              <AppealReview
+                workId={review.workId}
+                moderationVersion={review.moderationVersion}
+              />
             )}
             <DeleteReview
               id={review.id}

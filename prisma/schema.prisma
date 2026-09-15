@@ -48,6 +48,8 @@ model VerificationToken {
 }
 
 model User {
+  authVersion Int @default(0)
+  appeals ReviewAppeal[]
   id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
@@ -86,6 +88,7 @@ model User {
 // ---------- Book hierarchy ----------
 
 model Work {
+  appeals ReviewAppeal[]
   id             String   @id @default(cuid())
   title          String
   // Denormalized primary author display name. The full Contributor /
@@ -318,6 +321,7 @@ model GiftItem {
 }
 
 model BookReview {
+ moderationVersion Int @default(0)
  // Null frees the unique active slot while retaining moderation references.
  active Boolean? @default(true)
  deletedAt DateTime?
@@ -390,4 +394,23 @@ model ReviewReport {
  comment ReviewComment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
  @@unique([reporterId, targetKey])
  @@index([status, createdAt])
+}
+
+model ReviewAppeal {
+ id String @id @default(cuid())
+ userId String
+ workId String
+ moderationVersion Int
+ reason String
+ snapshot String
+ status String @default("pending")
+ response String @default("")
+ createdAt DateTime @default(now())
+ resolvedAt DateTime?
+ resolvedById String?
+ user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ work Work @relation(fields: [workId], references: [id], onDelete: Cascade)
+ @@unique([userId, workId, moderationVersion])
+ @@index([status, createdAt])
+ @@index([userId, createdAt])
 }

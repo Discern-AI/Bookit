@@ -43,11 +43,26 @@ export async function PATCH(
           where: { id: report.commentId },
           data: { isHidden: true },
         });
-      else
+      else {
         await tx.bookReview.updateMany({
           where: { userId: target.review.userId, workId: target.review.workId },
-          data: { isHidden: true },
+          data: { isHidden: true, moderationVersion: { increment: 1 } },
         });
+        await tx.reviewAppeal.updateMany({
+          where: {
+            userId: target.review.userId,
+            workId: target.review.workId,
+            status: "pending",
+          },
+          data: {
+            status: "superseded",
+            resolvedAt: new Date(),
+            resolvedById: session.user.id,
+            response:
+              "A newer moderation decision replaced this appeal. You can appeal the current restriction.",
+          },
+        });
+      }
     }
     await tx.reviewReport.update({
       where: { id: report.id },

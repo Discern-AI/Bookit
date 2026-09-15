@@ -1,3 +1,4 @@
+import { AppealReview } from "@/components/community/AppealReview";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
@@ -35,6 +36,12 @@ export default async function Page({ params }: { params: { workId: string } }) {
           This review has been hidden by a moderator. Saving edits will not
           republish it.
         </p>
+      )}
+      {latest?.isHidden && (
+        <AppealReview
+          workId={params.workId}
+          moderationVersion={latest.moderationVersion}
+        />
       )}
       <PublishingForm
         workId={params.workId}

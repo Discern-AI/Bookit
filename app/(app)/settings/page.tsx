@@ -1,3 +1,4 @@
+import { AccountSecurity } from "@/components/community/AccountSecurity";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { ImportSettings } from "@/components/import/ImportSettings";
@@ -17,6 +18,7 @@ export default async function SettingsPage() {
       <Link className="block text-shelf-700 underline" href="/settings/shelves">
         Manage shelf sharing
       </Link>
+      <AccountSecurity />
       <ImportSettings />
     </div>
   );

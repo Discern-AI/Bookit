@@ -8,6 +8,37 @@ import authConfig from "@/auth.config";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
+  callbacks: {
+    ...authConfig.callbacks,
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.authVersion = (
+          user as typeof user & { authVersion: number }
+        ).authVersion;
+      }
+      if (typeof token.id !== "string") return null;
+      const current = await prisma.user.findUnique({
+        where: { id: token.id },
+        select: { authVersion: true },
+      });
+      if (
+        !current ||
+        current.authVersion !==
+          (typeof token.authVersion === "number" ? token.authVersion : 0)
+      )
+        return null;
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user && typeof token.id === "string") {
+        session.user.id = token.id;
+        session.user.authVersion =
+          typeof token.authVersion === "number" ? token.authVersion : 0;
+      }
+      return session;
+    },
+  },
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
@@ -37,6 +68,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         return {
           id: user.id,
+          authVersion: user.authVersion,
           email: user.email,
           name: user.name,
           image: user.image,

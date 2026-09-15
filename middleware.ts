@@ -1,4 +1,3 @@
-import { giftReturnPath } from "@/lib/auth-return";
 import NextAuth from "next-auth";
 import authConfig from "@/auth.config";
 import { NextResponse } from "next/server";
@@ -27,11 +26,8 @@ export default auth((req) => {
     response.headers.set("X-Robots-Tag", "noindex, nofollow");
     return response;
   }
-  if (isLoggedIn && isAuthRoute) {
-    return NextResponse.redirect(
-      new URL(giftReturnPath(req.nextUrl.search), req.nextUrl.origin),
-    );
-  }
+  // Revocation is checked by Node auth. Never bounce an expired JWT away
+  // from login based solely on the Edge-readable cookie.
 });
 
 export const config = {
