@@ -209,3 +209,11 @@ assert.equal(converted.content.length,2);
 assert.equal(articleText(converted),"First line continued.\n<script>literal text</script>\n");
 assert.throws(()=>reviewArticleContent("   "));
 console.log("Review-to-article text and paragraph conversion checks passed");
+
+const {wrapCardText,shareCardDescription}=require("../lib/share-cards.ts");
+assert.deepEqual(wrapCardText("one two three",7,t=>t.length),["one two","three"]);
+assert.deepEqual(wrapCardText("abcdefgh",3,t=>t.length),["abc","def","gh"]);
+assert.deepEqual(wrapCardText("first\n\nlast",10,t=>t.length),["first","","last"]);
+const cardDescription=shareCardDescription({kind:"book",format:"square",theme:"paper",book:{editionId:"e",workId:"w",title:"Book",authorName:"Author",coverUrl:"https://example.test/cover"},quote:"UNUSED_QUOTE",caption:"My pick",page:"UNUSED_PAGE",byline:""});
+assert.equal(cardDescription,"My pick / Book / Author");
+console.log("Share-card wrapping and exported-field description checks passed");

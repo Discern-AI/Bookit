@@ -24,6 +24,9 @@ export default async function Page({
   return (
     <main className="max-w-3xl mx-auto p-6 space-y-6">
       <h1 className="font-display text-4xl">Your articles</h1>
+      <Link href="/creator/cards" className="underline">
+        Make shareable cards
+      </Link>
       <Link href="/creator/appeals" className="underline">
         Your article appeals
       </Link>
