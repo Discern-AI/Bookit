@@ -23,9 +23,11 @@ export function ShareCardStudio({
   const [hasNext, setHasNext] = useState(false);
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
-  const [kind, setKind] = useState<"book" | "quote">("book");
+  const [kind, setKind] = useState<"book" | "quote" | "shelfie">("book");
   const [format, setFormat] = useState<"square" | "portrait">("square");
   const [theme, setTheme] = useState<"paper" | "night">("paper");
+  const [selected, setSelected] = useState<ShareCardBook[]>([]);
+  const [heading, setHeading] = useState("");
   const [caption, setCaption] = useState("");
   const [quote, setQuote] = useState("");
   const [reference, setReference] = useState("");
@@ -46,18 +48,29 @@ export function ShareCardStudio({
         theme,
         byline: includeByline ? publicByline : "",
       }
-    : book
-      ? {
-          kind,
-          format,
-          theme,
-          book,
-          caption,
-          quote,
-          page: reference,
-          byline: includeByline ? publicByline : "",
-        }
-      : null;
+    : kind === "shelfie"
+      ? selected.length
+        ? {
+            kind,
+            books: selected,
+            heading,
+            format,
+            theme,
+            byline: includeByline ? publicByline : "",
+          }
+        : null
+      : book
+        ? {
+            kind,
+            format,
+            theme,
+            book,
+            caption,
+            quote,
+            page: reference,
+            byline: includeByline ? publicByline : "",
+          }
+        : null;
   const fingerprint = JSON.stringify(input);
   const current = useRef(fingerprint);
   current.current = fingerprint;
@@ -176,7 +189,7 @@ export function ShareCardStudio({
       <p>
         {recap
           ? "Download your reading year as a PNG. Counts reflect your saved records through the date shown."
-          : "Make a book or quote card and download a PNG to share. Only the fields shown in the preview are included."}
+          : "Make a book, quote or shelfie card and download a PNG to share. Only the fields shown in the preview are included."}
       </p>
       <div className="grid lg:grid-cols-2 gap-8">
         <section className="space-y-4" aria-label="Card controls">
@@ -209,8 +222,27 @@ export function ShareCardStudio({
                     key={b.editionId}
                     variant="secondary"
                     className="w-full h-auto py-3 justify-start text-left"
-                    aria-pressed={book?.editionId === b.editionId}
-                    onClick={() => setBook(b)}
+                    aria-pressed={
+                      kind === "shelfie"
+                        ? selected.some((item) => item.workId === b.workId)
+                        : book?.editionId === b.editionId
+                    }
+                    disabled={
+                      kind === "shelfie" &&
+                      selected.length >= 6 &&
+                      !selected.some((item) => item.workId === b.workId)
+                    }
+                    onClick={() =>
+                      kind === "shelfie"
+                        ? setSelected((items) =>
+                            items.some((item) => item.workId === b.workId)
+                              ? items.filter((item) => item.workId !== b.workId)
+                              : items.length < 6
+                                ? [...items, b]
+                                : items,
+                          )
+                        : setBook(b)
+                    }
                   >
                     <span className="min-w-0 break-words">
                       {b.title} / {b.authorName}
@@ -238,7 +270,7 @@ export function ShareCardStudio({
                   </Button>
                 )}
               </nav>
-              {book && <p>Selected: {book.title}</p>}
+              {kind !== "shelfie" && book && <p>Selected: {book.title}</p>}
               <label className="block">
                 Card type
                 <select
@@ -248,9 +280,85 @@ export function ShareCardStudio({
                 >
                   <option value="book">Book card</option>
                   <option value="quote">Quote card</option>
+                  <option value="shelfie">Shelfie card</option>
                 </select>
               </label>
-              {kind === "book" ? (
+              {kind === "shelfie" ? (
+                <>
+                  <label className="block">
+                    Shelfie heading (optional)
+                    <input
+                      className="block w-full border border-ink-200 rounded p-2"
+                      value={heading}
+                      maxLength={60}
+                      onChange={(e) => setHeading(e.target.value)}
+                    />
+                  </label>
+                  <p>
+                    Choose up to six books. Each book appears once, as an
+                    illustrated spine with its title and author.
+                  </p>
+                  <ol aria-label="Selected books" className="space-y-3">
+                    {selected.map((item, index) => (
+                      <li
+                        key={item.workId}
+                        className="border border-ink-200 rounded p-3 space-y-2"
+                      >
+                        <p className="break-words">
+                          {index + 1}. {item.title}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="secondary"
+                            aria-label={`Move ${item.title} up`}
+                            disabled={index === 0}
+                            onClick={() =>
+                              setSelected((items) => {
+                                const next = [...items];
+                                [next[index - 1], next[index]] = [
+                                  next[index],
+                                  next[index - 1],
+                                ];
+                                return next;
+                              })
+                            }
+                          >
+                            Up
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            aria-label={`Move ${item.title} down`}
+                            disabled={index === selected.length - 1}
+                            onClick={() =>
+                              setSelected((items) => {
+                                const next = [...items];
+                                [next[index], next[index + 1]] = [
+                                  next[index + 1],
+                                  next[index],
+                                ];
+                                return next;
+                              })
+                            }
+                          >
+                            Down
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            aria-label={`Remove ${item.title}`}
+                            onClick={() =>
+                              setSelected((items) =>
+                                items.filter((b) => b.workId !== item.workId),
+                              )
+                            }
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </>
+              ) : kind === "book" ? (
                 <label className="block">
                   Caption (optional)
                   <textarea

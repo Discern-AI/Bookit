@@ -224,3 +224,6 @@ for(const value of [undefined,"oops","2027","1899","2024x"]) assert.deepEqual(re
 assert.deepEqual(recapCounts([{date:new Date("2024-02-29T12:00Z"),pageStart:0,pageEnd:20},{date:new Date("2024-02-29T23:00Z"),pageStart:20,pageEnd:25},{date:new Date("2024-03-01T12:00Z"),pageStart:25,pageEnd:25}]),{pages:25,days:1});
 assert.deepEqual(recapCounts([]),{pages:0,days:0});
 console.log("Reading recap year boundaries and progress totals passed");
+
+assert.equal(shareCardDescription({kind:"shelfie",format:"square",theme:"paper",heading:"",books:[{title:"First",authorName:"Author",workId:"PRIVATE_ID",editionId:"e",coverUrl:"PRIVATE_URL"}],byline:""}),"On my shelf / First / Author");
+console.log("Shelfie exported description excludes catalogue identifiers");

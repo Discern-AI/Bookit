@@ -17,6 +17,7 @@ export type ShareCardInput = {
   theme: "paper" | "night";
   byline: string;
 } & (
+  | { kind: "shelfie"; books: ShareCardBook[]; heading: string }
   | { kind: "recap"; recap: ReadingRecap }
   | {
       kind: "book" | "quote";
@@ -64,6 +65,14 @@ export function wrapCardText(
   return lines;
 }
 export function shareCardDescription(input: ShareCardInput) {
+  if (input.kind === "shelfie")
+    return [
+      input.heading.trim() || "On my shelf",
+      ...input.books.map((book) => `${book.title} / ${book.authorName}`),
+      input.byline,
+    ]
+      .filter(Boolean)
+      .join(" / ");
   if (input.kind === "recap")
     return `${input.recap.year} reading recap / ${input.recap.books} books finished / ${input.recap.pages} pages logged / ${input.recap.days} reading days / Through ${input.recap.through}${input.byline ? ` / ${input.byline}` : ""}`;
   return [
@@ -113,14 +122,20 @@ export function drawShareCard(
     maxSize: number,
     minSize: number,
     font: string,
+    x = 96,
+    textWidth = width,
   ) {
     for (let size = maxSize; size >= minSize; size -= 2) {
       ctx!.font = `400 ${size}px ${font}`;
-      const lines = wrapCardText(text, width, (t) => ctx!.measureText(t).width);
+      const lines = wrapCardText(
+        text,
+        textWidth,
+        (t) => ctx!.measureText(t).width,
+      );
       const step = size * 1.3;
       if (lines.length * step <= area) {
         ctx!.fillStyle = style.ink;
-        lines.forEach((line, i) => ctx!.fillText(line, 96, y + i * step));
+        lines.forEach((line, i) => ctx!.fillText(line, x, y + i * step));
         return lines.length * step;
       }
     }
@@ -135,7 +150,50 @@ export function drawShareCard(
   ctx.moveTo(96, 154);
   ctx.lineTo(984, 154);
   ctx.stroke();
-  if (input.kind === "recap") {
+  if (input.kind === "shelfie") {
+    if (!input.books.length || input.books.length > 6)
+      throw new Error("Choose between one and six books.");
+    block(
+      input.heading.trim() || "On my shelf",
+      205,
+      90,
+      48,
+      24,
+      style.displayFont,
+    );
+    const rowHeight = Math.min(150, (height - 480) / input.books.length);
+    input.books.forEach((book, index) => {
+      const y = 330 + index * rowHeight;
+      const x = index % 2 ? 112 : 96;
+      ctx.fillStyle = style.accent;
+      ctx.globalAlpha = index % 2 ? 0.16 : 0.08;
+      ctx.fillRect(x, y, 872, rowHeight - 10);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = style.accent;
+      ctx.strokeRect(x, y, 872, rowHeight - 10);
+      ctx.fillRect(x + 12, y + 10, 4, rowHeight - 30);
+      const titleHeight = block(
+        book.title,
+        y + 12,
+        rowHeight - 54,
+        32,
+        18,
+        style.displayFont,
+        x + 32,
+        804,
+      );
+      block(
+        book.authorName,
+        y + 18 + titleHeight,
+        28,
+        20,
+        16,
+        style.bodyFont,
+        x + 32,
+        804,
+      );
+    });
+  } else if (input.kind === "recap") {
     label("MY READING YEAR", 208, 22);
     block(String(input.recap.year), 260, 150, 112, 60, style.displayFont);
     const rows = [

@@ -355,13 +355,19 @@ test("reading-year recap counts only the owner's dated activity and exports with
         .toBuffer()
     ).equals(await sharp("test-results/recap-card.png").raw().toBuffer()),
   ).toBe(true);
-  await page.getByRole("combobox", { name: "Layout", exact: true }).selectOption("portrait");
-  await page.getByRole("combobox", { name: "Colour theme", exact: true }).selectOption("night");
+  await page
+    .getByRole("combobox", { name: "Layout", exact: true })
+    .selectOption("portrait");
+  await page
+    .getByRole("combobox", { name: "Colour theme", exact: true })
+    .selectOption("night");
   await expect(downloadButton).toBeEnabled();
   const portraitDownload = page.waitForEvent("download");
   await downloadButton.click();
   await (await portraitDownload).saveAs("test-results/recap-portrait.png");
-  expect((await sharp("test-results/recap-portrait.png").metadata()).height).toBe(1350);
+  expect(
+    (await sharp("test-results/recap-portrait.png").metadata()).height,
+  ).toBe(1350);
   await page.getByRole("spinbutton", { name: "Reading year" }).fill("2023");
   await page.getByRole("button", { name: "View year" }).click();
   await expect(preview).toHaveAttribute(
@@ -387,4 +393,118 @@ test("reading-year recap counts only the owner's dated activity and exports with
     "aria-label",
     /0 books finished \/ 0 pages logged \/ 0 reading days/,
   );
+});
+
+test("shelfie selection, ordering and exports preserve private library data", async ({
+  page,
+}) => {
+  const owner = await login(page, "shelfie");
+  const titles = [];
+  for (let index = 0; index < 7; index++) {
+    const title = `Card ${stamp} Shelf ${index}`;
+    titles.push(title);
+    await add(owner.id, title);
+  }
+  await page.goto("/creator/cards");
+  await page
+    .getByRole("combobox", { name: "Card type", exact: true })
+    .selectOption("shelfie");
+  const downloadButton = page.getByRole("button", {
+    name: "Download PNG",
+    exact: true,
+  });
+  await expect(downloadButton).toBeDisabled();
+  for (const title of titles.slice(0, 6))
+    await page
+      .getByRole("button", { name: `${title} / A. Reader`, exact: true })
+      .click();
+  await expect(
+    page.getByRole("button", { name: `${titles[6]} / A. Reader`, exact: true }),
+  ).toBeDisabled();
+  const selected = page.getByRole("list", { name: "Selected books" });
+  await expect(selected.getByRole("listitem")).toHaveCount(6);
+  await page
+    .getByRole("textbox", { name: "Shelfie heading (optional)", exact: true })
+    .fill("Books to keep close");
+  await page
+    .getByRole("button", { name: `Move ${titles[1]} up`, exact: true })
+    .click();
+  await expect(selected.getByRole("listitem").first()).toContainText(titles[1]);
+  const preview = page
+    .getByRole("region", { name: "Card preview" })
+    .getByRole("img");
+  await expect(preview).toHaveAttribute(
+    "aria-label",
+    [
+      "Books to keep close",
+      ...[1, 0, 2, 3, 4, 5].map((i) => `${titles[i]} / A. Reader`),
+    ].join(" / "),
+  );
+  await expect(downloadButton).toBeEnabled();
+  const downloading = page.waitForEvent("download");
+  await downloadButton.click();
+  const file = await downloading;
+  expect(file.suggestedFilename()).toBe("folio-shelfie-card-square.png");
+  await file.saveAs("test-results/shelfie-card.png");
+  const data = await preview.evaluate((c) =>
+    (c as HTMLCanvasElement).toDataURL(),
+  );
+  expect(
+    (
+      await sharp(Buffer.from(data.split(",")[1], "base64"))
+        .raw()
+        .toBuffer()
+    ).equals(await sharp("test-results/shelfie-card.png").raw().toBuffer()),
+  ).toBe(true);
+  await page
+    .getByRole("button", { name: `Remove ${titles[0]}`, exact: true })
+    .click();
+  await expect(selected.getByRole("listitem")).toHaveCount(5);
+  await page
+    .getByRole("button", { name: `${titles[6]} / A. Reader`, exact: true })
+    .click();
+  await page
+    .getByRole("textbox", { name: "Search your collection" })
+    .fill("no matching title");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(
+    page.getByText("No matching books in your collection."),
+  ).toBeVisible();
+  await expect(selected.getByRole("listitem")).toHaveCount(6);
+  await page
+    .getByRole("combobox", { name: "Layout", exact: true })
+    .selectOption("portrait");
+  await page
+    .getByRole("combobox", { name: "Colour theme", exact: true })
+    .selectOption("night");
+  await expect(downloadButton).toBeEnabled();
+  const portrait = page.waitForEvent("download");
+  await downloadButton.click();
+  await (await portrait).saveAs("test-results/shelfie-portrait.png");
+  expect(
+    (await sharp("test-results/shelfie-portrait.png").metadata()).height,
+  ).toBe(1350);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page
+    .getByRole("heading", { name: "Preview", exact: true })
+    .scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "test-results/shelfie-mobile.png" });
+  for (const title of titles.filter((_, index) => index !== 0))
+    await page
+      .getByRole("button", { name: `Remove ${title}`, exact: true })
+      .click();
+  await expect(downloadButton).toBeDisabled();
+  expect(
+    await db.userBook.count({
+      where: { userId: owner.id, privateNotes: "PRIVATE_LIBRARY_NOTES" },
+    }),
+  ).toBe(7);
+  expect(
+    (await db.user.findUniqueOrThrow({ where: { id: owner.id } })).blogEnabled,
+  ).toBe(false);
 });

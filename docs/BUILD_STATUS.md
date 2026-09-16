@@ -183,7 +183,16 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Owner-scoped queries select only session dates/progress, a finished-book count and public-byline eligibility. Books finished count dated entries on the Read shelf; pages sum positive session progress and reading days count distinct dates with positive progress. Undated finishes and separate reread cycles are excluded. Empty years remain exportable with zero totals.
 - Reused the card studio's Paper/Night themes, square/portrait layout, preview readiness, optional byline and PNG retry. Recap downloads contain only the displayed aggregate counts, year, cutoff and opted-in public username. No notes, book titles or account names are included. Downloading does not publish or change visibility. No schema or dependency changes.
 
+## Shelfie cards continuation
+
+- Added Shelfie card to the existing studio. Select up to six distinct catalogue works across searches/pages, remove items and reorder with labelled Up/Down buttons. Alternate editions of one work cannot be added twice. The selection survives searches and card-mode changes in the open page.
+- Added an optional heading and illustrated horizontal book spines containing titles/authors, with Paper/Night themes and square/portrait exports. Text fits reserved regions or produces a visible error rather than silent clipping. No external cover requests or new storage are involved.
+- Empty selections cannot export. Exports use the existing preview-readiness, retry and optional public-byline controls. Only selected catalogue text, heading and opted-in public username appear. Selection and downloads leave library books, notes, shelves and publishing settings unchanged.
+- Selection/heading are not saved across navigation. Photo/cover-based shelfies and direct social integrations remain future work. No schema or dependency changes.
+
 ## Validation
+
+- Shelfie continuation: production build (including lint/type checks), standalone typecheck, unit checks and all four card browser scenarios pass (16 seconds). New coverage verifies empty/six-book limits, reordering/removal, selection retained through searches, matching preview/PNG pixels, portrait dimensions, mobile width and preserved library notes/publishing settings. Existing book, quote, recap, retry and collection-isolation checks also pass. Square/portrait shelfie exports and mobile preview were visually inspected. The unrelated regression suite was not rerun; no deployment or push.
 
 - Reading-year recap continuation: production build (including lint/type checks), unit tests and all three card browser scenarios pass (12 seconds). Checks cover year boundaries, repeated/zero-progress reading dates, empty years, owner-only totals, note exclusion, unchanged visibility, square/portrait PNG dimensions and matching preview pixels. Existing book/quote download, retry, byline and collection-isolation tests also pass. Both recap exports and mobile preview were visually inspected. The unrelated regression suite was not rerun; no deployment or push.
 
@@ -237,4 +246,4 @@ Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provid
 
 Next Phase 2 work: live acquisition/availability integrations, plus a successful live-provider check of the edition metadata flow. Reading paths now support manual creation, publishing and following. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
 
-Next build work: shelfie cards for selected books. Further account work includes password recovery, email changes and account deletion. Later phases include AI gift expansion, further creator tools, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.
+Next build work: account settings and deletion. Further account work includes password recovery, email changes and account deletion. Later phases include AI gift expansion, further creator tools, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.
