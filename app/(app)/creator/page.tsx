@@ -1,3 +1,4 @@
+import { AppealArticle } from "@/components/articles/ArticleAppealActions";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -23,6 +24,12 @@ export default async function Page({
   return (
     <main className="max-w-3xl mx-auto p-6 space-y-6">
       <h1 className="font-display text-4xl">Your articles</h1>
+      <Link href="/creator/appeals" className="underline">
+        Your article appeals
+      </Link>
+      <Link href="/community/reviews" className="underline">
+        Start from a review
+      </Link>
       <p>
         Write privately and publish when you are ready. Your public blog is{" "}
         {user.blogEnabled ? "enabled" : "disabled"}.
@@ -56,6 +63,12 @@ export default async function Page({
               {a.title}
             </Link>
           </h2>
+          {a.isHidden && (
+            <AppealArticle
+              articleId={a.id}
+              moderationVersion={a.moderationVersion}
+            />
+          )}
           <p>
             {a.isHidden
               ? "Hidden by moderation"

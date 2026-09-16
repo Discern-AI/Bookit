@@ -420,6 +420,9 @@ model ReviewAppeal {
 }
 
 model Article {
+  sourceReviewId String?
+  sourceReviewVersion Int?
+  appeals ArticleAppeal[]
   isHidden Boolean @default(false)
   moderationVersion Int @default(0)
   reports ArticleReport[]
@@ -443,6 +446,7 @@ model Article {
  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
  @@index([userId, updatedAt])
  @@index([isPublic, publishedAt])
+ @@unique([userId,sourceReviewId,sourceReviewVersion])
 }
 
 model ArticleImage {
@@ -476,5 +480,23 @@ model ArticleReport {
  article Article @relation(fields:[articleId],references:[id],onDelete:Cascade)
  reporter User @relation(fields:[reporterId],references:[id],onDelete:Cascade)
  @@unique([articleId,reporterId,publishedVersion])
+ @@index([status,createdAt])
+}
+
+model ArticleAppeal {
+ id String @id @default(cuid())
+ articleId String
+ moderationVersion Int
+ reason String
+ title String
+ snapshot Json
+ imageIds String[]
+ status String @default("pending")
+ response String @default("")
+ createdAt DateTime @default(now())
+ resolvedAt DateTime?
+ resolvedById String?
+ article Article @relation(fields:[articleId],references:[id],onDelete:Cascade)
+ @@unique([articleId,moderationVersion])
  @@index([status,createdAt])
 }

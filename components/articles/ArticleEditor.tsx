@@ -1,5 +1,6 @@
 "use client";
 import { ArticleImageNode, BookCardNode } from "./ArticleNodes";
+import { AppealArticle } from "./ArticleAppealActions";
 import { ArticleRecovery } from "./ArticleRecovery";
 import { ArticleEmbeds } from "./ArticleEmbeds";
 import { useEffect, useState } from "react";
@@ -23,6 +24,7 @@ type Draft = {
   isPublic: boolean;
   publishedVersion: number | null;
   isHidden?: boolean;
+  moderationVersion?: number;
 };
 export function ArticleEditor({
   initial,
@@ -177,6 +179,12 @@ export function ArticleEditor({
           Hidden by moderation. You can edit your private draft, but publishing
           is blocked until a moderator lifts the restriction.
         </p>
+      )}
+      {initial.isHidden && (
+        <AppealArticle
+          articleId={initial.id}
+          moderationVersion={initial.moderationVersion ?? 0}
+        />
       )}
       <ArticleRecovery
         userId={userId}

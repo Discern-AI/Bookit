@@ -23,6 +23,7 @@ export default async function Page({
       initial={{
         id: article.id,
         isHidden: article.isHidden,
+        moderationVersion: article.moderationVersion,
         title: article.title,
         excerpt: article.excerpt,
         content: parseArticleContent(article.content),

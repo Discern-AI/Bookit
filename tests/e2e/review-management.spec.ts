@@ -97,11 +97,17 @@ test("private review dashboard filters, searches, paginates and resumes drafts",
     page.getByRole("heading", { name: "Your reviews", exact: true }),
   ).toBeVisible();
   await page.getByRole("link", { name: "drafts", exact: true }).click();
+  await expect(
+    page.getByRole("link", { name: "drafts", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
   await expect(page.locator("article")).toHaveCount(20);
   await page.getByRole("link", { name: "Next", exact: true }).click();
   await expect(page).toHaveURL(/status=drafts&page=2/);
   await expect(page.locator("article")).toHaveCount(1);
   await page.getByRole("link", { name: "published", exact: true }).click();
+  await expect(
+    page.getByRole("link", { name: "published", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
   await expect(page.locator("article")).toHaveCount(1);
   await expect(
     page.getByRole("link", { name: "View discussion", exact: true }),
@@ -116,6 +122,9 @@ test("private review dashboard filters, searches, paginates and resumes drafts",
     page.getByRole("link", { name: "View discussion", exact: true }),
   ).toHaveCount(0);
   await page.getByRole("link", { name: "all", exact: true }).click();
+  await expect(
+    page.getByRole("link", { name: "all", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
   await page
     .getByRole("textbox", { name: "Search your reviews" })
     .fill(`Management ${stamp} draft20`);

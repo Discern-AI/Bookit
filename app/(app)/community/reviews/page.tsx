@@ -1,3 +1,4 @@
+import { ReviewToArticle } from "@/components/articles/ReviewToArticle";
 import { AppealReview } from "@/components/community/AppealReview";
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
@@ -155,6 +156,9 @@ export default async function Page({
                 workId={review.workId}
                 moderationVersion={review.moderationVersion}
               />
+            )}
+            {!review.isHidden && (
+              <ReviewToArticle reviewId={review.id} version={review.version} />
             )}
             <DeleteReview
               id={review.id}

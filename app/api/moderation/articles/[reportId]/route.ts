@@ -107,6 +107,23 @@ export async function PATCH(
         },
       });
     }
+    if (action !== "dismiss")
+      await tx.articleAppeal.updateMany({
+        where: {
+          articleId: article.id,
+          moderationVersion: article.moderationVersion,
+          status: "pending",
+        },
+        data: {
+          status: action === "restore" ? "restored" : "superseded",
+          response:
+            action === "restore"
+              ? note
+              : "A newer moderation decision replaced this appeal. You can appeal the current restriction.",
+          resolvedAt: new Date(),
+          resolvedById: session.user.id,
+        },
+      });
     return { status: 200 };
   });
   return Response.json(result, { status: result.status });

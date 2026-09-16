@@ -167,6 +167,16 @@ export async function POST(
       });
     else {
       await tx.articleImage.deleteMany({ where: { articleId: article.id } });
+      await tx.articleAppeal.updateMany({
+        where: { articleId: article.id, status: "pending" },
+        data: {
+          status: "withdrawn",
+          response:
+            "The author deleted this article. Its content cannot be restored through an appeal.",
+          resolvedAt: new Date(),
+          resolvedById: userId,
+        },
+      });
       await tx.article.update({
         where: { id: article.id },
         data: {

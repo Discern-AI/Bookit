@@ -202,3 +202,10 @@ assert.throws(()=>parseArticleRecovery(JSON.stringify({...recovery,updatedAt:Dat
 assert.throws(()=>parseArticleRecovery(JSON.stringify({...recovery,content:{type:"script"}})));
 assert.throws(()=>parseArticleRecovery("x".repeat(350001)));
 console.log("Article recovery validation and expiry checks passed");
+
+const {reviewArticleContent}=require("../lib/review-article.ts");
+const converted=reviewArticleContent("First line\ncontinued.\n\n<script>literal text</script>");
+assert.equal(converted.content.length,2);
+assert.equal(articleText(converted),"First line continued.\n<script>literal text</script>\n");
+assert.throws(()=>reviewArticleContent("   "));
+console.log("Review-to-article text and paragraph conversion checks passed");

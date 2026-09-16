@@ -55,7 +55,18 @@ export async function GET(
             select: { id: true },
           })
         : null;
-      if (!evidence) return new Response("Not found", { status: 404, headers });
+      const appealEvidence =
+        !evidence && moderator?.isModerator
+          ? await prisma.articleAppeal.findFirst({
+              where: {
+                article: { userId: a.userId },
+                imageIds: { has: params.imageId },
+              },
+              select: { id: true },
+            })
+          : null;
+      if (!evidence && !appealEvidence)
+        return new Response("Not found", { status: 404, headers });
     }
   }
   const bytes = await prisma.articleImage.findUnique({
