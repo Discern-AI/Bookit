@@ -217,3 +217,10 @@ assert.deepEqual(wrapCardText("first\n\nlast",10,t=>t.length),["first","","last"
 const cardDescription=shareCardDescription({kind:"book",format:"square",theme:"paper",book:{editionId:"e",workId:"w",title:"Book",authorName:"Author",coverUrl:"https://example.test/cover"},quote:"UNUSED_QUOTE",caption:"My pick",page:"UNUSED_PAGE",byline:""});
 assert.equal(cardDescription,"My pick / Book / Author");
 console.log("Share-card wrapping and exported-field description checks passed");
+
+const {recapPeriod,recapCounts}=require("../lib/reading-recap.ts");
+assert.deepEqual(recapPeriod("2024","2026-09-16"),{year:2024,through:"2024-12-31"});
+for(const value of [undefined,"oops","2027","1899","2024x"]) assert.deepEqual(recapPeriod(value,"2026-09-16"),{year:2026,through:"2026-09-16"});
+assert.deepEqual(recapCounts([{date:new Date("2024-02-29T12:00Z"),pageStart:0,pageEnd:20},{date:new Date("2024-02-29T23:00Z"),pageStart:20,pageEnd:25},{date:new Date("2024-03-01T12:00Z"),pageStart:25,pageEnd:25}]),{pages:25,days:1});
+assert.deepEqual(recapCounts([]),{pages:0,days:0});
+console.log("Reading recap year boundaries and progress totals passed");

@@ -177,7 +177,15 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Rendering/export runs in the browser without cover requests or new server storage. Preview readiness tracks every card input to prevent exporting an outdated rendering. Export failures allow retry; collection request failures preserve the current card and support search retry. Long words wrap in the selection UI.
 - This first version uses typographic cards, not cover imagery. Templates/text are not persisted across navigation; users download before leaving. Cover inclusion, saved presets, reading-year recaps, shelfies and direct social integrations remain future work. No migration or dependency installation was needed.
 
+## Reading-year recap continuation
+
+- Added a protected Creator recap page with year selection (1900 through the current year), current-year cutoff and historical full-year totals. Invalid URL years fall back to the current year. Date boundaries use UTC, matching stored reading dates.
+- Owner-scoped queries select only session dates/progress, a finished-book count and public-byline eligibility. Books finished count dated entries on the Read shelf; pages sum positive session progress and reading days count distinct dates with positive progress. Undated finishes and separate reread cycles are excluded. Empty years remain exportable with zero totals.
+- Reused the card studio's Paper/Night themes, square/portrait layout, preview readiness, optional byline and PNG retry. Recap downloads contain only the displayed aggregate counts, year, cutoff and opted-in public username. No notes, book titles or account names are included. Downloading does not publish or change visibility. No schema or dependency changes.
+
 ## Validation
+
+- Reading-year recap continuation: production build (including lint/type checks), unit tests and all three card browser scenarios pass (12 seconds). Checks cover year boundaries, repeated/zero-progress reading dates, empty years, owner-only totals, note exclusion, unchanged visibility, square/portrait PNG dimensions and matching preview pixels. Existing book/quote download, retry, byline and collection-isolation tests also pass. Both recap exports and mobile preview were visually inspected. The unrelated regression suite was not rerun; no deployment or push.
 
 - Share-card continuation: production build (including lint/type checks) and unit tests pass. Both targeted browser scenarios pass together (7.9 seconds) after correcting exact-label test selectors. Checks cover matching preview/export pixels, PNG dimensions, quote layout/themes, optional public byline, private-field exclusion, unchanged publishing state, failed-export retry, oversized-text rejection/recovery, collection search/pagination, account isolation and lookup retry. Book/quote exports and mobile preview were visually inspected. The unrelated regression suite was not rerun. No migration, dependency change, deployment or push.
 
@@ -229,4 +237,4 @@ Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provid
 
 Next Phase 2 work: live acquisition/availability integrations, plus a successful live-provider check of the edition metadata flow. Reading paths now support manual creation, publishing and following. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
 
-Next build work: shareable reading-year recap cards. Further account work includes password recovery, email changes and account deletion. Later phases include AI gift expansion, further creator tools, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.
+Next build work: shelfie cards for selected books. Further account work includes password recovery, email changes and account deletion. Later phases include AI gift expansion, further creator tools, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.

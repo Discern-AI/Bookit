@@ -7,8 +7,15 @@ import {
   shareCardDescription,
   ShareCardBook,
   ShareCardInput,
+  ReadingRecap,
 } from "@/lib/share-cards";
-export function ShareCardStudio({ publicByline }: { publicByline: string }) {
+export function ShareCardStudio({
+  publicByline,
+  recap,
+}: {
+  publicByline: string;
+  recap?: ReadingRecap;
+}) {
   const [books, setBooks] = useState<ShareCardBook[]>([]);
   const [book, setBook] = useState<ShareCardBook | null>(null);
   const [q, setQ] = useState("");
@@ -31,18 +38,26 @@ export function ShareCardStudio({ publicByline }: { publicByline: string }) {
   const display = useRef<HTMLSpanElement>(null);
   const body = useRef<HTMLSpanElement>(null);
   const requestNumber = useRef(0);
-  const input: ShareCardInput | null = book
+  const input: ShareCardInput | null = recap
     ? {
-        kind,
+        kind: "recap",
+        recap,
         format,
         theme,
-        book,
-        caption,
-        quote,
-        page: reference,
         byline: includeByline ? publicByline : "",
       }
-    : null;
+    : book
+      ? {
+          kind,
+          format,
+          theme,
+          book,
+          caption,
+          quote,
+          page: reference,
+          byline: includeByline ? publicByline : "",
+        }
+      : null;
   const fingerprint = JSON.stringify(input);
   const current = useRef(fingerprint);
   current.current = fingerprint;
@@ -71,7 +86,7 @@ export function ShareCardStudio({ publicByline }: { publicByline: string }) {
     }
   }
   useEffect(() => {
-    void search(); /* The initial collection query runs once. */ // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!recap) void search(); /* The initial collection query runs once. */ // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     let cancelled = false;
@@ -141,7 +156,7 @@ export function ShareCardStudio({ publicByline }: { publicByline: string }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `folio-${kind}-card-${format}.png`;
+      a.download = `folio-${recap ? `recap-${recap.year}` : kind}-card-${format}.png`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) {
@@ -155,116 +170,131 @@ export function ShareCardStudio({ publicByline }: { publicByline: string }) {
       <Link className="underline" href="/creator">
         Your articles
       </Link>
-      <h1 className="font-display text-4xl">Shareable cards</h1>
+      <h1 className="font-display text-4xl">
+        {recap ? "Reading-year recap" : "Shareable cards"}
+      </h1>
       <p>
-        Make a book or quote card and download a PNG to share. Only the fields
-        shown in the preview are included.
+        {recap
+          ? "Download your reading year as a PNG. Counts reflect your saved records through the date shown."
+          : "Make a book or quote card and download a PNG to share. Only the fields shown in the preview are included."}
       </p>
       <div className="grid lg:grid-cols-2 gap-8">
         <section className="space-y-4" aria-label="Card controls">
-          <h2 className="font-display text-2xl">Choose a book</h2>
-          <form
-            className="flex gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void search();
-            }}
-          >
-            <input
-              className="min-w-0 flex-1 border border-ink-200 rounded p-2"
-              aria-label="Search your collection"
-              value={q}
-              maxLength={160}
-              onChange={(e) => setQ(e.target.value)}
-            />
-            <Button loading={loading}>Search</Button>
-          </form>
-          {searchError && <p role="alert">{searchError}</p>}
-          {!loading && !books.length && !searchError && (
-            <p>No matching books in your collection.</p>
-          )}
-          <div className="max-h-64 overflow-y-auto space-y-2">
-            {books.map((b) => (
-              <Button
-                key={b.editionId}
-                variant="secondary"
-                className="w-full h-auto py-3 justify-start text-left"
-                aria-pressed={book?.editionId === b.editionId}
-                onClick={() => setBook(b)}
-              >
-                <span className="min-w-0 break-words">
-                  {b.title} / {b.authorName}
-                </span>
-              </Button>
-            ))}
-          </div>
-          <nav className="flex gap-3" aria-label="Collection pages">
-            {page > 1 && (
-              <Button
-                variant="secondary"
-                disabled={loading}
-                onClick={() => search(page - 1)}
-              >
-                Previous books
-              </Button>
-            )}
-            {hasNext && (
-              <Button
-                variant="secondary"
-                disabled={loading}
-                onClick={() => search(page + 1)}
-              >
-                Next books
-              </Button>
-            )}
-          </nav>
-          {book && <p>Selected: {book.title}</p>}
-          <label className="block">
-            Card type
-            <select
-              className="block w-full border border-ink-200 rounded p-2"
-              value={kind}
-              onChange={(e) => setKind(e.target.value as typeof kind)}
-            >
-              <option value="book">Book card</option>
-              <option value="quote">Quote card</option>
-            </select>
-          </label>
-          {kind === "book" ? (
-            <label className="block">
-              Caption (optional)
-              <textarea
-                className="block w-full border border-ink-200 rounded p-2"
-                value={caption}
-                maxLength={180}
-                onChange={(e) => setCaption(e.target.value)}
-              />
-            </label>
-          ) : (
+          {!recap && (
             <>
-              <label className="block">
-                Quote
-                <textarea
-                  className="block w-full border border-ink-200 rounded p-2"
-                  value={quote}
-                  maxLength={500}
-                  onChange={(e) => setQuote(e.target.value)}
-                />
-              </label>
-              <p className="text-sm text-ink-500">
-                Enter the quote from your copy of the book and check its wording
-                and attribution.
-              </p>
-              <label className="block">
-                Page or reference (optional)
+              <h2 className="font-display text-2xl">Choose a book</h2>
+              <form
+                className="flex gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void search();
+                }}
+              >
                 <input
-                  className="block w-full border border-ink-200 rounded p-2"
-                  value={reference}
-                  maxLength={40}
-                  onChange={(e) => setReference(e.target.value)}
+                  className="min-w-0 flex-1 border border-ink-200 rounded p-2"
+                  aria-label="Search your collection"
+                  value={q}
+                  maxLength={160}
+                  onChange={(e) => setQ(e.target.value)}
                 />
+                <Button loading={loading}>Search</Button>
+              </form>
+              {searchError && <p role="alert">{searchError}</p>}
+              {!loading && !books.length && !searchError && (
+                <p>No matching books in your collection.</p>
+              )}
+              <div className="max-h-64 overflow-y-auto space-y-2">
+                {books.map((b) => (
+                  <Button
+                    key={b.editionId}
+                    variant="secondary"
+                    className="w-full h-auto py-3 justify-start text-left"
+                    aria-pressed={book?.editionId === b.editionId}
+                    onClick={() => setBook(b)}
+                  >
+                    <span className="min-w-0 break-words">
+                      {b.title} / {b.authorName}
+                    </span>
+                  </Button>
+                ))}
+              </div>
+              <nav className="flex gap-3" aria-label="Collection pages">
+                {page > 1 && (
+                  <Button
+                    variant="secondary"
+                    disabled={loading}
+                    onClick={() => search(page - 1)}
+                  >
+                    Previous books
+                  </Button>
+                )}
+                {hasNext && (
+                  <Button
+                    variant="secondary"
+                    disabled={loading}
+                    onClick={() => search(page + 1)}
+                  >
+                    Next books
+                  </Button>
+                )}
+              </nav>
+              {book && <p>Selected: {book.title}</p>}
+              <label className="block">
+                Card type
+                <select
+                  className="block w-full border border-ink-200 rounded p-2"
+                  value={kind}
+                  onChange={(e) => setKind(e.target.value as typeof kind)}
+                >
+                  <option value="book">Book card</option>
+                  <option value="quote">Quote card</option>
+                </select>
               </label>
+              {kind === "book" ? (
+                <label className="block">
+                  Caption (optional)
+                  <textarea
+                    className="block w-full border border-ink-200 rounded p-2"
+                    value={caption}
+                    maxLength={180}
+                    onChange={(e) => setCaption(e.target.value)}
+                  />
+                </label>
+              ) : (
+                <>
+                  <label className="block">
+                    Quote
+                    <textarea
+                      className="block w-full border border-ink-200 rounded p-2"
+                      value={quote}
+                      maxLength={500}
+                      onChange={(e) => setQuote(e.target.value)}
+                    />
+                  </label>
+                  <p className="text-sm text-ink-500">
+                    Enter the quote from your copy of the book and check its
+                    wording and attribution.
+                  </p>
+                  <label className="block">
+                    Page or reference (optional)
+                    <input
+                      className="block w-full border border-ink-200 rounded p-2"
+                      value={reference}
+                      maxLength={40}
+                      onChange={(e) => setReference(e.target.value)}
+                    />
+                  </label>
+                </>
+              )}
             </>
+          )}
+          {recap && (
+            <p>
+              Books finished use dated books on your Read shelf. Pages logged
+              total reading-session progress; reading days count dates with
+              positive progress. Undated finishes and separate reread cycles are
+              not included.
+            </p>
           )}
           <label className="block">
             Layout
@@ -321,7 +351,7 @@ export function ShareCardStudio({ publicByline }: { publicByline: string }) {
             <span ref={display} className="font-display" />
             <span ref={body} className="font-body" />
           </div>
-          {!book && <p>Select a book to start your card.</p>}
+          {!input && <p>Select a book to start your card.</p>}
           <canvas
             ref={canvas}
             role="img"
@@ -329,7 +359,7 @@ export function ShareCardStudio({ publicByline }: { publicByline: string }) {
             className={`w-full h-auto rounded shadow-card ${!input || rendered !== fingerprint ? "hidden" : ""}`}
           />
           {error && <p role="alert">{error}</p>}
-          {book && !error && rendered !== fingerprint && (
+          {input && !error && rendered !== fingerprint && (
             <p role="status">Preparing preview...</p>
           )}
           <Button

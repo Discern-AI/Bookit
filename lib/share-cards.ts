@@ -5,16 +5,27 @@ export type ShareCardBook = {
   authorName: string;
   coverUrl: string;
 };
+export type ReadingRecap = {
+  year: number;
+  through: string;
+  books: number;
+  pages: number;
+  days: number;
+};
 export type ShareCardInput = {
-  kind: "book" | "quote";
   format: "square" | "portrait";
   theme: "paper" | "night";
-  book: ShareCardBook;
-  quote: string;
-  caption: string;
-  page: string;
   byline: string;
-};
+} & (
+  | { kind: "recap"; recap: ReadingRecap }
+  | {
+      kind: "book" | "quote";
+      book: ShareCardBook;
+      quote: string;
+      caption: string;
+      page: string;
+    }
+);
 export function wrapCardText(
   text: string,
   maxWidth: number,
@@ -53,6 +64,8 @@ export function wrapCardText(
   return lines;
 }
 export function shareCardDescription(input: ShareCardInput) {
+  if (input.kind === "recap")
+    return `${input.recap.year} reading recap / ${input.recap.books} books finished / ${input.recap.pages} pages logged / ${input.recap.days} reading days / Through ${input.recap.through}${input.byline ? ` / ${input.byline}` : ""}`;
   return [
     input.kind === "quote" ? input.quote : input.caption,
     input.book.title,
@@ -122,7 +135,21 @@ export function drawShareCard(
   ctx.moveTo(96, 154);
   ctx.lineTo(984, 154);
   ctx.stroke();
-  if (input.kind === "book") {
+  if (input.kind === "recap") {
+    label("MY READING YEAR", 208, 22);
+    block(String(input.recap.year), 260, 150, 112, 60, style.displayFont);
+    const rows = [
+      [input.recap.books, "BOOKS FINISHED"],
+      [input.recap.pages, "PAGES LOGGED"],
+      [input.recap.days, "READING DAYS"],
+    ] as const;
+    rows.forEach(([count, title], index) => {
+      const y = 440 + index * (input.format === "portrait" ? 210 : 145);
+      block(count.toLocaleString("en-GB"), y, 85, 64, 32, style.displayFont);
+      label(title, y + 82, 20);
+    });
+    label(`Through ${input.recap.through}`, height - 155, 20);
+  } else if (input.kind === "book") {
     label("ON MY BOOKSHELF", 208, 22);
     const titleHeight = block(
       input.book.title,

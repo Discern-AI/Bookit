@@ -193,7 +193,9 @@ test("book and quote cards export matching PNGs with optional byline and unchang
     path: "test-results/card-studio-mobile.png",
     fullPage: true,
   });
-  await page.getByRole("textbox", { name: "Quote", exact: true }).fill("W".repeat(500));
+  await page
+    .getByRole("textbox", { name: "Quote", exact: true })
+    .fill("W".repeat(500));
   await page
     .getByRole("combobox", { name: "Layout", exact: true })
     .selectOption("square");
@@ -268,4 +270,121 @@ test("collection search and pagination stay private and recover from lookup fail
   ).toBeDisabled();
   await expect(other.locator("body")).not.toContainText(`Card ${stamp}`);
   await context.close();
+});
+
+test("reading-year recap counts only the owner's dated activity and exports without publishing", async ({
+  page,
+}) => {
+  const owner = await login(page, "recap");
+  await db.user.update({
+    where: { id: owner.id },
+    data: { profilePublic: false },
+  });
+  await add(owner.id, `Card ${stamp} Recap`);
+  const book = await db.userBook.findFirstOrThrow({
+    where: { userId: owner.id },
+  });
+  await db.userBook.update({
+    where: { id: book.id },
+    data: { dateFinished: new Date("2024-12-31T12:00:00Z") },
+  });
+  await db.readingSession.createMany({
+    data: [
+      {
+        userId: owner.id,
+        userBookId: book.id,
+        date: new Date("2024-01-01T12:00:00Z"),
+        pageStart: 0,
+        pageEnd: 30,
+        note: "PRIVATE_SESSION_NOTE",
+      },
+      {
+        userId: owner.id,
+        userBookId: book.id,
+        date: new Date("2024-01-01T15:00:00Z"),
+        pageStart: 30,
+        pageEnd: 50,
+      },
+      {
+        userId: owner.id,
+        userBookId: book.id,
+        date: new Date("2024-12-31T12:00:00Z"),
+        pageStart: 50,
+        pageEnd: 60,
+      },
+      {
+        userId: owner.id,
+        userBookId: book.id,
+        date: new Date("2025-01-01T00:00:00Z"),
+        pageStart: 60,
+        pageEnd: 100,
+      },
+    ],
+  });
+  await page.goto("/creator/recap?year=2024");
+  const preview = page
+    .getByRole("region", { name: "Card preview" })
+    .getByRole("img");
+  await expect(preview).toHaveAttribute(
+    "aria-label",
+    "2024 reading recap / 1 books finished / 60 pages logged / 2 reading days / Through 2024-12-31",
+  );
+  await expect(page.getByRole("checkbox")).toHaveCount(0);
+  expect(await page.content()).not.toContain("PRIVATE_SESSION_NOTE");
+  expect(await page.content()).not.toContain("PRIVATE_LIBRARY_NOTES");
+  const downloadButton = page.getByRole("button", {
+    name: "Download PNG",
+    exact: true,
+  });
+  await expect(downloadButton).toBeEnabled();
+  const downloading = page.waitForEvent("download");
+  await downloadButton.click();
+  const download = await downloading;
+  expect(download.suggestedFilename()).toBe("folio-recap-2024-card-square.png");
+  await download.saveAs("test-results/recap-card.png");
+  expect((await sharp("test-results/recap-card.png").metadata()).width).toBe(
+    1080,
+  );
+  const data = await preview.evaluate((c) =>
+    (c as HTMLCanvasElement).toDataURL(),
+  );
+  expect(
+    (
+      await sharp(Buffer.from(data.split(",")[1], "base64"))
+        .raw()
+        .toBuffer()
+    ).equals(await sharp("test-results/recap-card.png").raw().toBuffer()),
+  ).toBe(true);
+  await page.getByRole("combobox", { name: "Layout", exact: true }).selectOption("portrait");
+  await page.getByRole("combobox", { name: "Colour theme", exact: true }).selectOption("night");
+  await expect(downloadButton).toBeEnabled();
+  const portraitDownload = page.waitForEvent("download");
+  await downloadButton.click();
+  await (await portraitDownload).saveAs("test-results/recap-portrait.png");
+  expect((await sharp("test-results/recap-portrait.png").metadata()).height).toBe(1350);
+  await page.getByRole("spinbutton", { name: "Reading year" }).fill("2023");
+  await page.getByRole("button", { name: "View year" }).click();
+  await expect(preview).toHaveAttribute(
+    "aria-label",
+    /2023 reading recap \/ 0 books finished \/ 0 pages logged \/ 0 reading days/,
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page
+    .getByRole("heading", { name: "Preview", exact: true })
+    .scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "test-results/recap-mobile.png" });
+  const after = await db.user.findUniqueOrThrow({ where: { id: owner.id } });
+  expect(after.profilePublic).toBe(false);
+  expect(after.blogEnabled).toBe(false);
+  await login(page, "recapother");
+  await page.goto("/creator/recap?year=2024");
+  await expect(preview).toHaveAttribute(
+    "aria-label",
+    /0 books finished \/ 0 pages logged \/ 0 reading days/,
+  );
 });
