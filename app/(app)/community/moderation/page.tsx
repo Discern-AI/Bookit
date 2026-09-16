@@ -37,6 +37,9 @@ export default async function Page({
   return (
     <main className="max-w-2xl mx-auto p-6 space-y-6">
       <h1 className="font-display text-3xl">Moderation reports</h1>
+      <Link className="underline" href="/community/moderation/articles">
+        Article reports
+      </Link>
       <Link className="underline" href="/community/moderation/appeals">
         Review appeals
       </Link>

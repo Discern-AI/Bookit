@@ -122,6 +122,12 @@ export async function POST(
         error: "This article changed elsewhere. Reload before continuing.",
       };
     if (action === "publish") {
+      if (article.isHidden)
+        return {
+          status: 403,
+          error:
+            "This article is hidden by moderation. You can edit the draft, but cannot publish it until the restriction is lifted.",
+        };
       const user = await tx.user.findUniqueOrThrow({
         where: { id: userId },
         select: { blogEnabled: true, profilePublic: true },

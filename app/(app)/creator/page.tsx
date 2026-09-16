@@ -57,20 +57,25 @@ export default async function Page({
             </Link>
           </h2>
           <p>
-            {a.isPublic
-              ? user.blogEnabled && user.profilePublic
-                ? "Published"
-                : "Published version hidden by your settings"
-              : "Private draft"}
+            {a.isHidden
+              ? "Hidden by moderation"
+              : a.isPublic
+                ? user.blogEnabled && user.profilePublic
+                  ? "Published"
+                  : "Published version hidden by your settings"
+                : "Private draft"}
             {a.isPublic && a.publishedVersion !== a.version
               ? " / Unpublished changes"
               : ""}
           </p>
-          {a.isPublic && user.blogEnabled && user.profilePublic && (
-            <Link href={`/article/${a.id}`} className="underline">
-              View published article
-            </Link>
-          )}
+          {!a.isHidden &&
+            a.isPublic &&
+            user.blogEnabled &&
+            user.profilePublic && (
+              <Link href={`/article/${a.id}`} className="underline">
+                View published article
+              </Link>
+            )}
         </article>
       ))}
       <nav className="flex gap-4" aria-label="Your article pages">

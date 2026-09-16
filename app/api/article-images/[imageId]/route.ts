@@ -14,6 +14,7 @@ export async function GET(
           userId: true,
           deletedAt: true,
           isPublic: true,
+          isHidden: true,
           publishedContent: true,
           user: { select: { profilePublic: true, blogEnabled: true } },
         },
@@ -28,6 +29,7 @@ export async function GET(
     return new Response("Not found", { status: 404, headers });
   const a = image.article;
   const published =
+    !a.isHidden &&
     a.isPublic &&
     a.user.profilePublic &&
     a.user.blogEnabled &&
@@ -37,8 +39,24 @@ export async function GET(
     );
   if (!published) {
     const session = await auth();
-    if (session?.user?.id !== a.userId)
-      return new Response("Not found", { status: 404, headers });
+    if (session?.user?.id !== a.userId) {
+      const moderator = session?.user?.id
+        ? await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { isModerator: true },
+          })
+        : null;
+      const evidence = moderator?.isModerator
+        ? await prisma.articleReport.findFirst({
+            where: {
+              article: { userId: a.userId },
+              imageIds: { has: params.imageId },
+            },
+            select: { id: true },
+          })
+        : null;
+      if (!evidence) return new Response("Not found", { status: 404, headers });
+    }
   }
   const bytes = await prisma.articleImage.findUnique({
     where: { id: params.imageId },

@@ -193,3 +193,12 @@ console.log("Article image and book-card schema checks passed");
 const {articleFingerprint}=require("../lib/articles.ts");
 assert.equal(articleFingerprint({type:"doc",content:[{type:"articleImage",attrs:{alt:"Text",imageId:"id",caption:""}}]}),articleFingerprint({content:[{attrs:{caption:"",imageId:"id",alt:"Text"},type:"articleImage"}],type:"doc"}));
 assert.notEqual(articleFingerprint({content:["a","b"]}),articleFingerprint({content:["b","a"]}));
+
+const {parseArticleRecovery}=require("../lib/article-recovery.ts");
+const recovery={version:0,title:"",excerpt:"",content:{type:"doc",content:[{type:"paragraph"}]},updatedAt:Date.now()};
+assert.equal(parseArticleRecovery(JSON.stringify(recovery)).version,0);
+assert.throws(()=>parseArticleRecovery(JSON.stringify({...recovery,updatedAt:Date.now()-8*24*60*60*1000})));
+assert.throws(()=>parseArticleRecovery(JSON.stringify({...recovery,updatedAt:Date.now()+120000})));
+assert.throws(()=>parseArticleRecovery(JSON.stringify({...recovery,content:{type:"script"}})));
+assert.throws(()=>parseArticleRecovery("x".repeat(350001)));
+console.log("Article recovery validation and expiry checks passed");

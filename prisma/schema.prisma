@@ -48,6 +48,7 @@ model VerificationToken {
 }
 
 model User {
+  articleReports ArticleReport[]
   blogEnabled Boolean @default(false)
   blogVersion Int @default(0)
   articles Article[]
@@ -419,6 +420,9 @@ model ReviewAppeal {
 }
 
 model Article {
+  isHidden Boolean @default(false)
+  moderationVersion Int @default(0)
+  reports ArticleReport[]
   images ArticleImage[]
  id String @id
  userId String
@@ -448,4 +452,29 @@ model ArticleImage {
   createdAt DateTime @default(now())
   article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
   @@index([articleId])
+}
+
+model ArticleReport {
+ id String @id @default(cuid())
+ articleId String
+ reporterId String
+ publishedVersion Int
+ title String
+ snapshot Json
+ imageIds String[]
+ reason String
+ details String
+ status String @default("pending")
+ decisionVersion Int?
+ note String @default("")
+ resolvedById String?
+ resolvedAt DateTime?
+ restoreNote String @default("")
+ restoredById String?
+ restoredAt DateTime?
+ createdAt DateTime @default(now())
+ article Article @relation(fields:[articleId],references:[id],onDelete:Cascade)
+ reporter User @relation(fields:[reporterId],references:[id],onDelete:Cascade)
+ @@unique([articleId,reporterId,publishedVersion])
+ @@index([status,createdAt])
 }

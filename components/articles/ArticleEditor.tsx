@@ -1,5 +1,6 @@
 "use client";
 import { ArticleImageNode, BookCardNode } from "./ArticleNodes";
+import { ArticleRecovery } from "./ArticleRecovery";
 import { ArticleEmbeds } from "./ArticleEmbeds";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -21,8 +22,17 @@ type Draft = {
   version: number;
   isPublic: boolean;
   publishedVersion: number | null;
+  isHidden?: boolean;
 };
-export function ArticleEditor({ initial }: { initial: Draft }) {
+export function ArticleEditor({
+  initial,
+  userId,
+  savedNotice = false,
+}: {
+  initial: Draft;
+  userId: string;
+  savedNotice?: boolean;
+}) {
   const router = useRouter();
   const [title, setTitle] = useState(initial.title);
   const [excerpt, setExcerpt] = useState(initial.excerpt);
@@ -36,7 +46,9 @@ export function ArticleEditor({ initial }: { initial: Draft }) {
     articleFingerprint([initial.title, initial.excerpt, initial.content]),
   );
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(
+    savedNotice ? "Draft saved. Publish when you are ready." : "",
+  );
   const [preview, setPreview] = useState(false);
   const [action, setAction] = useState<
     "publish" | "unpublish" | "delete" | "leave" | null
@@ -106,6 +118,12 @@ export function ArticleEditor({ initial }: { initial: Draft }) {
       setContent(savedContent);
       setBaseline(articleFingerprint([title, excerpt, savedContent]));
       setMessage("Draft saved. Publish when you are ready.");
+      if (initial.version === 0) {
+        try {
+          localStorage.removeItem(`folio:article-recovery:${userId}:new`);
+        } catch {}
+        router.replace(`/creator/${initial.id}/edit?saved=1`);
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not save.");
     } finally {
@@ -122,6 +140,11 @@ export function ArticleEditor({ initial }: { initial: Draft }) {
     try {
       const data = await request("POST", { action, version });
       if (action === "delete") {
+        try {
+          localStorage.removeItem(
+            `folio:article-recovery:${userId}:${initial.version === 0 ? "new" : initial.id}`,
+          );
+        } catch {}
         router.push("/creator");
         router.refresh();
         return;
@@ -149,6 +172,29 @@ export function ArticleEditor({ initial }: { initial: Draft }) {
         Back to your articles
       </Button>
       <h1 className="font-display text-3xl">Article editor</h1>
+      {initial.isHidden && (
+        <p role="alert">
+          Hidden by moderation. You can edit your private draft, but publishing
+          is blocked until a moderator lifts the restriction.
+        </p>
+      )}
+      <ArticleRecovery
+        userId={userId}
+        articleKey={initial.version === 0 ? "new" : initial.id}
+        version={version}
+        title={title}
+        excerpt={excerpt}
+        content={content}
+        dirty={dirty}
+        onRestore={(copy) => {
+          setTitle(copy.title);
+          setExcerpt(copy.excerpt);
+          setContent(copy.content);
+          editor?.commands.setContent(copy.content, { emitUpdate: false });
+          setMessage("Recovery copy restored. Review it before saving.");
+        }}
+      />
+
       <p>
         {published
           ? publishedVersion === version
@@ -231,7 +277,7 @@ export function ArticleEditor({ initial }: { initial: Draft }) {
           {preview ? "Close preview" : "Preview"}
         </Button>
         <Button
-          disabled={busy || dirty || version === 0}
+          disabled={busy || dirty || version === 0 || initial.isHidden}
           onClick={() => setAction("publish")}
         >
           {published ? "Publish changes" : "Publish article"}
@@ -276,7 +322,7 @@ export function ArticleEditor({ initial }: { initial: Draft }) {
         }}
         title={
           action === "leave"
-            ? "Discard unsaved changes?"
+            ? "Leave without saving?"
             : action === "delete"
               ? "Delete article?"
               : action === "unpublish"
@@ -286,7 +332,7 @@ export function ArticleEditor({ initial }: { initial: Draft }) {
       >
         <p className="mb-4">
           {action === "leave"
-            ? "Your unsaved edits will be lost."
+            ? "Your saved draft will not change. If browser recovery is enabled, its local copy remains available."
             : action === "delete"
               ? "This permanently clears the article and removes its public page."
               : action === "unpublish"

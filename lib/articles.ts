@@ -176,6 +176,7 @@ export const articleActionSchema = z.object({
   version: z.number().int().min(1),
 });
 export const publishedArticles = {
+  isHidden: false,
   isPublic: true,
   deletedAt: null,
   user: { profilePublic: true, blogEnabled: true },
