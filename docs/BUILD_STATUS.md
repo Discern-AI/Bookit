@@ -206,7 +206,16 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Added a configurable HTTPS delivery-service contract (Bearer-authenticated POST of to/subject/text, timeout and no redirects). No provider or credentials are bundled and live delivery is unverified. Explicit localhost-only local mode writes ignored test outbox files; ordinary API responses never expose links. Unconfigured delivery is reported clearly. Public deployment still needs edge rate protection and operational delivery monitoring.
 - No schema migration or dependency installation. Local test messages are removed by the test fixture. External email was not sent.
 
+## Reading-session management continuation
+
+- Added diary entry edit/delete controls with cancellation, validation, failed-save draft retention and explicit delete confirmation. Editing supports date, page range and private note; timing metadata is preserved. Book shelf, start/finish dates, rating and library notes remain separate and are not recomputed from edited/deleted sessions.
+- Added a per-session version and deletedAt marker through the additive local session_management migration. Owner-scoped mutations use the same advisory lock as session creation; stale versions are rejected. Serialized progress tokens include the revision after an edit so already-open log forms cannot silently use changed page ranges.
+- Deletion removes the session from diary, history, library progress, chat context, exports and recap totals. Notes, page ranges, times and finished flags are cleared; a private marker with the original request identity remains until account/library-book deletion. Original log retries cannot resurrect deleted sessions; repeated deletion is harmless and edits of deleted sessions are rejected.
+- No new dependencies. Editing timing metadata and separate reread cycles remain future work.
+
 ## Validation
+
+- Session-management continuation: production build (including lint/type checks), standalone typecheck, unit tests and all nine targeted reading/session/card browser scenarios pass (31.9 seconds). New checks cover diary edits, page-count validation, stale revisions/log forms, foreign-account denial, cancellation, deletion content cleanup, old-create retry rejection, repeat deletion, deleted-session edit denial, history/export exclusion, recap totals and preserved book status/notes/ratings. Existing reading, drawer, browse and card scenarios pass. The mobile deletion dialog was inspected. Applied the additive local `20260917010000_session_management` migration. The unrelated regression suite was not rerun; no deployment or push.
 
 - Account-link continuation: production build (including lint/type checks), standalone typecheck, unit tests and all four targeted account/security browser scenarios pass (27.5 seconds). New coverage checks local-outbox delivery, generic unknown-account response, hashed storage, request cooldown, purpose mismatch, expiry, one-use redemption, reset sign-in, old-session rejection, email password/auth checks, occupied-email rollback, delayed address changes and email verification. Existing deletion, recovery-copy cleanup, appeals and password/device security regressions pass. The mobile email-confirmation page was inspected. A normal-config restart confirmed unconfigured mail returns the expected 503; live delivery and the unrelated regression suite remain unverified. No external mail, deployment or push.
 
@@ -262,8 +271,8 @@ A verified npm audit reported nine high-severity dependency entries in the retai
 
 ## Remaining work
 
-Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provider verification. Import matching uses the local canonical catalogue without external metadata enrichment. Imported public reviews, editing/deleting existing sessions and separate reread cycles are not implemented. Chat history and unconfirmed log proposals remain in the open page only.
+Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provider verification. Import matching uses the local canonical catalogue without external metadata enrichment. Imported public reviews and separate reread cycles are not implemented. Chat history and unconfirmed log proposals remain in the open page only.
 
 Next Phase 2 work: live acquisition/availability integrations, plus a successful live-provider check of the edition metadata flow. Reading paths now support manual creation, publishing and following. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
 
-Next build work: reading-session editing and deletion. Live account email delivery still requires configuration and provider verification. Later phases include AI gift expansion, further creator tools, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.
+Next build work: reading-session timing corrections and reread planning. Live account email delivery still requires configuration and provider verification. Later phases include AI gift expansion, further creator tools, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.

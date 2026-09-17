@@ -224,6 +224,8 @@ model ImportJob {
 }
 
 model ReadingSession {
+  version Int @default(0)
+  deletedAt DateTime?
   id         String    @id @default(cuid())
   userId     String
   userBookId String

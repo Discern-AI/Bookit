@@ -10,8 +10,13 @@ import {
 } from "@/lib/reading";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { SessionActions } from "@/components/library/SessionActions";
 import { EmptyState } from "@/components/ui/EmptyState";
-type DiarySession = SessionData & { title: string; userBookId: string };
+type DiarySession = SessionData & {
+  title: string;
+  userBookId: string;
+  version: number;
+};
 type DiaryBook = {
   id: string;
   title: string;
@@ -225,7 +230,7 @@ export function ReadingDiary({
                     <time className="text-xs text-ink-500 w-20 shrink-0">
                       {event.date.slice(0, 10)}
                     </time>
-                    <div>
+                    <div className="min-w-0 break-words">
                       <h3 className="text-sm font-medium">
                         {event.session.title}
                       </h3>
@@ -244,6 +249,7 @@ export function ReadingDiary({
                           min
                         </p>
                       )}
+                      <SessionActions session={event.session} />
                       {event.session.note && (
                         <p className="text-sm italic mt-1 whitespace-pre-wrap">
                           {event.session.note}

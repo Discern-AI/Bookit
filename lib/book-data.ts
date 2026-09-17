@@ -6,6 +6,7 @@ export const libraryInclude = {
   edition: { include: { work: true, translation: true } },
   customShelves: true,
   readingSessions: {
+    where: { deletedAt: null },
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     take: 1,
   },
@@ -41,7 +42,7 @@ export function serializeBook(book: StoredBook): LibraryBook {
   return {
     workId: book.edition.workId,
     currentPage: book.readingSessions[0]?.pageEnd ?? 0,
-    lastSessionId: book.readingSessions[0]?.id ?? null,
+    lastSessionId: sessionProgressToken(book.readingSessions[0]),
     id: book.id,
     title: book.edition.editionTitle ?? book.edition.work.title,
     author: book.edition.work.authorName,
@@ -64,4 +65,14 @@ export function serializeBook(book: StoredBook): LibraryBook {
     privateNotes: book.privateNotes,
     customShelves: book.customShelves.map(({ id, name }) => ({ id, name })),
   };
+}
+
+export function sessionProgressToken(
+  session: { id: string; version: number } | undefined,
+) {
+  return session
+    ? session.version
+      ? `${session.id}:${session.version}`
+      : session.id
+    : null;
 }

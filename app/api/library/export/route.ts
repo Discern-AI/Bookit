@@ -10,7 +10,7 @@ export async function GET() {
     include: {
       edition: { include: { work: true } },
       customShelves: { select: { name: true } },
-      readingSessions: true,
+      readingSessions: { where: { deletedAt: null } },
     },
   });
   return new Response(

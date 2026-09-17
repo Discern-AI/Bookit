@@ -16,10 +16,11 @@ export async function GET(
     return NextResponse.json({ error: "Book not found." }, { status: 404 });
   return NextResponse.json({
     sessions: await prisma.readingSession.findMany({
-      where: { userBookId: book.id },
+      where: { userBookId: book.id, deletedAt: null },
       orderBy: [{ date: "desc" }, { createdAt: "desc" }],
       select: {
         id: true,
+        version: true,
         date: true,
         pageStart: true,
         pageEnd: true,

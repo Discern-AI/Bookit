@@ -8,7 +8,11 @@ export default async function ChatPage() {
     where: { userId: session.user.id, shelf: "reading_now" },
     include: {
       edition: { include: { work: true } },
-      readingSessions: { orderBy: [{ date: "desc" }, { createdAt: "desc" }], take: 1 },
+      readingSessions: {
+        where: { deletedAt: null },
+        orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+        take: 1,
+      },
     },
     orderBy: { dateAdded: "desc" },
   });

@@ -22,7 +22,7 @@ export default async function Page({
       where: { userId: session!.user.id, shelf: "read", dateFinished: range },
     }),
     prisma.readingSession.findMany({
-      where: { userId: session!.user.id, date: range },
+      where: { userId: session!.user.id, date: range, deletedAt: null },
       select: { date: true, pageStart: true, pageEnd: true },
     }),
     prisma.user.findUniqueOrThrow({

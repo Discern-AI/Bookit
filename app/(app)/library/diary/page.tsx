@@ -6,7 +6,7 @@ export default async function DiaryPage() {
   if (!session?.user) return null;
   const [sessions, books, user] = await Promise.all([
     prisma.readingSession.findMany({
-      where: { userId: session.user.id },
+      where: { userId: session.user.id, deletedAt: null },
       orderBy: [{ date: "desc" }, { createdAt: "desc" }],
       include: {
         userBook: { include: { edition: { include: { work: true } } } },
@@ -36,6 +36,7 @@ export default async function DiaryPage() {
     <ReadingDiary
       sessions={sessions.map((s) => ({
         id: s.id,
+        version: s.version,
         date: s.date.toISOString(),
         pageStart: s.pageStart,
         pageEnd: s.pageEnd,

@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { sessionSchema } from "@/lib/session-schema";
-import { libraryInclude, serializeBook } from "@/lib/book-data";
+import {
+  libraryInclude,
+  serializeBook,
+  sessionProgressToken,
+} from "@/lib/book-data";
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user)
@@ -27,6 +31,12 @@ export async function POST(request: Request) {
       where: { requestId: input.requestId },
     });
     if (existing) {
+      if (existing.deletedAt)
+        return {
+          error:
+            "This session was deleted. Start a new log to record more reading.",
+          status: 409,
+        };
       if (
         existing.userId !== session.user.id ||
         existing.userBookId !== book.id ||
@@ -44,7 +54,10 @@ export async function POST(request: Request) {
         };
       return { book: serializeBook(book), duplicate: true, status: 200 };
     }
-    if ((book.readingSessions[0]?.id ?? null) !== input.expectedLastSessionId)
+    if (
+      sessionProgressToken(book.readingSessions[0]) !==
+      input.expectedLastSessionId
+    )
       return {
         error:
           "Your reading progress changed. Reopen the log form to use the latest pages.",

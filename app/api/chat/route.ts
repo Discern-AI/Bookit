@@ -46,6 +46,7 @@ export async function POST(request: Request) {
       include: {
         ...include,
         readingSessions: {
+          where: { deletedAt: null },
           orderBy: [{ date: "desc" }, { createdAt: "desc" }],
           take: 20,
         },
