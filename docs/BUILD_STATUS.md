@@ -213,7 +213,16 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Deletion removes the session from diary, history, library progress, chat context, exports and recap totals. Notes, page ranges, times and finished flags are cleared; a private marker with the original request identity remains until account/library-book deletion. Original log retries cannot resurrect deleted sessions; repeated deletion is harmless and edits of deleted sessions are rejected.
 - No new dependencies. Editing timing metadata and separate reread cycles remain future work.
 
+## Session timing corrections continuation
+
+- Extended diary edits with optional local start/end datetime fields and Clear session times. Both timestamps must be supplied or both cleared, with positive duration up to 24 hours; sessions may cross midnight. The diary reading date remains an explicit separate date controlling totals.
+- Local-time conversion rejects invalid calendar values and daylight-saving gaps. Untouched timestamps retain their original UTC instant and milliseconds, including the second occurrence of an ambiguous clock time. Newly entered ambiguous fall-back times use the browser's timezone disambiguation; explicit UTC-offset entry is not yet provided.
+- The edit API preserves omitted timing fields for compatibility and validates the effective pair before saving. Session revision checks cover timing changes; the editor captures the revision and original timestamps when opened so a later refresh cannot silently advance an unsaved draft's version.
+- No migration or dependency changes. Separate reread cycles remain the next implementation; see `docs/REREAD_PLAN.md` for the data migration and behaviour plan.
+
 ## Validation
+
+- Timing-corrections continuation: production build (including lint/type checks), standalone typecheck, unit tests and all six targeted reading/session browser scenarios pass (29.3 seconds). New checks cover London local-time conversion, a midnight/daylight-saving session, nonexistent local-time rejection, incomplete/reversed/overlong pairs, unchanged timestamp precision, server-preserved omitted fields, stale-draft retention and clearing both times. Existing session deletion, totals, diary, logging, drawer and browse regressions pass. The mobile timing editor was inspected. Reread work is documented as a plan only. No migration, dependency change, deployment or push.
 
 - Session-management continuation: production build (including lint/type checks), standalone typecheck, unit tests and all nine targeted reading/session/card browser scenarios pass (31.9 seconds). New checks cover diary edits, page-count validation, stale revisions/log forms, foreign-account denial, cancellation, deletion content cleanup, old-create retry rejection, repeat deletion, deleted-session edit denial, history/export exclusion, recap totals and preserved book status/notes/ratings. Existing reading, drawer, browse and card scenarios pass. The mobile deletion dialog was inspected. Applied the additive local `20260917010000_session_management` migration. The unrelated regression suite was not rerun; no deployment or push.
 
@@ -275,4 +284,4 @@ Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provid
 
 Next Phase 2 work: live acquisition/availability integrations, plus a successful live-provider check of the edition metadata flow. Reading paths now support manual creation, publishing and following. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
 
-Next build work: reading-session timing corrections and reread planning. Live account email delivery still requires configuration and provider verification. Later phases include AI gift expansion, further creator tools, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.
+Next build work: separate reread cycles following docs/REREAD_PLAN.md. Live account email delivery still requires configuration and provider verification. Later phases include AI gift expansion, further creator tools, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.

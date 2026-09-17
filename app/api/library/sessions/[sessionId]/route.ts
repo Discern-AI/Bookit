@@ -9,6 +9,8 @@ const editSchema = z
     pageStart: z.number(),
     pageEnd: z.number(),
     note: z.string().max(5000),
+    timeStart: z.string().datetime().nullable().optional(),
+    timeEnd: z.string().datetime().nullable().optional(),
   })
   .strict();
 const deleteSchema = z.object({ version: z.number().int().min(0) }).strict();
@@ -72,8 +74,14 @@ async function change(request: Request, sessionId: string, remove: boolean) {
           requestId: "00000000-0000-4000-8000-000000000000",
           expectedLastSessionId: null,
           finished: existing.finished,
-          timeStart: existing.timeStart?.toISOString() ?? null,
-          timeEnd: existing.timeEnd?.toISOString() ?? null,
+          timeStart:
+            input.timeStart === undefined
+              ? (existing.timeStart?.toISOString() ?? null)
+              : input.timeStart,
+          timeEnd:
+            input.timeEnd === undefined
+              ? (existing.timeEnd?.toISOString() ?? null)
+              : input.timeEnd,
         });
         if (!validated.success)
           return { status: 400, error: validated.error.issues[0].message };
@@ -92,6 +100,8 @@ async function change(request: Request, sessionId: string, remove: boolean) {
             pageStart: input.pageStart,
             pageEnd: input.pageEnd,
             note: input.note || null,
+            timeStart: validated.data.timeStart,
+            timeEnd: validated.data.timeEnd,
             version: { increment: 1 },
           },
         });

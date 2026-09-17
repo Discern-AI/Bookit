@@ -227,3 +227,16 @@ console.log("Reading recap year boundaries and progress totals passed");
 
 assert.equal(shareCardDescription({kind:"shelfie",format:"square",theme:"paper",heading:"",books:[{title:"First",authorName:"Author",workId:"PRIVATE_ID",editionId:"e",coverUrl:"PRIVATE_URL"}],byline:""}),"On my shelf / First / Author");
 console.log("Shelfie exported description excludes catalogue identifiers");
+
+const {localSessionTime,sessionTimeValue}=require("../lib/session-times.ts");
+const originalTZ=process.env.TZ;
+process.env.TZ="Europe/London";
+assert.equal(localSessionTime("2024-07-01T12:34:56.789Z"),"2024-07-01T13:34:56.789");
+assert.equal(sessionTimeValue("2024-07-01T13:34",null),"2024-07-01T12:34:00.000Z");
+assert.throws(()=>sessionTimeValue("2024-03-31T01:30",null),/does not exist/);
+assert.throws(()=>sessionTimeValue("2024-02-30T12:00",null));
+const repeatedTime="2024-10-27T01:30:00.123Z";
+assert.equal(sessionTimeValue(localSessionTime(repeatedTime),repeatedTime),repeatedTime);
+assert.equal(sessionTimeValue("",repeatedTime),null);
+if(originalTZ===undefined) delete process.env.TZ; else process.env.TZ=originalTZ;
+console.log("Session local times, daylight-saving gaps and unchanged timestamp precision passed");

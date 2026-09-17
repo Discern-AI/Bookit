@@ -231,3 +231,111 @@ test("session corrections and deletion update totals, reject stale changes and p
     page.getByRole("region", { name: "Card preview" }).getByRole("img"),
   ).toHaveAttribute("aria-label", /0 pages logged \/ 0 reading days/);
 });
+
+test("session times handle local midnight and daylight-saving changes with stale-draft protection", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ timezoneId: "Europe/London" });
+  const page = await context.newPage();
+  const owner = await login(page, "times");
+  await add(owner.id, `Session ${stamp} Timed reading`);
+  const book = await db.userBook.findFirstOrThrow({
+    where: { userId: owner.id },
+  });
+  const saved = await db.readingSession.create({
+    data: {
+      userId: owner.id,
+      userBookId: book.id,
+      date: new Date("2024-03-30T12:00Z"),
+      pageStart: 0,
+      pageEnd: 20,
+      timeStart: new Date("2024-03-30T23:30Z"),
+      timeEnd: new Date("2024-03-31T00:15Z"),
+    },
+  });
+  await page.goto("/library/diary");
+  await page.getByRole("button", { name: "Edit session", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Edit reading session" });
+  await expect(
+    dialog.getByLabel("Session start (local time)", { exact: true }),
+  ).toHaveValue("2024-03-30T23:30");
+  await dialog
+    .getByLabel("Session end (local time)", { exact: true })
+    .fill("2024-03-31T01:30");
+  await dialog
+    .getByRole("button", { name: "Save session changes", exact: true })
+    .click();
+  await expect(dialog.getByRole("alert")).toContainText("does not exist");
+  expect(
+    (await db.readingSession.findUniqueOrThrow({ where: { id: saved.id } }))
+      .version,
+  ).toBe(0);
+  await dialog
+    .getByLabel("Session end (local time)", { exact: true })
+    .fill("2024-03-31T02:15");
+  await dialog
+    .getByRole("button", { name: "Save session changes", exact: true })
+    .click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByText("105 min", { exact: true })).toBeVisible();
+  const edited = await db.readingSession.findUniqueOrThrow({
+    where: { id: saved.id },
+  });
+  expect(edited.timeEnd?.toISOString()).toBe("2024-03-31T01:15:00.000Z");
+  const payload = {
+    version: 1,
+    date: "2024-03-30",
+    pageStart: 0,
+    pageEnd: 20,
+    note: "remote",
+  };
+  for (const values of [
+    { timeStart: null },
+    { timeEnd: "2024-03-30T22:00:00.000Z" },
+    { timeEnd: "2024-04-02T00:00:00.000Z" },
+  ])
+    expect(
+      (
+        await page.request.patch(`/api/library/sessions/${saved.id}`, {
+          data: { ...payload, ...values },
+        })
+      ).status(),
+    ).toBe(400);
+  await page.getByRole("button", { name: "Edit session", exact: true }).click();
+  await dialog
+    .getByRole("textbox", { name: "Private session note", exact: true })
+    .fill("My unsaved timing draft");
+  expect(
+    (
+      await page.request.patch(`/api/library/sessions/${saved.id}`, {
+        data: payload,
+      })
+    ).status(),
+  ).toBe(200);
+  await dialog
+    .getByRole("button", { name: "Save session changes", exact: true })
+    .click();
+  await expect(dialog.getByRole("alert")).toContainText("changed elsewhere");
+  await expect(
+    dialog.getByRole("textbox", { name: "Private session note", exact: true }),
+  ).toHaveValue("My unsaved timing draft");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: "test-results/session-times-mobile.png" });
+  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await page.reload();
+  await page.getByRole("button", { name: "Edit session", exact: true }).click();
+  await dialog
+    .getByRole("button", { name: "Clear session times", exact: true })
+    .click();
+  await dialog
+    .getByRole("button", { name: "Save session changes", exact: true })
+    .click();
+  await expect(dialog).not.toBeVisible();
+  const cleared = await db.readingSession.findUniqueOrThrow({
+    where: { id: saved.id },
+  });
+  expect(cleared.timeStart).toBeNull();
+  expect(cleared.timeEnd).toBeNull();
+  expect(cleared.note).toBe("remote");
+  await context.close();
+});
