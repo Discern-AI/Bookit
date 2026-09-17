@@ -1,4 +1,4 @@
-# Reread implementation plan
+# Reread implementation record
 
 The current library row stores one start/finish pair. Restarting a completed book must preserve its earlier finish and history while resetting current-cycle progress. Changing the shelf alone cannot represent this reliably.
 
@@ -9,4 +9,4 @@ The current library row stores one start/finish pair. Restarting a completed boo
 5. Show completed cycles in the diary and define the yearly metric as reads finished, including rereads. Update recap wording accordingly; count cycle finishes, avoiding double counting the legacy UserBook finish field. Keep pages and reading-day counts based on undeleted sessions across cycles.
 6. Include cycles in private exports and delete them with their library book/account. Test legacy/undated migration, repeated start requests, stale log forms, cross-account access, two completed cycles in one year, earlier-cycle corrections and preserved public reviews.
 
-This is a plan only; the cycle model, migration and reread controls have not been implemented. A future start-reread action needs a user-selected start date; cancellation must leave the current book and all history unchanged.
+Implemented on 17 September 2026 with a user-selected start date and cancellation. Each book has one current cycle (which may be finished); a partial unique index enforces that constraint. Legacy cycles are backfilled once, and newly imported/created rows initialise their first cycle on a reading mutation. Unknown finish dates remain unknown and are excluded from annual completion counts. Cycle-history editing, cancelling an already-started reread and changing cycle completion dates are still future work.

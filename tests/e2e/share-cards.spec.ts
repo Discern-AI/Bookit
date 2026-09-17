@@ -327,7 +327,7 @@ test("reading-year recap counts only the owner's dated activity and exports with
     .getByRole("img");
   await expect(preview).toHaveAttribute(
     "aria-label",
-    "2024 reading recap / 1 books finished / 60 pages logged / 2 reading days / Through 2024-12-31",
+    "2024 reading recap / 1 reads finished / 60 pages logged / 2 reading days / Through 2024-12-31",
   );
   await expect(page.getByRole("checkbox")).toHaveCount(0);
   expect(await page.content()).not.toContain("PRIVATE_SESSION_NOTE");
@@ -372,7 +372,7 @@ test("reading-year recap counts only the owner's dated activity and exports with
   await page.getByRole("button", { name: "View year" }).click();
   await expect(preview).toHaveAttribute(
     "aria-label",
-    /2023 reading recap \/ 0 books finished \/ 0 pages logged \/ 0 reading days/,
+    /2023 reading recap \/ 0 reads finished \/ 0 pages logged \/ 0 reading days/,
   );
   await page.setViewportSize({ width: 390, height: 844 });
   expect(
@@ -391,7 +391,7 @@ test("reading-year recap counts only the owner's dated activity and exports with
   await page.goto("/creator/recap?year=2024");
   await expect(preview).toHaveAttribute(
     "aria-label",
-    /0 books finished \/ 0 pages logged \/ 0 reading days/,
+    /0 reads finished \/ 0 pages logged \/ 0 reading days/,
   );
 });
 

@@ -1,3 +1,4 @@
+import { libraryInclude, serializeBook } from "@/lib/book-data";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ChatView } from "@/components/chat/ChatView";
@@ -6,14 +7,7 @@ export default async function ChatPage() {
   if (!session?.user) return null;
   const book = await prisma.userBook.findFirst({
     where: { userId: session.user.id, shelf: "reading_now" },
-    include: {
-      edition: { include: { work: true } },
-      readingSessions: {
-        where: { deletedAt: null },
-        orderBy: [{ date: "desc" }, { createdAt: "desc" }],
-        take: 1,
-      },
-    },
+    include: libraryInclude,
     orderBy: { dateAdded: "desc" },
   });
   return (
@@ -23,7 +17,7 @@ export default async function ChatPage() {
           ? {
               title: book.edition.work.title,
               author: book.edition.work.authorName,
-              page: book.readingSessions[0]?.pageEnd ?? 0,
+              page: serializeBook(book).currentPage,
             }
           : null
       }

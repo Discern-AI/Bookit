@@ -15,9 +15,11 @@ import { EmptyState } from "@/components/ui/EmptyState";
 type DiarySession = SessionData & {
   title: string;
   userBookId: string;
+  cycleId: string | null;
   version: number;
 };
 type DiaryBook = {
+  cycleId: string | null;
   id: string;
   title: string;
   shelf: string;
@@ -28,11 +30,18 @@ type DiaryBook = {
 export function ReadingDiary({
   sessions,
   books,
+  completions,
   goal,
   goalYear,
 }: {
   sessions: DiarySession[];
   books: DiaryBook[];
+  completions: {
+    id: string;
+    title: string;
+    dateFinished: string;
+    rating: number | null;
+  }[];
   goal: number | null;
   goalYear: number | null;
 }) {
@@ -41,7 +50,7 @@ export function ReadingDiary({
   );
   useEffect(() => setToday(localDate()), []);
   const year = Number(today.slice(0, 4));
-  const stats = readingStats(sessions, books, today);
+  const stats = readingStats(sessions, completions, today);
   const [savedGoal, setSavedGoal] = useState(goal);
   const [savedYear, setSavedYear] = useState(goalYear);
   const [value, setValue] = useState(
@@ -79,7 +88,7 @@ export function ReadingDiary({
       id: s.id,
       session: s,
     })),
-    ...books
+    ...completions
       .filter((b) => b.dateFinished)
       .map((b) => ({
         type: "finished" as const,
@@ -99,7 +108,7 @@ export function ReadingDiary({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
           {[
             [stats.pages, `Pages in ${year}`],
-            [stats.books, "Books finished"],
+            [stats.books, "Reads finished"],
             [stats.streak, "Current streak (days)"],
             [stats.averageSession, "Average session (pages)"],
           ].map(([value, label]) => (
@@ -136,7 +145,7 @@ export function ReadingDiary({
               className="w-full accent-shelf-700"
             />
             <p className="text-sm text-ink-500">
-              {stats.books} of {savedGoal} books this year
+              {stats.books} of {savedGoal} reads this year
             </p>
           </div>
         )}
@@ -149,7 +158,7 @@ export function ReadingDiary({
             onSubmit={saveGoal}
           >
             <label className="text-sm">
-              Books in {year}
+              Reads in {year}
               <Input
                 type="number"
                 min={1}
@@ -176,7 +185,11 @@ export function ReadingDiary({
       {books
         .filter((b) => b.shelf === "reading_now")
         .map((book) => {
-          const history = sessions.filter((s) => s.userBookId === book.id);
+          const history = sessions.filter(
+            (s) =>
+              s.userBookId === book.id &&
+              (!book.cycleId || s.cycleId === book.cycleId),
+          );
           const page = history[0]?.pageEnd ?? 0;
           const days = estimateDays(history, page, book.pageCount, today);
           return (

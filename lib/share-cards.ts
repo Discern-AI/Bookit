@@ -74,7 +74,7 @@ export function shareCardDescription(input: ShareCardInput) {
       .filter(Boolean)
       .join(" / ");
   if (input.kind === "recap")
-    return `${input.recap.year} reading recap / ${input.recap.books} books finished / ${input.recap.pages} pages logged / ${input.recap.days} reading days / Through ${input.recap.through}${input.byline ? ` / ${input.byline}` : ""}`;
+    return `${input.recap.year} reading recap / ${input.recap.books} reads finished / ${input.recap.pages} pages logged / ${input.recap.days} reading days / Through ${input.recap.through}${input.byline ? ` / ${input.byline}` : ""}`;
   return [
     input.kind === "quote" ? input.quote : input.caption,
     input.book.title,
@@ -197,7 +197,7 @@ export function drawShareCard(
     label("MY READING YEAR", 208, 22);
     block(String(input.recap.year), 260, 150, 112, 60, style.displayFont);
     const rows = [
-      [input.recap.books, "BOOKS FINISHED"],
+      [input.recap.books, "READS FINISHED"],
       [input.recap.pages, "PAGES LOGGED"],
       [input.recap.days, "READING DAYS"],
     ] as const;

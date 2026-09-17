@@ -1,12 +1,9 @@
+import { ensureReadingCycle } from "@/lib/reading-cycles";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { sessionSchema } from "@/lib/session-schema";
-import {
-  libraryInclude,
-  serializeBook,
-  sessionProgressToken,
-} from "@/lib/book-data";
+import { libraryInclude, serializeBook } from "@/lib/book-data";
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user)
@@ -54,10 +51,7 @@ export async function POST(request: Request) {
         };
       return { book: serializeBook(book), duplicate: true, status: 200 };
     }
-    if (
-      sessionProgressToken(book.readingSessions[0]) !==
-      input.expectedLastSessionId
-    )
+    if (serializeBook(book).lastSessionId !== input.expectedLastSessionId)
       return {
         error:
           "Your reading progress changed. Reopen the log form to use the latest pages.",
@@ -69,8 +63,26 @@ export async function POST(request: Request) {
         status: 400,
       };
     const date = new Date(`${input.date}T12:00:00.000Z`);
+    const cycle = await ensureReadingCycle(db, book);
+    if (cycle.dateFinished)
+      return {
+        status: 409,
+        error:
+          "This reading is finished. Start a reread to log more pages, or edit an earlier session in the diary.",
+      };
+    if (
+      cycle.number > 1 &&
+      cycle.dateStarted &&
+      date.toISOString().slice(0, 10) <
+        cycle.dateStarted.toISOString().slice(0, 10)
+    )
+      return {
+        error: "Choose a date on or after this reread started.",
+        status: 400,
+      };
     await db.readingSession.create({
       data: {
+        cycleId: cycle.id,
         userId: session.user.id,
         userBookId: book.id,
         requestId: input.requestId,
@@ -81,6 +93,18 @@ export async function POST(request: Request) {
         note: input.note || null,
         timeStart: input.timeStart,
         timeEnd: input.timeEnd,
+      },
+    });
+    await db.readingCycle.update({
+      where: { id: cycle.id },
+      data: {
+        dateStarted:
+          !cycle.dateStarted || date < cycle.dateStarted
+            ? date
+            : cycle.dateStarted,
+        ...(input.finished
+          ? { dateFinished: date, version: { increment: 1 } }
+          : {}),
       },
     });
     const updated = await db.userBook.update({

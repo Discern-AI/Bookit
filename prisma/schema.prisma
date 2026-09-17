@@ -171,6 +171,7 @@ enum Shelf {
 }
 
 model UserBook {
+  readingCycles ReadingCycle[]
   id             String    @id @default(cuid())
   userId         String
   editionId      String
@@ -224,6 +225,8 @@ model ImportJob {
 }
 
 model ReadingSession {
+  cycleId String?
+  cycle ReadingCycle? @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   version Int @default(0)
   deletedAt DateTime?
   id         String    @id @default(cuid())
@@ -501,4 +504,18 @@ model ArticleAppeal {
  article Article @relation(fields:[articleId],references:[id],onDelete:Cascade)
  @@unique([articleId,moderationVersion])
  @@index([status,createdAt])
+}
+
+model ReadingCycle {
+ id String @id @default(cuid())
+ userBookId String
+ number Int
+ isCurrent Boolean @default(true)
+ dateStarted DateTime?
+ dateFinished DateTime?
+ version Int @default(0)
+ requestId String? @unique
+ userBook UserBook @relation(fields:[userBookId],references:[id],onDelete:Cascade)
+ sessions ReadingSession[]
+ @@unique([userBookId,number])
 }

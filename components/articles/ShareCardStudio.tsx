@@ -398,10 +398,9 @@ export function ShareCardStudio({
           )}
           {recap && (
             <p>
-              Books finished use dated books on your Read shelf. Pages logged
-              total reading-session progress; reading days count dates with
-              positive progress. Undated finishes and separate reread cycles are
-              not included.
+              Reads finished include dated reading cycles, including rereads.
+              Pages logged total reading-session progress; reading days count
+              dates with positive progress. Undated finishes are not included.
             </p>
           )}
           <label className="block">

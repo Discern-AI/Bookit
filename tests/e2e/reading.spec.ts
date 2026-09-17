@@ -223,15 +223,15 @@ test("reading logs confirm, persist, resist duplicates and update the diary", as
   ).toBeVisible();
   await page.getByText("Set a reading goal", { exact: true }).click();
   await page
-    .getByLabel(`Books in ${new Date().getFullYear()}`, { exact: true })
+    .getByLabel(`Reads in ${new Date().getFullYear()}`, { exact: true })
     .fill("12");
   await page.getByRole("button", { name: "Save goal", exact: true }).click();
   await expect(
-    page.getByText("1 of 12 books this year", { exact: true }),
+    page.getByText("1 of 12 reads this year", { exact: true }),
   ).toBeVisible();
   await page.reload();
   await expect(
-    page.getByText("1 of 12 books this year", { exact: true }),
+    page.getByText("1 of 12 reads this year", { exact: true }),
   ).toBeVisible();
   await page.screenshot({ path: ".local/diary-desktop.png", fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });

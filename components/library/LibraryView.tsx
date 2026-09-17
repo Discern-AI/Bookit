@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { RatingStars } from "@/components/ui/RatingStars";
 import { useToast } from "@/components/ui/Toast";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import { StartReread } from "./StartReread";
 import { LogSession } from "./LogSession";
 import { SessionHistory } from "./SessionHistory";
 import { ManageShelf } from "./ManageShelf";
@@ -402,6 +403,15 @@ export function LibraryView({
         >
           <div className="space-y-5">
             <BookCard book={book} />
+            <p className="text-sm text-ink-500">
+              Reading {book.cycleNumber ?? 1}
+            </p>
+            <StartReread
+              key={book.id}
+              book={book}
+              onSaved={update}
+              disabled={busy || notes !== (book.privateNotes ?? "")}
+            />
             <ProgressBar
               currentPage={book.currentPage}
               totalPages={book.pageCount}

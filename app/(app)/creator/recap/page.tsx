@@ -17,9 +17,14 @@ export default async function Page({
     gte: new Date(`${period.year}-01-01T00:00:00.000Z`),
     lt: new Date(Date.parse(`${period.through}T00:00:00.000Z`) + 86400000),
   };
-  const [books, sessions, user] = await Promise.all([
+  const [legacyBooks, sessions, user, cycleFinishes] = await Promise.all([
     prisma.userBook.count({
-      where: { userId: session!.user.id, shelf: "read", dateFinished: range },
+      where: {
+        userId: session!.user.id,
+        shelf: "read",
+        dateFinished: range,
+        readingCycles: { none: {} },
+      },
     }),
     prisma.readingSession.findMany({
       where: { userId: session!.user.id, date: range, deletedAt: null },
@@ -29,8 +34,15 @@ export default async function Page({
       where: { id: session!.user.id },
       select: { profilePublic: true, username: true },
     }),
+    prisma.readingCycle.count({
+      where: { userBook: { userId: session!.user.id }, dateFinished: range },
+    }),
   ]);
-  const recap = { ...period, books, ...recapCounts(sessions) };
+  const recap = {
+    ...period,
+    books: legacyBooks + cycleFinishes,
+    ...recapCounts(sessions),
+  };
   return (
     <>
       <form

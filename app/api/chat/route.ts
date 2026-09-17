@@ -45,6 +45,16 @@ export async function POST(request: Request) {
       where: { userId, shelf: "reading_now" },
       include: {
         ...include,
+        readingCycles: {
+          where: { isCurrent: true },
+          include: {
+            sessions: {
+              where: { deletedAt: null },
+              orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+              take: 20,
+            },
+          },
+        },
         readingSessions: {
           where: { deletedAt: null },
           orderBy: [{ date: "desc" }, { createdAt: "desc" }],
@@ -86,11 +96,15 @@ export async function POST(request: Request) {
     currentBooks: current.map((b) => ({
       title: b.edition.work.title,
       author: b.edition.work.authorName,
-      currentPage: b.readingSessions[0]?.pageEnd ?? 0,
+      currentPage:
+        (b.readingCycles[0]?.sessions ?? b.readingSessions)[0]?.pageEnd ?? 0,
       totalPages: b.edition.pageCount,
-      averageSessionPages: b.readingSessions.length
-        ? b.readingSessions.reduce((n, s) => n + s.pageEnd - s.pageStart, 0) /
-          b.readingSessions.length
+      averageSessionPages: (b.readingCycles[0]?.sessions ?? b.readingSessions)
+        .length
+        ? (b.readingCycles[0]?.sessions ?? b.readingSessions).reduce(
+            (n, s) => n + s.pageEnd - s.pageStart,
+            0,
+          ) / (b.readingCycles[0]?.sessions ?? b.readingSessions).length
         : null,
     })),
     recentlyRead: recent.map((b) => ({

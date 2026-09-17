@@ -5,6 +5,16 @@ import type { ShelfKey } from "@/lib/shelves";
 export const libraryInclude = {
   edition: { include: { work: true, translation: true } },
   customShelves: true,
+  readingCycles: {
+    where: { isCurrent: true },
+    include: {
+      sessions: {
+        where: { deletedAt: null },
+        orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+        take: 1,
+      },
+    },
+  },
   readingSessions: {
     where: { deletedAt: null },
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
@@ -15,6 +25,10 @@ export type StoredBook = Prisma.UserBookGetPayload<{
   include: typeof libraryInclude;
 }>;
 export interface LibraryBook {
+  cycleId?: string | null;
+  cycleVersion?: number;
+  cycleNumber?: number;
+  canReread?: boolean;
   workId?: string;
   currentPage: number;
   lastSessionId: string | null;
@@ -39,10 +53,19 @@ export interface LibraryBook {
   customShelves: { id: string; name: string }[];
 }
 export function serializeBook(book: StoredBook): LibraryBook {
+  const cycle = book.readingCycles[0];
+  const latest = cycle ? cycle.sessions[0] : book.readingSessions[0];
   return {
+    cycleId: cycle?.id ?? null,
+    cycleVersion: cycle?.version ?? 0,
+    cycleNumber: cycle?.number ?? 1,
+    canReread: !!cycle?.dateFinished || book.shelf === "read",
     workId: book.edition.workId,
-    currentPage: book.readingSessions[0]?.pageEnd ?? 0,
-    lastSessionId: sessionProgressToken(book.readingSessions[0]),
+    currentPage: latest?.pageEnd ?? 0,
+    lastSessionId:
+      cycle && cycle.number > 1
+        ? `${cycle.id}:${cycle.version}:${sessionProgressToken(latest) ?? "empty"}`
+        : sessionProgressToken(latest),
     id: book.id,
     title: book.edition.editionTitle ?? book.edition.work.title,
     author: book.edition.work.authorName,

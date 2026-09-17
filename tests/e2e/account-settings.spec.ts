@@ -74,6 +74,9 @@ test("private name edits and confirmed account deletion preserve other readers",
   const saved = await db.userBook.findFirstOrThrow({
     where: { userId: owner.id },
   });
+  const readingCycle = await db.readingCycle.create({
+    data: { userBookId: saved.id, number: 1 },
+  });
   await db.userBook.create({
     data: {
       userId: other.id,
@@ -198,6 +201,9 @@ test("private name edits and confirmed account deletion preserve other readers",
     .click();
   await expect(page).toHaveURL(/\/login\?deleted=1/);
   expect(await db.user.count({ where: { id: owner.id } })).toBe(0);
+  expect(await db.readingCycle.count({ where: { id: readingCycle.id } })).toBe(
+    0,
+  );
   expect(await db.userBook.count({ where: { userId: owner.id } })).toBe(0);
   expect(await db.readingSession.count({ where: { userId: owner.id } })).toBe(
     0,
