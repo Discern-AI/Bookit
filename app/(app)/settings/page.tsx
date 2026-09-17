@@ -1,3 +1,4 @@
+import { AccountLinkRequest } from "@/components/community/AccountLinkRequest";
 import { prisma } from "@/lib/prisma";
 import { AccountSettings } from "@/components/community/AccountSettings";
 import { AccountSecurity } from "@/components/community/AccountSecurity";
@@ -28,6 +29,7 @@ export default async function SettingsPage() {
         userId={session!.user.id}
         initialName={user.name || ""}
       />
+      <AccountLinkRequest action="email" />
       <AccountSecurity />
       <ImportSettings />
     </div>

@@ -81,6 +81,9 @@ export async function POST(request: Request) {
         await tx.verificationToken.deleteMany({
           where: { identifier: user.email },
         });
+      await tx.verificationToken.deleteMany({
+        where: { identifier: { startsWith: `account:${user.id}:` } },
+      });
       await tx.user.delete({ where: { id: user.id } });
       return { status: 200 };
     });

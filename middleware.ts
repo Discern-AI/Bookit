@@ -8,7 +8,8 @@ export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const isAuthRoute =
     req.nextUrl.pathname.startsWith("/login") ||
-    req.nextUrl.pathname.startsWith("/signup");
+    req.nextUrl.pathname.startsWith("/signup") ||
+    ["/forgot-password", "/account-link"].includes(req.nextUrl.pathname);
 
   const isPublicBook =
     /^\/(?:book|path|profile|review|shelf|article)\/[^/]+\/?$/.test(
@@ -27,7 +28,10 @@ export default auth((req) => {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isSharedGift) {
+  if (
+    isSharedGift ||
+    ["/forgot-password", "/account-link"].includes(req.nextUrl.pathname)
+  ) {
     const response = NextResponse.next();
     response.headers.set("Cache-Control", "private, no-store");
     response.headers.set("Referrer-Policy", "no-referrer");
