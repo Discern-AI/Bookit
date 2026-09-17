@@ -20,7 +20,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (typeof token.id !== "string") return null;
       const current = await prisma.user.findUnique({
         where: { id: token.id },
-        select: { authVersion: true },
+        select: { authVersion: true, name: true },
       });
       if (
         !current ||
@@ -28,6 +28,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           (typeof token.authVersion === "number" ? token.authVersion : 0)
       )
         return null;
+      token.name = current.name;
       return token;
     },
     async session({ session, token }) {

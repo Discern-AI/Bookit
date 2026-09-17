@@ -190,7 +190,17 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Empty selections cannot export. Exports use the existing preview-readiness, retry and optional public-byline controls. Only selected catalogue text, heading and opted-in public username appear. Selection and downloads leave library books, notes, shelves and publishing settings unchanged.
 - Selection/heading are not saved across navigation. Photo/cover-based shelfies and direct social integrations remain future work. No schema or dependency changes.
 
+## Account details and deletion continuation
+
+- Added private account-name editing in Settings. Server validation limits trimmed names to 1-100 characters; the public profile name remains separate. Auth sessions now refresh names from the database rather than trusting client updates.
+- Added an explicit permanent-deletion dialog requiring the current password and exact DELETE confirmation. The authenticated JSON-only endpoint rejects foreign origins, unknown fields, invalid input, stale sessions and wrong passwords. It locks the user and performs deletion in one transaction; errors leave database changes rolled back.
+- Existing foreign-key cascades remove owned library/history, imports, shelves, gift lists, paths/follows, reviews/comments/likes/reports/appeals, articles/images and auth records. Gift claims on other lists are released with both claim and list versions advanced under the existing list locks. Email verification tokens are removed. Shared Work/Edition catalogue rows and other users remain.
+- Deleted users fail the existing database-backed JWT check on subsequent requests. The browser signs out after deletion and clears this user's optional article recovery entries where storage permits. Downloads and other-device copies cannot be removed by this flow; users are asked to close other tabs first. Opaque moderator audit IDs and decision notes on other users' retained records are not erased.
+- No migration or dependency change. Email changes and password recovery remain future work, separate from existing password changes/device sign-out.
+
 ## Validation
+
+- Account details/deletion continuation: production build (including lint/type checks) and unit tests pass. Both existing appeals/security scenarios passed; the new account scenario passed on a focused rerun (9.1 seconds) after correcting the expected revoked-session response to null. Coverage verifies private-name/session refresh, strict input and foreign-origin rejection, cancellation, incorrect-password recovery, owned library/session/article/image deletion, other-account/catalogue preservation, released gift claims/list versions, browser recovery cleanup scoped to the deleted account and rejection of another device's session. The mobile deletion dialog was inspected. Also fixed an explicit string-array type in the prior shelfie test. The unrelated regression suite was not rerun; no deployment or push.
 
 - Shelfie continuation: production build (including lint/type checks), standalone typecheck, unit checks and all four card browser scenarios pass (16 seconds). New coverage verifies empty/six-book limits, reordering/removal, selection retained through searches, matching preview/PNG pixels, portrait dimensions, mobile width and preserved library notes/publishing settings. Existing book, quote, recap, retry and collection-isolation checks also pass. Square/portrait shelfie exports and mobile preview were visually inspected. The unrelated regression suite was not rerun; no deployment or push.
 
@@ -246,4 +256,4 @@ Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provid
 
 Next Phase 2 work: live acquisition/availability integrations, plus a successful live-provider check of the edition metadata flow. Reading paths now support manual creation, publishing and following. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
 
-Next build work: account settings and deletion. Further account work includes password recovery, email changes and account deletion. Later phases include AI gift expansion, further creator tools, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.
+Next build work: password recovery and verified email changes. Later phases include AI gift expansion, further creator tools, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.

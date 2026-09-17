@@ -399,7 +399,7 @@ test("shelfie selection, ordering and exports preserve private library data", as
   page,
 }) => {
   const owner = await login(page, "shelfie");
-  const titles = [];
+  const titles: string[] = [];
   for (let index = 0; index < 7; index++) {
     const title = `Card ${stamp} Shelf ${index}`;
     titles.push(title);
