@@ -1,0 +1,266 @@
+import { test, expect, Page } from "@playwright/test";
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import "dotenv/config";
+const stamp = Date.now();
+const password = "cycle-history-password";
+const db = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+});
+async function login(page: Page, suffix: string) {
+  const email = `cycle-history-${stamp}-${suffix}@example.test`;
+  expect(
+    (
+      await page.request.post("/api/auth/signup", {
+        data: { name: "PRIVATE_ACCOUNT_NAME", email, password },
+      })
+    ).ok(),
+  ).toBe(true);
+  const { csrfToken } = await (await page.request.get("/api/auth/csrf")).json();
+  await page.request.post("/api/auth/callback/credentials", {
+    form: { csrfToken, email, password },
+  });
+  return db.user.update({
+    where: { email },
+    data: {
+      username: `sc${stamp}${suffix}`,
+      publicName: "Public reader",
+      profilePublic: true,
+    },
+  });
+}
+async function add(userId: string, title: string) {
+  return db.work.create({
+    data: {
+      title,
+      authorName: "A. Reader",
+      genres: [],
+      themes: [],
+      embedding: [],
+      editions: {
+        create: {
+          format: "paperback",
+          userBooks: {
+            create: {
+              userId,
+              shelf: "read",
+              rating: 5,
+              privateNotes: "PRIVATE_LIBRARY_NOTES",
+              importedReview: "PRIVATE_IMPORTED_REVIEW",
+            },
+          },
+        },
+      },
+    },
+  });
+}
+test.afterAll(async () => {
+  await db.user.deleteMany({
+    where: { email: { startsWith: `cycle-history-${stamp}-` } },
+  });
+  await db.work.deleteMany({
+    where: { title: { startsWith: `Cycle ${stamp}` } },
+  });
+  await db.$disconnect();
+});
+
+test("cycle history corrects finish dates without changing sessions and rejects stale or out-of-order edits", async ({
+  page,
+  browser,
+}) => {
+  const owner = await login(page, "owner");
+  await add(owner.id, `Cycle ${stamp} Dates`);
+  const book = await db.userBook.findFirstOrThrow({
+    where: { userId: owner.id },
+  });
+  const logged = await page.request.post("/api/library/session", {
+    data: {
+      userBookId: book.id,
+      requestId: crypto.randomUUID(),
+      expectedLastSessionId: null,
+      date: "2023-12-20",
+      pageStart: 0,
+      pageEnd: 50,
+      finished: true,
+      note: "KEEP_SESSION_NOTE",
+    },
+  });
+  expect(logged.status()).toBe(200);
+  const initial = (await logged.json()).book;
+  const started = await page.request.post(`/api/library/${book.id}/reread`, {
+    data: {
+      requestId: crypto.randomUUID(),
+      cycleId: initial.cycleId,
+      version: initial.cycleVersion,
+      date: "2024-02-01",
+    },
+  });
+  expect(started.status()).toBe(200);
+  const active = (await started.json()).book;
+  expect(
+    (
+      await page.request.post("/api/library/session", {
+        data: {
+          userBookId: book.id,
+          requestId: crypto.randomUUID(),
+          expectedLastSessionId: active.lastSessionId,
+          date: "2024-03-01",
+          pageStart: 0,
+          pageEnd: 60,
+          finished: true,
+        },
+      })
+    ).status(),
+  ).toBe(200);
+  const cycles = (
+    await (await page.request.get(`/api/library/${book.id}/cycles`)).json()
+  ).cycles;
+  const first = cycles.find((c: { number: number }) => c.number === 1);
+  const second = cycles.find((c: { number: number }) => c.number === 2);
+  const patch = (date: string, version = first.version) =>
+    page.request.patch(`/api/library/${book.id}/cycles`, {
+      data: { cycleId: first.id, version, dateFinished: date },
+    });
+  expect((await patch("2023-12-01")).status()).toBe(400);
+  expect((await patch("2024-02-02")).status()).toBe(400);
+  await page.goto(`/library?book=${book.id}`);
+  const drawer = page.getByRole("dialog");
+  await drawer.getByRole("tab", { name: "Sessions", exact: true }).click();
+  const history = drawer.getByRole("region", { name: "Reading history" });
+  const older = history.getByRole("article", {
+    name: "Reading 1",
+    exact: true,
+  });
+  await expect(older).toContainText("1 sessions / 50 pages logged");
+  await older
+    .getByRole("button", { name: "Correct finish date", exact: true })
+    .click();
+  await older
+    .getByLabel("Corrected finish date", { exact: true })
+    .fill("2024-01-05");
+  await page.route(`**/api/library/${book.id}/cycles`, async (route) => {
+    if (route.request().method() === "PATCH")
+      await route.fulfill({
+        status: 503,
+        json: { error: "Temporary save failure" },
+      });
+    else await route.continue();
+  });
+  await older
+    .getByRole("button", { name: "Save finish date", exact: true })
+    .click();
+  await expect(older.getByRole("alert")).toHaveText("Temporary save failure");
+  await expect(
+    older.getByLabel("Corrected finish date", { exact: true }),
+  ).toHaveValue("2024-01-05");
+  await page.unroute(`**/api/library/${book.id}/cycles`);
+  await older
+    .getByRole("button", { name: "Save finish date", exact: true })
+    .click();
+  await expect(
+    older.getByText("Finished: 2024-01-05", { exact: true }),
+  ).toBeVisible();
+  expect(
+    (
+      await db.userBook.findUniqueOrThrow({ where: { id: book.id } })
+    ).dateFinished
+      ?.toISOString()
+      .slice(0, 10),
+  ).toBe("2024-03-01");
+  await older
+    .getByRole("button", { name: "Correct finish date", exact: true })
+    .click();
+  await older
+    .getByLabel("Corrected finish date", { exact: true })
+    .fill("2024-01-07");
+  expect((await patch("2024-01-06", first.version + 1)).status()).toBe(200);
+  await older
+    .getByRole("button", { name: "Save finish date", exact: true })
+    .click();
+  await expect(older.getByRole("alert")).toContainText("changed");
+  await expect(
+    older.getByLabel("Corrected finish date", { exact: true }),
+  ).toHaveValue("2024-01-07");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: "test-results/cycle-history-mobile.png" });
+  await older
+    .getByRole("button", { name: "Cancel date correction", exact: true })
+    .click();
+  await expect(
+    older.getByText("Finished: 2024-01-06", { exact: true }),
+  ).toBeVisible();
+  const current = history.getByRole("article", {
+    name: "Reading 2",
+    exact: true,
+  });
+  await current
+    .getByRole("button", { name: "Correct finish date", exact: true })
+    .click();
+  await current
+    .getByLabel("Corrected finish date", { exact: true })
+    .fill("2024-03-03");
+  await current
+    .getByRole("button", { name: "Save finish date", exact: true })
+    .click();
+  await expect(
+    current.getByText("Finished: 2024-03-03", { exact: true }),
+  ).toBeVisible();
+  const after = await db.userBook.findUniqueOrThrow({ where: { id: book.id } });
+  expect(after.dateFinished?.toISOString().slice(0, 10)).toBe("2024-03-03");
+  expect(after.shelf).toBe("read");
+  expect(after.rating).toBe(5);
+  expect(after.privateNotes).toBe("PRIVATE_LIBRARY_NOTES");
+  expect(
+    await db.readingSession.count({
+      where: {
+        userBookId: book.id,
+        note: "KEEP_SESSION_NOTE",
+        pageEnd: 50,
+        date: new Date("2023-12-20T12:00Z"),
+      },
+    }),
+  ).toBe(1);
+  const other = await browser.newPage();
+  await login(other, "other");
+  expect(
+    (await other.request.get(`/api/library/${book.id}/cycles`)).status(),
+  ).toBe(404);
+  expect(
+    (
+      await other.request.patch(`/api/library/${book.id}/cycles`, {
+        data: {
+          cycleId: second.id,
+          version: second.version,
+          dateFinished: "2024-03-04",
+        },
+      })
+    ).status(),
+  ).toBe(404);
+  await other.close();
+  await page.goto("/creator/recap?year=2024");
+  await expect(
+    page.getByRole("region", { name: "Card preview" }).getByRole("img"),
+  ).toHaveAttribute("aria-label", /2 reads finished/);
+  await page.goto("/creator/recap?year=2023");
+  await expect(
+    page.getByRole("region", { name: "Card preview" }).getByRole("img"),
+  ).toHaveAttribute("aria-label", /0 reads finished/);
+  await add(owner.id, `Cycle ${stamp} Undated`);
+  const undated = await db.userBook.findFirstOrThrow({
+    where: { userId: owner.id, id: { not: book.id } },
+  });
+  expect(
+    (
+      await page.request.patch(`/api/library/${undated.id}/cycles`, {
+        data: { cycleId: null, version: 0, dateFinished: "2024-05-01" },
+      })
+    ).status(),
+  ).toBe(200);
+  expect(
+    (
+      await db.userBook.findUniqueOrThrow({ where: { id: undated.id } })
+    ).dateFinished
+      ?.toISOString()
+      .slice(0, 10),
+  ).toBe("2024-05-01");
+});

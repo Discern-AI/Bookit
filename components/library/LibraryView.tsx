@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/Toast";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { StartReread } from "./StartReread";
 import { LogSession } from "./LogSession";
+import { CycleHistory } from "./CycleHistory";
 import { SessionHistory } from "./SessionHistory";
 import { ManageShelf } from "./ManageShelf";
 import { GetBook } from "@/components/books/GetBook";
@@ -528,6 +529,9 @@ export function LibraryView({
               aria-labelledby="book-tab-Sessions"
               hidden={tab !== "Sessions"}
             >
+              {tab === "Sessions" && (
+                <CycleHistory key={book.id} book={book} onSaved={update} />
+              )}
               <SessionHistory bookId={book.id} latestId={book.lastSessionId} />
             </section>
             <section
