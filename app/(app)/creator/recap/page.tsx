@@ -35,7 +35,11 @@ export default async function Page({
       select: { profilePublic: true, username: true },
     }),
     prisma.readingCycle.count({
-      where: { userBook: { userId: session!.user.id }, dateFinished: range },
+      where: {
+        userBook: { userId: session!.user.id },
+        dateFinished: range,
+        cancelledAt: null,
+      },
     }),
   ]);
   const recap = {

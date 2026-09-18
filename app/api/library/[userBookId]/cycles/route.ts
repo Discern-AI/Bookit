@@ -22,8 +22,10 @@ export async function GET(_request: Request, { params }: Context) {
       dateStarted: true,
       dateFinished: true,
       readingCycles: {
+        where: { cancelledAt: null },
         orderBy: { number: "desc" },
         include: {
+          _count: { select: { sessions: true } },
           sessions: {
             where: { deletedAt: null },
             select: { pageStart: true, pageEnd: true },
@@ -48,6 +50,7 @@ export async function GET(_request: Request, { params }: Context) {
           dateFinished: book.dateFinished,
           version: 0,
           sessions: book.readingSessions,
+          _count: { sessions: book.readingSessions.length },
         },
       ];
   return reply({
@@ -59,6 +62,12 @@ export async function GET(_request: Request, { params }: Context) {
       dateFinished: c.dateFinished?.toISOString() ?? null,
       version: c.version,
       canEdit: !!c.dateFinished || !c.isCurrent || book.shelf === "read",
+      canCancel:
+        c.isCurrent &&
+        c.number > 1 &&
+        !c.dateFinished &&
+        book.shelf !== "read" &&
+        c._count.sessions === 0,
       sessionCount: c.sessions.length,
       pages: c.sessions.reduce((sum, s) => sum + s.pageEnd - s.pageStart, 0),
     })),
@@ -97,7 +106,12 @@ export async function PATCH(request: Request, { params }: Context) {
       await db.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${session.user.id}))`;
       const book = await db.userBook.findFirst({
         where: { id: params.userBookId, userId: session.user.id },
-        include: { readingCycles: { orderBy: { number: "asc" } } },
+        include: {
+          readingCycles: {
+            where: { cancelledAt: null },
+            orderBy: { number: "asc" },
+          },
+        },
       });
       if (!book) return { status: 404, error: "Book not found." };
       const cycle = input.cycleId
@@ -123,9 +137,7 @@ export async function PATCH(request: Request, { params }: Context) {
           status: 409,
           error: "Finish this reading before correcting its completion date.",
         };
-      const next = book.readingCycles.find(
-        (c) => c.number === cycle.number + 1,
-      );
+      const next = book.readingCycles.find((c) => c.number > cycle.number);
       const latest = await db.readingSession.findFirst({
         where: { userBookId: book.id, cycleId: cycle.id, deletedAt: null },
         orderBy: { date: "desc" },

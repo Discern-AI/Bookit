@@ -507,6 +507,7 @@ model ArticleAppeal {
 }
 
 model ReadingCycle {
+ cancelledAt DateTime?
  id String @id @default(cuid())
  userBookId String
  number Int

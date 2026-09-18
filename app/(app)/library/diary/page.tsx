@@ -33,7 +33,7 @@ export default async function DiaryPage() {
       select: { yearlyGoal: true, goalYear: true },
     }),
     prisma.readingCycle.findMany({
-      where: { userBook: { userId: session.user.id } },
+      where: { userBook: { userId: session.user.id }, cancelledAt: null },
       include: {
         userBook: { include: { edition: { include: { work: true } } } },
       },

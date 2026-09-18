@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { CancelReread } from "./CancelReread";
 import { Button } from "@/components/ui/Button";
 import { localDate } from "@/lib/reading";
 import type { LibraryBook } from "@/lib/book-data";
@@ -12,6 +13,7 @@ type Cycle = {
   dateStarted: string | null;
   dateFinished: string | null;
   canEdit: boolean;
+  canCancel: boolean;
   sessionCount: number;
   pages: number;
 };
@@ -80,6 +82,19 @@ export function CycleHistory({
             <p>
               {c.sessionCount} sessions / {c.pages} pages logged
             </p>
+            {c.canCancel && c.id && (
+              <CancelReread
+                bookId={book.id}
+                cycleId={c.id}
+                version={c.version}
+                disabled={!!edit || busy}
+                onSaved={(updated) => {
+                  onSaved(updated);
+                  setAttempt((n) => n + 1);
+                  router.refresh();
+                }}
+              />
+            )}
             {edit?.number === c.number ? (
               <form
                 className="space-y-3"
