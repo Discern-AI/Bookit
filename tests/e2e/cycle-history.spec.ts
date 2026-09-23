@@ -264,3 +264,128 @@ test("cycle history corrects finish dates without changing sessions and rejects 
       .slice(0, 10),
   ).toBe("2024-05-01");
 });
+
+test("start dates respect reading boundaries and preserve stale drafts", async ({
+  page,
+}) => {
+  const owner = await login(page, "starts");
+  await add(owner.id, `Cycle ${stamp} Starts`);
+  const book = await db.userBook.findFirstOrThrow({
+    where: { userId: owner.id },
+  });
+  const url = `/api/library/${book.id}/cycles`;
+  const patch = (
+    cycleId: string | null,
+    version: number,
+    dateStarted: string,
+  ) => page.request.patch(url, { data: { cycleId, version, dateStarted } });
+  expect((await patch(null, 0, "2099-01-01")).status()).toBe(400);
+  expect(await db.readingCycle.count({ where: { userBookId: book.id } })).toBe(
+    0,
+  );
+  expect((await patch(null, 0, "2024-01-01")).status()).toBe(200);
+  let first = await db.readingCycle.findFirstOrThrow({
+    where: { userBookId: book.id },
+  });
+  expect(
+    (
+      await page.request.patch(url, {
+        data: {
+          cycleId: first.id,
+          version: first.version,
+          dateFinished: "2024-01-10",
+        },
+      })
+    ).status(),
+  ).toBe(200);
+  first = await db.readingCycle.findUniqueOrThrow({ where: { id: first.id } });
+  const started = await page.request.post(`/api/library/${book.id}/reread`, {
+    data: {
+      requestId: crypto.randomUUID(),
+      cycleId: first.id,
+      version: first.version,
+      date: "2024-02-01",
+    },
+  });
+  expect(started.status()).toBe(200);
+  const active = (await started.json()).book;
+  expect(
+    (await patch(active.cycleId, active.cycleVersion, "2024-01-09")).status(),
+  ).toBe(400);
+  expect(
+    (
+      await page.request.post("/api/library/session", {
+        data: {
+          userBookId: book.id,
+          requestId: crypto.randomUUID(),
+          expectedLastSessionId: active.lastSessionId,
+          date: "2024-02-05",
+          pageStart: 0,
+          pageEnd: 20,
+          finished: false,
+        },
+      })
+    ).status(),
+  ).toBe(200);
+  const second = await db.readingCycle.findUniqueOrThrow({
+    where: { id: active.cycleId },
+  });
+  expect((await patch(second.id, second.version, "2024-02-06")).status()).toBe(
+    400,
+  );
+  await page.goto(`/library?book=${book.id}`);
+  await page
+    .getByRole("dialog")
+    .getByRole("tab", { name: "Sessions", exact: true })
+    .click();
+  const current = page.getByRole("article", { name: "Reading 2", exact: true });
+  await current
+    .getByRole("button", { name: "Correct start date", exact: true })
+    .click();
+  await current
+    .getByLabel("Corrected start date", { exact: true })
+    .fill("2024-01-20");
+  expect((await patch(second.id, second.version, "2024-01-21")).status()).toBe(
+    200,
+  );
+  await current
+    .getByRole("button", { name: "Save start date", exact: true })
+    .click();
+  await expect(current.getByRole("alert")).toContainText("changed");
+  await expect(
+    current.getByLabel("Corrected start date", { exact: true }),
+  ).toHaveValue("2024-01-20");
+  await current
+    .getByRole("button", { name: "Cancel date correction", exact: true })
+    .click();
+  await expect(current).toContainText("Started: 2024-01-21");
+  await current
+    .getByRole("button", { name: "Correct start date", exact: true })
+    .click();
+  await current
+    .getByLabel("Corrected start date", { exact: true })
+    .fill("2024-01-20");
+  await current
+    .getByRole("button", { name: "Save start date", exact: true })
+    .click();
+  await expect(current).toContainText("Started: 2024-01-20");
+  const archived = await db.readingCycle.findUniqueOrThrow({
+    where: { id: first.id },
+  });
+  expect((await patch(first.id, archived.version, "2024-01-11")).status()).toBe(
+    400,
+  );
+  expect((await patch(first.id, archived.version, "2023-12-30")).status()).toBe(
+    200,
+  );
+  const after = await db.userBook.findUniqueOrThrow({ where: { id: book.id } });
+  expect(after.dateStarted?.toISOString().slice(0, 10)).toBe("2024-01-20");
+  expect(after.dateFinished).toBeNull();
+  expect(after.shelf).toBe("reading_now");
+  expect(after.privateNotes).toBe("PRIVATE_LIBRARY_NOTES");
+  const session = await db.readingSession.findFirstOrThrow({
+    where: { userBookId: book.id },
+  });
+  expect(session.date.toISOString().slice(0, 10)).toBe("2024-02-05");
+  expect(session.pageEnd).toBe(20);
+});

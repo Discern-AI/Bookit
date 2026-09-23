@@ -29,6 +29,10 @@ export function CycleHistory({
   const [loadError, setLoadError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const [edit, setEdit] = useState<Cycle | null>(null);
+  const [field, setField] = useState<"dateStarted" | "dateFinished">(
+    "dateFinished",
+  );
+  const label = field === "dateStarted" ? "start" : "finish";
   const [date, setDate] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -109,14 +113,12 @@ export function CycleHistory({
                       body: JSON.stringify({
                         cycleId: edit.id,
                         version: edit.version,
-                        dateFinished: date,
+                        [field]: date,
                       }),
                     });
                     const data = await r.json();
                     if (!r.ok)
-                      throw new Error(
-                        data.error || "Could not save the finish date.",
-                      );
+                      throw new Error(data.error || "Could not save the date.");
                     setEdit(null);
                     onSaved(data.book);
                     setAttempt((n) => n + 1);
@@ -125,7 +127,7 @@ export function CycleHistory({
                     setError(
                       e instanceof Error
                         ? e.message
-                        : "Could not save the finish date.",
+                        : "Could not save the date.",
                     );
                   } finally {
                     setBusy(false);
@@ -133,11 +135,13 @@ export function CycleHistory({
                 }}
               >
                 <p>
-                  This changes the finish event and yearly totals. Sessions,
-                  shelf, rating and notes stay unchanged.
+                  {field === "dateFinished"
+                    ? "This changes the finish event and yearly totals."
+                    : "This changes when this reading started."}{" "}
+                  Sessions, shelf, rating and notes stay unchanged.
                 </p>
                 <label className="block">
-                  Corrected finish date
+                  Corrected {label} date
                   <input
                     className="block w-full border border-ink-200 rounded p-2"
                     type="date"
@@ -148,7 +152,7 @@ export function CycleHistory({
                   />
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  <Button loading={busy}>Save finish date</Button>
+                  <Button loading={busy}>Save {label} date</Button>
                   <Button
                     type="button"
                     variant="secondary"
@@ -164,19 +168,34 @@ export function CycleHistory({
                 {error && <p role="alert">{error}</p>}
               </form>
             ) : (
-              c.canEdit && (
+              <div className="flex flex-wrap gap-2">
                 <Button
                   variant="secondary"
                   disabled={!!edit || busy}
                   onClick={() => {
                     setEdit(c);
-                    setDate(c.dateFinished?.slice(0, 10) ?? "");
+                    setField("dateStarted");
+                    setDate(c.dateStarted?.slice(0, 10) ?? "");
                     setError("");
                   }}
                 >
-                  Correct finish date
+                  Correct start date
                 </Button>
-              )
+                {c.canEdit && (
+                  <Button
+                    variant="secondary"
+                    disabled={!!edit || busy}
+                    onClick={() => {
+                      setField("dateFinished");
+                      setEdit(c);
+                      setDate(c.dateFinished?.slice(0, 10) ?? "");
+                      setError("");
+                    }}
+                  >
+                    Correct finish date
+                  </Button>
+                )}
+              </div>
             )}
           </article>
         ))

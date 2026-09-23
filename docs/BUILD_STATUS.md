@@ -243,7 +243,15 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Cancelled cycles are excluded from history, diary completion events, recap counts and correction boundaries. Private exports retain their cancellation marker/request identity. Date validation skips cancelled attempts when finding the next reread. Account/book cascades still remove all cycles.
 - No new dependencies. Start-date correction and clearing finish dates remain future work.
 
+## Reading start-date corrections - 23 September 2026
+
+- Reading history offers Correct start date for current and earlier readings, including imported books with unknown dates. Current corrections update the library start date; archived corrections leave the current reading alone.
+- Owner-scoped, version-checked writes use the existing reading lock. Dates cannot precede the previous reading's known finish or follow the cycle's earliest undeleted session, known finish or next reading's known start. Invalid legacy edits make no cycle write.
+- Failed and stale saves preserve the date draft. Sessions, shelves, ratings, notes and completion totals remain unchanged. No migration or dependency change.
+
 ## Validation
+
+- Start-date correction continuation: production build (including lint/type checks), standalone typecheck, unit tests and all six targeted cycle-history/cancellation/reread/session browser scenarios pass (21.9 seconds). New coverage verifies invalid legacy edits do not create cycles, unknown-date initialization, prior-finish/session/own-finish boundaries, stale draft retention, successful browser correction, archived isolation and preserved sessions/notes/shelf. No live providers, deployment or push.
 
 - Reread-cancellation continuation: production build (including lint/type checks), standalone typecheck, unit tests and all five targeted cancellation/history/reread/session browser scenarios pass (18.1 seconds). Checks cover keeping the reread, failed-request retry, stale/foreign rejection, restored progress/dates/shelf and preserved notes/ratings, old-start and old-log rejection, idempotent cancellation after a newer reread starts, numbering after cancellation, correction boundaries across cancelled attempts, active/deleted-session and completed-reading protection, recap exclusion and exported markers. The mobile cancellation and retry state was inspected. Applied the additive local `20260918010000_cancel_reread` migration. No dependency change, deployment or push; unrelated regressions were not rerun.
 
@@ -313,4 +321,4 @@ Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provid
 
 Next Phase 2 work: live acquisition/availability integrations, plus a successful live-provider check of the edition metadata flow. Reading paths now support manual creation, publishing and following. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
 
-Next build work: reading-cycle start-date corrections. Live account email delivery still requires configuration and provider verification. Later phases include AI gift expansion, further creator tools, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.
+Next build work: clearing an incorrect reading-cycle finish with explicit handling of completion totals and current shelf state. Live account email delivery still requires configuration and provider verification. Later phases include AI gift expansion, further creator tools, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.

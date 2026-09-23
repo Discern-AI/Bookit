@@ -73,18 +73,18 @@ export async function GET(_request: Request, { params }: Context) {
     })),
   });
 }
-const schema = z
-  .object({
-    cycleId: z.string().nullable(),
-    version: z.number().int().min(0),
-    dateFinished: z
-      .string()
-      .refine(validDate)
-      .refine(
-        (date) => date <= shiftDay(new Date().toISOString().slice(0, 10), 1),
-      ),
-  })
-  .strict();
+const correctionDate = z
+  .string()
+  .refine(validDate)
+  .refine((date) => date <= shiftDay(new Date().toISOString().slice(0, 10), 1));
+const identity = {
+  cycleId: z.string().nullable(),
+  version: z.number().int().min(0),
+};
+const schema = z.union([
+  z.object({ ...identity, dateFinished: correctionDate }).strict(),
+  z.object({ ...identity, dateStarted: correctionDate }).strict(),
+]);
 export async function PATCH(request: Request, { params }: Context) {
   const session = await auth();
   if (!session?.user.id) return reply({ error: "Sign in first." }, 401);
@@ -96,11 +96,10 @@ export async function PATCH(request: Request, { params }: Context) {
     return reply({ error: "Use the library on this site." }, 403);
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success)
-    return reply(
-      { error: "Choose a valid finish date, today or earlier." },
-      400,
-    );
+    return reply({ error: "Choose a valid date, today or earlier." }, 400);
   const input = parsed.data;
+  const isStart = "dateStarted" in input;
+  const value = isStart ? input.dateStarted : input.dateFinished;
   try {
     const result = await prisma.$transaction(async (db) => {
       await db.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${session.user.id}))`;
@@ -132,45 +131,71 @@ export async function PATCH(request: Request, { params }: Context) {
           error:
             "This reading changed. Your date is still here; cancel and reload history before trying again.",
         };
-      if (cycle.isCurrent && !cycle.dateFinished && book.shelf !== "read")
+      if (
+        !isStart &&
+        cycle.isCurrent &&
+        !cycle.dateFinished &&
+        book.shelf !== "read"
+      )
         return {
           status: 409,
           error: "Finish this reading before correcting its completion date.",
         };
       const next = book.readingCycles.find((c) => c.number > cycle.number);
-      const latest = await db.readingSession.findFirst({
+      const boundarySession = await db.readingSession.findFirst({
         where: { userBookId: book.id, cycleId: cycle.id, deletedAt: null },
-        orderBy: { date: "desc" },
+        orderBy: { date: isStart ? "asc" : "desc" },
         select: { date: true },
       });
-      if (
-        (cycle.dateStarted &&
-          input.dateFinished < cycle.dateStarted.toISOString().slice(0, 10)) ||
-        (latest && input.dateFinished < latest.date.toISOString().slice(0, 10))
-      )
-        return {
-          status: 400,
-          error:
-            "The finish date must be on or after the start and all recorded sessions for this reading.",
-        };
-      if (
-        next?.dateStarted &&
-        input.dateFinished > next.dateStarted.toISOString().slice(0, 10)
-      )
-        return {
-          status: 400,
-          error: "The finish date must be on or before the next reread starts.",
-        };
+      const day = (date: Date) => date.toISOString().slice(0, 10);
+      if (isStart) {
+        const previous = book.readingCycles
+          .filter((c) => c.number < cycle.number)
+          .at(-1);
+        if (previous?.dateFinished && value < day(previous.dateFinished))
+          return {
+            status: 400,
+            error:
+              "The start date must be on or after the previous reading finishes.",
+          };
+        if (
+          (cycle.dateFinished && value > day(cycle.dateFinished)) ||
+          (boundarySession && value > day(boundarySession.date)) ||
+          (next?.dateStarted && value > day(next.dateStarted))
+        )
+          return {
+            status: 400,
+            error:
+              "The start date must be on or before its sessions, finish date and next reread.",
+          };
+      } else {
+        if (
+          (cycle.dateStarted && value < day(cycle.dateStarted)) ||
+          (boundarySession && value < day(boundarySession.date))
+        )
+          return {
+            status: 400,
+            error:
+              "The finish date must be on or after the start and all recorded sessions for this reading.",
+          };
+        if (next?.dateStarted && value > day(next.dateStarted))
+          return {
+            status: 400,
+            error:
+              "The finish date must be on or before the next reread starts.",
+          };
+      }
       const current = cycle.id ? cycle : await ensureReadingCycle(db, book);
-      const date = new Date(`${input.dateFinished}T12:00:00.000Z`);
+      const date = new Date(`${value}T12:00:00.000Z`);
+      const dates = isStart ? { dateStarted: date } : { dateFinished: date };
       await db.readingCycle.update({
         where: { id: current.id! },
-        data: { dateFinished: date, version: { increment: 1 } },
+        data: { ...dates, version: { increment: 1 } },
       });
       if (cycle.isCurrent)
         await db.userBook.update({
           where: { id: book.id },
-          data: { dateFinished: date },
+          data: dates,
         });
       const updated = await db.userBook.findUniqueOrThrow({
         where: { id: book.id },
@@ -180,6 +205,6 @@ export async function PATCH(request: Request, { params }: Context) {
     });
     return reply(result, result.status);
   } catch {
-    return reply({ error: "Could not save the finish date. Try again." }, 503);
+    return reply({ error: "Could not save the date. Try again." }, 503);
   }
 }
