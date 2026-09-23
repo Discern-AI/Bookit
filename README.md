@@ -109,3 +109,5 @@ A book's Sessions tab now includes Reading history: each reading's start/finish 
 An unfinished reread with no sessions can be cancelled from Reading history in the book's Sessions tab. Confirming restores the prior reading, dates and progress and moves the book to Read. Rereads with any session records (including deleted ones) cannot be cancelled. Cancellation markers remain in private exports to prevent old requests recreating them, so reading numbers can have gaps.
 
 Reading history in the book drawer Sessions tab supports correcting start dates, including unknown imported dates. Corrections preserve sessions and finished-read totals; conflicting dates and stale edits are rejected while keeping the draft.
+
+Reading history also offers Clear finish date with confirmation. This marks the date unknown and removes the reading from dated annual totals while preserving sessions and shelf membership. Current readings must be on Read; it is not a reopen action. A known date can be restored through Correct finish date.

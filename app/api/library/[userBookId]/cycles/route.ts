@@ -82,7 +82,7 @@ const identity = {
   version: z.number().int().min(0),
 };
 const schema = z.union([
-  z.object({ ...identity, dateFinished: correctionDate }).strict(),
+  z.object({ ...identity, dateFinished: correctionDate.nullable() }).strict(),
   z.object({ ...identity, dateStarted: correctionDate }).strict(),
 ]);
 export async function PATCH(request: Request, { params }: Context) {
@@ -141,6 +141,34 @@ export async function PATCH(request: Request, { params }: Context) {
           status: 409,
           error: "Finish this reading before correcting its completion date.",
         };
+      if (value === null) {
+        if (cycle.isCurrent && book.shelf !== "read")
+          return {
+            status: 409,
+            error:
+              "Move this book to Read before clearing its finish date so it remains completed.",
+          };
+        if (!cycle.dateFinished)
+          return {
+            status: 409,
+            error: "This reading has no finish date to clear. Reload history.",
+          };
+        const current = cycle.id ? cycle : await ensureReadingCycle(db, book);
+        await db.readingCycle.update({
+          where: { id: current.id! },
+          data: { dateFinished: null, version: { increment: 1 } },
+        });
+        if (cycle.isCurrent)
+          await db.userBook.update({
+            where: { id: book.id },
+            data: { dateFinished: null },
+          });
+        const updated = await db.userBook.findUniqueOrThrow({
+          where: { id: book.id },
+          include: libraryInclude,
+        });
+        return { status: 200, book: serializeBook(updated) };
+      }
       const next = book.readingCycles.find((c) => c.number > cycle.number);
       const boundarySession = await db.readingSession.findFirst({
         where: { userBookId: book.id, cycleId: cycle.id, deletedAt: null },

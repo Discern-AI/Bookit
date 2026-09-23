@@ -389,3 +389,141 @@ test("start dates respect reading boundaries and preserve stale drafts", async (
   expect(session.date.toISOString().slice(0, 10)).toBe("2024-02-05");
   expect(session.pageEnd).toBe(20);
 });
+
+test("clearing finish dates confirms totals change, preserves completion and protects stale writes", async ({
+  page,
+  browser,
+}) => {
+  const owner = await login(page, "clear");
+  await add(owner.id, `Cycle ${stamp} Clear`);
+  const book = await db.userBook.findFirstOrThrow({
+    where: { userId: owner.id },
+  });
+  const url = `/api/library/${book.id}/cycles`;
+  const logged = await page.request.post("/api/library/session", {
+    data: {
+      userBookId: book.id,
+      requestId: crypto.randomUUID(),
+      expectedLastSessionId: null,
+      date: "2024-01-10",
+      pageStart: 0,
+      pageEnd: 40,
+      finished: true,
+      note: "PRESERVE_FINISHED_SESSION",
+    },
+  });
+  expect(logged.status()).toBe(200);
+  const first = (await logged.json()).book;
+  const clear = (id: string, version: number) =>
+    page.request.patch(url, {
+      data: { cycleId: id, version, dateFinished: null },
+    });
+  await db.userBook.update({ where: { id: book.id }, data: { shelf: "tbr" } });
+  expect((await clear(first.cycleId, first.cycleVersion)).status()).toBe(409);
+  await db.userBook.update({ where: { id: book.id }, data: { shelf: "read" } });
+  const foreign = await browser.newPage();
+  await login(foreign, "clearforeign");
+  expect(
+    (
+      await foreign.request.patch(url, {
+        data: {
+          cycleId: first.cycleId,
+          version: first.cycleVersion,
+          dateFinished: null,
+        },
+      })
+    ).status(),
+  ).toBe(404);
+  await foreign.close();
+  await page.goto(`/library?book=${book.id}`);
+  await page
+    .getByRole("dialog")
+    .getByRole("tab", { name: "Sessions", exact: true })
+    .click();
+  const reading = page.getByRole("article", { name: "Reading 1", exact: true });
+  await reading
+    .getByRole("button", { name: "Clear finish date", exact: true })
+    .click();
+  await expect(reading).toContainText(
+    "removes this reading from dated annual totals",
+  );
+  await reading
+    .getByRole("button", { name: "Cancel date correction", exact: true })
+    .click();
+  await expect(reading).toContainText("Finished: 2024-01-10");
+  await reading
+    .getByRole("button", { name: "Clear finish date", exact: true })
+    .click();
+  await page.route(`**/api/library/${book.id}/cycles`, async (route) => {
+    if (route.request().method() === "PATCH")
+      await route.fulfill({
+        status: 503,
+        json: { error: "Temporary save failure" },
+      });
+    else await route.continue();
+  });
+  await reading
+    .getByRole("button", { name: "Confirm clearing finish date", exact: true })
+    .click();
+  await expect(reading.getByRole("alert")).toHaveText("Temporary save failure");
+  await page.unroute(`**/api/library/${book.id}/cycles`);
+  await reading
+    .getByRole("button", { name: "Confirm clearing finish date", exact: true })
+    .click();
+  await expect(reading).toContainText("Finished: Unknown");
+  expect((await clear(first.cycleId, first.cycleVersion)).status()).toBe(409);
+  const after = await db.userBook.findUniqueOrThrow({ where: { id: book.id } });
+  expect(after.dateFinished).toBeNull();
+  expect(after.shelf).toBe("read");
+  expect(after.rating).toBe(5);
+  expect(after.privateNotes).toBe("PRIVATE_LIBRARY_NOTES");
+  expect(
+    await db.readingSession.count({
+      where: {
+        userBookId: book.id,
+        finished: true,
+        pageEnd: 40,
+        note: "PRESERVE_FINISHED_SESSION",
+      },
+    }),
+  ).toBe(1);
+  await page.goto("/creator/recap?year=2024");
+  await expect(
+    page.getByRole("region", { name: "Card preview" }).getByRole("img"),
+  ).toHaveAttribute("aria-label", /0 reads finished/);
+  const cycle = await db.readingCycle.findUniqueOrThrow({
+    where: { id: first.cycleId },
+  });
+  expect(
+    (
+      await page.request.patch(url, {
+        data: {
+          cycleId: cycle.id,
+          version: cycle.version,
+          dateFinished: "2024-01-11",
+        },
+      })
+    ).status(),
+  ).toBe(200);
+  const restored = await db.readingCycle.findUniqueOrThrow({
+    where: { id: cycle.id },
+  });
+  const reread = await page.request.post(`/api/library/${book.id}/reread`, {
+    data: {
+      requestId: crypto.randomUUID(),
+      cycleId: restored.id,
+      version: restored.version,
+      date: "2024-02-01",
+    },
+  });
+  expect(reread.status()).toBe(200);
+  const archived = await db.readingCycle.findUniqueOrThrow({
+    where: { id: cycle.id },
+  });
+  expect((await clear(archived.id, archived.version)).status()).toBe(200);
+  const active = await db.userBook.findUniqueOrThrow({
+    where: { id: book.id },
+  });
+  expect(active.shelf).toBe("reading_now");
+  expect(active.dateStarted?.toISOString().slice(0, 10)).toBe("2024-02-01");
+});

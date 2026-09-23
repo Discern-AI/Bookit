@@ -249,7 +249,15 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Owner-scoped, version-checked writes use the existing reading lock. Dates cannot precede the previous reading's known finish or follow the cycle's earliest undeleted session, known finish or next reading's known start. Invalid legacy edits make no cycle write.
 - Failed and stale saves preserve the date draft. Sessions, shelves, ratings, notes and completion totals remain unchanged. No migration or dependency change.
 
+## Clearing finish dates - 23 September 2026
+
+- Reading history offers a confirmation before clearing a known finish date. The date becomes unknown and the reading drops out of dated annual totals, while sessions, ratings, notes and shelf membership remain unchanged.
+- Current readings must be on Read so they retain completion through the existing undated-read representation. Archived corrections leave the current reading untouched. This is a date correction, not a reopen action; known dates can be restored with Correct finish date.
+- Owner and version checks plus the existing reading lock protect against foreign and stale writes. Failed saves retain confirmation for retry. No migration or dependency change.
+
 ## Validation
+
+- Finish-date clearing: production build (lint/type checks), standalone typecheck, unit tests and seven targeted cycle-history/cancellation/reread/session browser scenarios pass (32.9 seconds). New coverage verifies confirmation cancellation, failed-save retry, foreign/stale requests, current-shelf guard, preserved sessions/notes/rating, annual-count removal, date restoration and archived isolation. No live provider calls, deployment or push.
 
 - Start-date correction continuation: production build (including lint/type checks), standalone typecheck, unit tests and all six targeted cycle-history/cancellation/reread/session browser scenarios pass (21.9 seconds). New coverage verifies invalid legacy edits do not create cycles, unknown-date initialization, prior-finish/session/own-finish boundaries, stale draft retention, successful browser correction, archived isolation and preserved sessions/notes/shelf. No live providers, deployment or push.
 
@@ -321,4 +329,4 @@ Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provid
 
 Next Phase 2 work: live acquisition/availability integrations, plus a successful live-provider check of the edition metadata flow. Reading paths now support manual creation, publishing and following. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
 
-Next build work: clearing an incorrect reading-cycle finish with explicit handling of completion totals and current shelf state. Live account email delivery still requires configuration and provider verification. Later phases include AI gift expansion, further creator tools, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.
+Next build work: explicitly reopening an incorrectly completed current reading, with consistent completion state and logging behavior. Live account email delivery still requires configuration and provider verification. Later phases include AI gift expansion, further creator tools, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.

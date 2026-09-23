@@ -29,7 +29,7 @@ export function CycleHistory({
   const [loadError, setLoadError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const [edit, setEdit] = useState<Cycle | null>(null);
-  const [field, setField] = useState<"dateStarted" | "dateFinished">(
+  const [field, setField] = useState<"dateStarted" | "dateFinished" | "clear">(
     "dateFinished",
   );
   const label = field === "dateStarted" ? "start" : "finish";
@@ -113,7 +113,8 @@ export function CycleHistory({
                       body: JSON.stringify({
                         cycleId: edit.id,
                         version: edit.version,
-                        [field]: date,
+                        [field === "clear" ? "dateFinished" : field]:
+                          field === "clear" ? null : date,
                       }),
                     });
                     const data = await r.json();
@@ -135,24 +136,32 @@ export function CycleHistory({
                 }}
               >
                 <p>
-                  {field === "dateFinished"
-                    ? "This changes the finish event and yearly totals."
-                    : "This changes when this reading started."}{" "}
+                  {field === "clear"
+                    ? "This marks the finish date as unknown and removes this reading from dated annual totals. It does not reopen the reading."
+                    : field === "dateFinished"
+                      ? "This changes the finish event and yearly totals."
+                      : "This changes when this reading started."}{" "}
                   Sessions, shelf, rating and notes stay unchanged.
                 </p>
-                <label className="block">
-                  Corrected {label} date
-                  <input
-                    className="block w-full border border-ink-200 rounded p-2"
-                    type="date"
-                    required
-                    max={localDate()}
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                  />
-                </label>
+                {field !== "clear" && (
+                  <label className="block">
+                    Corrected {label} date
+                    <input
+                      className="block w-full border border-ink-200 rounded p-2"
+                      type="date"
+                      required
+                      max={localDate()}
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                    />
+                  </label>
+                )}
                 <div className="flex flex-wrap gap-2">
-                  <Button loading={busy}>Save {label} date</Button>
+                  <Button loading={busy}>
+                    {field === "clear"
+                      ? "Confirm clearing finish date"
+                      : `Save ${label} date`}
+                  </Button>
                   <Button
                     type="button"
                     variant="secondary"
@@ -169,6 +178,19 @@ export function CycleHistory({
               </form>
             ) : (
               <div className="flex flex-wrap gap-2">
+                {c.dateFinished && (!c.isCurrent || book.shelf === "read") && (
+                  <Button
+                    variant="secondary"
+                    disabled={!!edit || busy}
+                    onClick={() => {
+                      setEdit(c);
+                      setField("clear");
+                      setError("");
+                    }}
+                  >
+                    Clear finish date
+                  </Button>
+                )}
                 <Button
                   variant="secondary"
                   disabled={!!edit || busy}
