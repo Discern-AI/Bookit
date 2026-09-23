@@ -527,3 +527,146 @@ test("clearing finish dates confirms totals change, preserves completion and pro
   expect(active.shelf).toBe("reading_now");
   expect(active.dateStarted?.toISOString().slice(0, 10)).toBe("2024-02-01");
 });
+
+test("reopening preserves progress, removes the completion and permits finishing the same reading again", async ({
+  page,
+  browser,
+}) => {
+  const owner = await login(page, "reopen");
+  await add(owner.id, `Cycle ${stamp} Reopen`);
+  const book = await db.userBook.findFirstOrThrow({
+    where: { userId: owner.id },
+  });
+  const log = (
+    requestId: string,
+    expectedLastSessionId: string | null,
+    date: string,
+    pageStart: number,
+    pageEnd: number,
+    finished: boolean,
+  ) =>
+    page.request.post("/api/library/session", {
+      data: {
+        userBookId: book.id,
+        requestId,
+        expectedLastSessionId,
+        date,
+        pageStart,
+        pageEnd,
+        finished,
+      },
+    });
+  const finishId = crypto.randomUUID();
+  const finished = await log(finishId, null, "2024-01-10", 0, 40, true);
+  expect(finished.status()).toBe(200);
+  const initial = (await finished.json()).book;
+  const url = `/api/library/${book.id}/reopen`;
+  const payload = { cycleId: initial.cycleId, version: initial.cycleVersion };
+  const foreign = await browser.newPage();
+  await login(foreign, "reopenforeign");
+  expect((await foreign.request.post(url, { data: payload })).status()).toBe(
+    404,
+  );
+  await foreign.close();
+  expect(
+    (
+      await page.request.post(url, { data: { ...payload, version: 99 } })
+    ).status(),
+  ).toBe(409);
+  await page.goto(`/library?book=${book.id}`);
+  await page
+    .getByRole("dialog")
+    .getByRole("tab", { name: "Sessions", exact: true })
+    .click();
+  const reading = page.getByRole("article", { name: "Reading 1", exact: true });
+  await reading
+    .getByRole("button", { name: "Reopen reading", exact: true })
+    .click();
+  await expect(reading).toContainText("move the book to Reading now");
+  await reading
+    .getByRole("button", { name: "Cancel date correction", exact: true })
+    .click();
+  await expect(reading).toContainText("Finished: 2024-01-10");
+  await reading
+    .getByRole("button", { name: "Reopen reading", exact: true })
+    .click();
+  await page.route(`**/api/library/${book.id}/reopen`, (route) =>
+    route.fulfill({ status: 503, json: { error: "Temporary reopen failure" } }),
+  );
+  await reading
+    .getByRole("button", { name: "Confirm reopening", exact: true })
+    .click();
+  await expect(reading.getByRole("alert")).toHaveText(
+    "Temporary reopen failure",
+  );
+  await page.unroute(`**/api/library/${book.id}/reopen`);
+  await reading
+    .getByRole("button", { name: "Confirm reopening", exact: true })
+    .click();
+  await expect(reading).toContainText("Finished: Not finished");
+  expect((await page.request.post(url, { data: payload })).status()).toBe(409);
+  const after = await db.userBook.findUniqueOrThrow({ where: { id: book.id } });
+  expect(after.shelf).toBe("reading_now");
+  expect(after.dateFinished).toBeNull();
+  expect(after.dateStarted?.toISOString().slice(0, 10)).toBe("2024-01-10");
+  expect(after.rating).toBe(5);
+  expect(after.privateNotes).toBe("PRIVATE_LIBRARY_NOTES");
+  expect(await db.readingCycle.count({ where: { userBookId: book.id } })).toBe(
+    1,
+  );
+  const replay = await log(finishId, null, "2024-01-10", 0, 40, true);
+  expect(replay.status()).toBe(200);
+  const reopened = (await replay.json()).book;
+  expect(reopened.shelf).toBe("reading_now");
+  expect(reopened.currentPage).toBe(40);
+  expect(reopened.canReread).toBe(false);
+  await page.goto("/creator/recap?year=2024");
+  await expect(
+    page.getByRole("region", { name: "Card preview" }).getByRole("img"),
+  ).toHaveAttribute("aria-label", /0 reads finished/);
+  const complete = await log(
+    crypto.randomUUID(),
+    reopened.lastSessionId,
+    "2024-01-12",
+    40,
+    60,
+    true,
+  );
+  expect(complete.status()).toBe(200);
+  const current = (await complete.json()).book;
+  expect(current.cycleId).toBe(initial.cycleId);
+  expect(current.shelf).toBe("read");
+  expect((await page.request.post(url, { data: payload })).status()).toBe(409);
+  await page.goto("/creator/recap?year=2024");
+  await expect(
+    page.getByRole("region", { name: "Card preview" }).getByRole("img"),
+  ).toHaveAttribute("aria-label", /1 reads finished/);
+  const reread = await page.request.post(`/api/library/${book.id}/reread`, {
+    data: {
+      requestId: crypto.randomUUID(),
+      cycleId: current.cycleId,
+      version: current.cycleVersion,
+      date: "2024-02-01",
+    },
+  });
+  expect(reread.status()).toBe(200);
+  const archived = await db.readingCycle.findUniqueOrThrow({
+    where: { id: initial.cycleId },
+  });
+  expect(
+    (
+      await page.request.post(url, {
+        data: { cycleId: archived.id, version: archived.version },
+      })
+    ).status(),
+  ).toBe(409);
+  await add(owner.id, `Cycle ${stamp} Reopen unknown`);
+  const unknown = await db.userBook.findFirstOrThrow({
+    where: { userId: owner.id, id: { not: book.id } },
+  });
+  const un = await page.request.post(`/api/library/${unknown.id}/reopen`, {
+    data: { cycleId: null, version: 0 },
+  });
+  expect(un.status()).toBe(200);
+  expect((await un.json()).book.shelf).toBe("reading_now");
+});

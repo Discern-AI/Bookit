@@ -111,3 +111,5 @@ An unfinished reread with no sessions can be cancelled from Reading history in t
 Reading history in the book drawer Sessions tab supports correcting start dates, including unknown imported dates. Corrections preserve sessions and finished-read totals; conflicting dates and stale edits are rejected while keeping the draft.
 
 Reading history also offers Clear finish date with confirmation. This marks the date unknown and removes the reading from dated annual totals while preserving sessions and shelf membership. Current readings must be on Read; it is not a reopen action. A known date can be restored through Correct finish date.
+
+Use Reopen reading in reading history when the current book was marked finished by mistake. Confirmation moves it to Reading now and removes its dated completion while keeping the same cycle, start date, page progress and sessions. Earlier readings cannot be reopened.

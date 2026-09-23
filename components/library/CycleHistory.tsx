@@ -29,9 +29,9 @@ export function CycleHistory({
   const [loadError, setLoadError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const [edit, setEdit] = useState<Cycle | null>(null);
-  const [field, setField] = useState<"dateStarted" | "dateFinished" | "clear">(
-    "dateFinished",
-  );
+  const [field, setField] = useState<
+    "dateStarted" | "dateFinished" | "clear" | "reopen"
+  >("dateFinished");
   const label = field === "dateStarted" ? "start" : "finish";
   const [date, setDate] = useState("");
   const [error, setError] = useState("");
@@ -107,16 +107,23 @@ export function CycleHistory({
                   setBusy(true);
                   setError("");
                   try {
-                    const r = await fetch(`/api/library/${book.id}/cycles`, {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        cycleId: edit.id,
-                        version: edit.version,
-                        [field === "clear" ? "dateFinished" : field]:
-                          field === "clear" ? null : date,
-                      }),
-                    });
+                    const r = await fetch(
+                      `/api/library/${book.id}/${field === "reopen" ? "reopen" : "cycles"}`,
+                      {
+                        method: field === "reopen" ? "POST" : "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          cycleId: edit.id,
+                          version: edit.version,
+                          ...(field === "reopen"
+                            ? {}
+                            : {
+                                [field === "clear" ? "dateFinished" : field]:
+                                  field === "clear" ? null : date,
+                              }),
+                        }),
+                      },
+                    );
                     const data = await r.json();
                     if (!r.ok)
                       throw new Error(data.error || "Could not save the date.");
@@ -136,14 +143,17 @@ export function CycleHistory({
                 }}
               >
                 <p>
-                  {field === "clear"
-                    ? "This marks the finish date as unknown and removes this reading from dated annual totals. It does not reopen the reading."
-                    : field === "dateFinished"
-                      ? "This changes the finish event and yearly totals."
-                      : "This changes when this reading started."}{" "}
-                  Sessions, shelf, rating and notes stay unchanged.
+                  {field === "reopen"
+                    ? "Reopen this reading and move the book to Reading now? Its finish date will be removed from annual totals. Current progress, sessions, start date, ratings and notes are preserved."
+                    : field === "clear"
+                      ? "This marks the finish date as unknown and removes this reading from dated annual totals. It does not reopen the reading."
+                      : field === "dateFinished"
+                        ? "This changes the finish event and yearly totals."
+                        : "This changes when this reading started."}{" "}
+                  {field !== "reopen" &&
+                    "Sessions, shelf, rating and notes stay unchanged."}
                 </p>
-                {field !== "clear" && (
+                {field !== "clear" && field !== "reopen" && (
                   <label className="block">
                     Corrected {label} date
                     <input
@@ -158,9 +168,11 @@ export function CycleHistory({
                 )}
                 <div className="flex flex-wrap gap-2">
                   <Button loading={busy}>
-                    {field === "clear"
-                      ? "Confirm clearing finish date"
-                      : `Save ${label} date`}
+                    {field === "reopen"
+                      ? "Confirm reopening"
+                      : field === "clear"
+                        ? "Confirm clearing finish date"
+                        : `Save ${label} date`}
                   </Button>
                   <Button
                     type="button"
@@ -178,6 +190,19 @@ export function CycleHistory({
               </form>
             ) : (
               <div className="flex flex-wrap gap-2">
+                {c.isCurrent && (c.dateFinished || book.shelf === "read") && (
+                  <Button
+                    variant="secondary"
+                    disabled={!!edit || busy}
+                    onClick={() => {
+                      setEdit(c);
+                      setField("reopen");
+                      setError("");
+                    }}
+                  >
+                    Reopen reading
+                  </Button>
+                )}
                 {c.dateFinished && (!c.isCurrent || book.shelf === "read") && (
                   <Button
                     variant="secondary"
