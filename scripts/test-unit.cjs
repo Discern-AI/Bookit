@@ -240,3 +240,14 @@ assert.equal(sessionTimeValue(localSessionTime(repeatedTime),repeatedTime),repea
 assert.equal(sessionTimeValue("",repeatedTime),null);
 if(originalTZ===undefined) delete process.env.TZ; else process.env.TZ=originalTZ;
 console.log("Session local times, daylight-saving gaps and unchanged timestamp precision passed");
+
+const { mentionedWork, entrySchema } = require("../lib/book-journal.ts");
+const works = [{id:"a",title:"The Long Way Home"},{id:"b",title:"Another Story"},{id:"c",title:"It"}];
+assert.equal(mentionedWork("I loved The Long Way Home!",works),"a");
+assert.equal(mentionedWork("The Long Way Home and Another Story",works),null);
+assert.equal(mentionedWork("It was good",works),null);
+assert.equal(mentionedWork("The Long Way Homeward",works),null);
+assert.equal(mentionedWork("Another Story",[...works,{id:"d",title:"Another Story"}]),null);
+assert.equal(entrySchema.safeParse({id:"11111111-1111-4111-8111-111111111111",workId:"a",kind:"link",text:"Post",url:"javascript:alert(1)"}).success,false);
+assert.equal(entrySchema.safeParse({id:"11111111-1111-4111-8111-111111111111",workId:null,kind:"note",text:"Unfiled"}).success,false);
+console.log("Book journal association ambiguity and link validation passed");

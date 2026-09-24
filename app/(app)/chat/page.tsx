@@ -2,7 +2,11 @@ import { libraryInclude, serializeBook } from "@/lib/book-data";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ChatView } from "@/components/chat/ChatView";
-export default async function ChatPage() {
+export default async function ChatPage({
+  searchParams,
+}: {
+  searchParams: { book?: string; conversation?: string };
+}) {
   const session = await auth();
   if (!session?.user) return null;
   const book = await prisma.userBook.findFirst({
@@ -12,6 +16,9 @@ export default async function ChatPage() {
   });
   return (
     <ChatView
+      key={`${searchParams.book ?? ""}:${searchParams.conversation ?? ""}`}
+      initialBookId={searchParams.book}
+      initialConversation={searchParams.conversation}
       currentBook={
         book
           ? {

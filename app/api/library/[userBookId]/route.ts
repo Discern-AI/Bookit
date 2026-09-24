@@ -1,3 +1,4 @@
+import { sameOriginJson } from "@/lib/book-journal";
 import { ensureReadingCycle } from "@/lib/reading-cycles";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -6,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { SHELVES } from "@/lib/shelves";
 import { libraryInclude, serializeBook } from "@/lib/book-data";
 const schema = z.object({
+  shelfPinned: z.boolean().optional(),
   shelf: z.enum(SHELVES).optional(),
   rating: z.number().min(0).max(5).multipleOf(0.5).nullable().optional(),
   privateNotes: z.string().max(20000).optional(),
@@ -18,6 +20,7 @@ export async function PATCH(
   const session = await auth();
   if (!session?.user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!sameOriginJson(request)) return NextResponse.json({ error: "Use the library on this site." }, { status: 403 });
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success)
     return NextResponse.json({ error: "Invalid update." }, { status: 400 });

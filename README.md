@@ -113,3 +113,9 @@ Reading history in the book drawer Sessions tab supports correcting start dates,
 Reading history also offers Clear finish date with confirmation. This marks the date unknown and removes the reading from dated annual totals while preserving sessions and shelf membership. Current readings must be on Read; it is not a reopen action. A known date can be restored through Correct finish date.
 
 Use Reopen reading in reading history when the current book was marked finished by mistake. Confirmation moves it to Reading now and removes its dated completion while keeping the same cycle, start date, page progress and sessions. Earlier readings cannot be reopened.
+
+Chat now includes your personal reading bookshelf: finished reads to the left, current books in the middle and explicitly pinned Up next books to the right. Choose Up next to select books or hide that section. Click a spine for its private journal, or open the journal from Library. Notes, saved book-related chat, reading sessions, reviews and book-linked articles collect there across editions and rereads. Add a note or an external post URL directly.
+
+Chat conversations are saved privately from this update onward. Use Talking about to select a book, or let an unambiguous full-title mention identify it; use each message's Filed under selector to correct associations. Save as book note works without the Claude key. Library export includes journal and chat records. Previously unsaved chats cannot be reconstructed.
+
+The [bookshelf and journal integration requirements](docs/BOOKSHELF_AND_JOURNAL.md) extend the original brief and apply to future clubs, challenges, creator/video/social features and reading plans.

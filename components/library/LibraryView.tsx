@@ -448,6 +448,12 @@ export function LibraryView({
               disabled={busy}
               onChange={(rating) => save({ rating })}
             />
+            <Link
+              className="block py-3 text-shelf-700 underline"
+              href={`/library/book/${book.id}`}
+            >
+              Open book journal: notes, chat and writing
+            </Link>
             <div
               role="tablist"
               aria-label="Book details"

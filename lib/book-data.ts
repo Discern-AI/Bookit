@@ -25,6 +25,7 @@ export type StoredBook = Prisma.UserBookGetPayload<{
   include: typeof libraryInclude;
 }>;
 export interface LibraryBook {
+  shelfPinned?: boolean;
   cycleId?: string | null;
   cycleVersion?: number;
   cycleNumber?: number;
@@ -56,6 +57,7 @@ export function serializeBook(book: StoredBook): LibraryBook {
   const cycle = book.readingCycles[0];
   const latest = cycle ? cycle.sessions[0] : book.readingSessions[0];
   return {
+    shelfPinned: book.shelfPinned,
     cycleId: cycle?.id ?? null,
     cycleVersion: cycle?.version ?? 0,
     cycleNumber: cycle?.number ?? 1,

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 const schema = z.object({
+  workId: z.string().nullable().optional(),
   messages: z
     .array(
       z.object({
@@ -30,6 +31,33 @@ export async function POST(request: Request) {
       { error: "Try a shorter conversation or start a new chat." },
       { status: 400 },
     );
+  const selectedBook = parsed.data.workId
+    ? await prisma.userBook.findFirst({
+        where: {
+          userId: session.user.id,
+          edition: { workId: parsed.data.workId },
+        },
+        include: { edition: { include: { work: true } } },
+      })
+    : null;
+  if (parsed.data.workId && !selectedBook)
+    return NextResponse.json(
+      { error: "Book not found in your library." },
+      { status: 404 },
+    );
+  const journal = selectedBook
+    ? await prisma.bookEntry.findMany({
+        where: {
+          userId: session.user.id,
+          workId: selectedBook.edition.workId,
+          deletedAt: null,
+          kind: { in: ["note", "link"] },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        select: { text: true, kind: true },
+      })
+    : [];
   if (!process.env.ANTHROPIC_API_KEY)
     return NextResponse.json(
       {
@@ -93,6 +121,14 @@ export async function POST(request: Request) {
     }),
   ]);
   const context = {
+    discussingBook: selectedBook
+      ? {
+          title: selectedBook.edition.work.title,
+          author: selectedBook.edition.work.authorName,
+          privateNotes: selectedBook.privateNotes?.slice(0, 10000),
+          journal: journal.map((e) => ({ ...e, text: e.text.slice(0, 1500) })),
+        }
+      : null,
     currentBooks: current.map((b) => ({
       title: b.edition.work.title,
       author: b.edition.work.authorName,

@@ -10,6 +10,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const input = z
     .object({
+      workId: z.string().optional(),
       message: z.string().max(12000),
       today: z.string().refine(validDate),
     })
@@ -22,7 +23,11 @@ export async function POST(request: Request) {
   const intent = parseReadingIntent(input.data.message);
   if (!intent) return NextResponse.json({ handled: false });
   const books = await prisma.userBook.findMany({
-    where: { userId: session.user.id, shelf: "reading_now" },
+    where: {
+      userId: session.user.id,
+      shelf: "reading_now",
+      ...(input.data.workId ? { edition: { workId: input.data.workId } } : {}),
+    },
     include: libraryInclude,
     orderBy: { dateAdded: "desc" },
   });

@@ -14,8 +14,16 @@ export async function GET() {
       readingSessions: { where: { deletedAt: null } },
     },
   });
+  const journalEntries = await prisma.bookEntry.findMany({
+    where: { userId: session.user.id, deletedAt: null },
+    orderBy: { createdAt: "asc" },
+  });
   return new Response(
-    JSON.stringify({ exportedAt: new Date().toISOString(), books }, null, 2),
+    JSON.stringify(
+      { exportedAt: new Date().toISOString(), books, journalEntries },
+      null,
+      2,
+    ),
     {
       headers: {
         "Content-Type": "application/json",

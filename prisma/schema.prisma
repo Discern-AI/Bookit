@@ -48,6 +48,8 @@ model VerificationToken {
 }
 
 model User {
+  bookEntries BookEntry[]
+  showUpNext Boolean @default(true)
   articleReports ArticleReport[]
   blogEnabled Boolean @default(false)
   blogVersion Int @default(0)
@@ -92,6 +94,7 @@ model User {
 // ---------- Book hierarchy ----------
 
 model Work {
+  bookEntries BookEntry[]
   appeals ReviewAppeal[]
   id             String   @id @default(cuid())
   title          String
@@ -171,6 +174,7 @@ enum Shelf {
 }
 
 model UserBook {
+  shelfPinned Boolean @default(false)
   readingCycles ReadingCycle[]
   id             String    @id @default(cuid())
   userId         String
@@ -519,4 +523,23 @@ model ReadingCycle {
  userBook UserBook @relation(fields:[userBookId],references:[id],onDelete:Cascade)
  sessions ReadingSession[]
  @@unique([userBookId,number])
+}
+
+// Private, work-scoped journal. A null work is an unfiled chat message.
+model BookEntry {
+  id String @id @db.Uuid
+  userId String
+  workId String?
+  kind String
+  role String?
+  conversationId String? @db.Uuid
+  text String
+  url String?
+  version Int @default(0)
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  work Work? @relation(fields: [workId], references: [id], onDelete: Cascade)
+  @@index([userId, workId, createdAt])
+  @@index([userId, conversationId, createdAt])
 }
