@@ -48,6 +48,7 @@ model VerificationToken {
 }
 
 model User {
+  readingChallenges ReadingChallenge[]
   ownedClubs BookClub[]
   clubMemberships BookClubMember[]
   clubPosts BookClubPost[]
@@ -606,4 +607,18 @@ model BookClubPost {
  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
  @@index([readingId,createdAt])
  @@index([userId,readingId])
+}
+
+model ReadingChallenge {
+  id String @id @db.Uuid
+  userId String
+  title String
+  target Int
+  startsOn String
+  endsOn String
+  genre String?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, createdAt])
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import type { JournalEntry } from "@/lib/book-journal";
 type Journal = {
+  challenges: { id: string; title: string; count: number; target: number }[];
   book: {
     id: string;
     workId: string;
@@ -465,6 +466,22 @@ export function BookJournal({
               </p>
             ))}
           </section>
+          {!!data.challenges?.length && (
+            <section aria-label="Your reading challenges">
+              <h2 className="font-display text-2xl">Your reading challenges</h2>
+              {data.challenges.map((c) => (
+                <p key={c.id}>
+                  <Link
+                    className="underline"
+                    href={`/community/challenges#${c.id}`}
+                  >
+                    {c.title}
+                  </Link>{" "}
+                  - {c.count} / {c.target} completed
+                </p>
+              ))}
+            </section>
+          )}
           {(data.clubReadings.length > 0 || data.clubPosts.length > 0) && (
             <section aria-label="Your book club activity" className="space-y-3">
               <h2 className="font-display text-2xl">Your book clubs</h2>

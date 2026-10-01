@@ -123,3 +123,5 @@ The [bookshelf and journal integration requirements](docs/BOOKSHELF_AND_JOURNAL.
 Book clubs are available from Community. Create a private club or explicitly list an open one, choose a club display name, schedule books and discuss them with members. Owners can generate/revoke invitation codes, remove members and manage discussions. Spoiler-marked posts are collapsed until opened. Club scheduling never changes personal shelves or Up next pins.
 
 Your book journal links to club readings and collects only your own posts while you remain a member. Edits/deletions update at their source; leaving or losing access removes journal links. Private export follows the same membership gate. AI club facilitation and notifications are not included in this first version.
+
+Personal reading challenges are available under Community. Set a private book target, date range and optional genre; progress follows original reading history and links to bookshelf journals. Rereads count separately. Community/bingo and charity challenges remain planned.

@@ -1,3 +1,4 @@
+import { readingChallenges } from "@/lib/challenge-progress";
 import { ownClubPostsWhere } from "@/lib/club-journal";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -125,8 +126,17 @@ export async function GET(
       take: 51,
     }),
   ]);
+  const challenges = (await readingChallenges(userId))
+    .filter((c) => c.completions.some((r) => r.workId === workId))
+    .map((c) => ({
+      id: c.id,
+      title: c.title,
+      count: c.completions.length,
+      target: c.target,
+    }));
   return Response.json(
     {
+      challenges,
       book: {
         id: book.id,
         workId,

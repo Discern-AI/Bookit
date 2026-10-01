@@ -1,3 +1,4 @@
+import { readingChallenges } from "@/lib/challenge-progress";
 import { ownClubPostsWhere } from "@/lib/club-journal";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -6,6 +7,7 @@ export async function GET() {
   const session = await auth();
   if (!session?.user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const challenges = await readingChallenges(session.user.id);
   const books = await prisma.userBook.findMany({
     where: { userId: session.user.id },
     include: {
@@ -45,6 +47,7 @@ export async function GET() {
         books,
         journalEntries,
         clubPosts,
+        challenges,
       },
       null,
       2,

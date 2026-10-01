@@ -260,3 +260,12 @@ assert.equal(scheduleSchema.safeParse({action:"reading",id:clubId,workId:"book",
 assert.equal(scheduleSchema.safeParse({action:"reading",id:clubId,workId:"book",version:0,startsOn:null,endsOn:null}).success,true);
 assert.equal(clubActionSchema.safeParse({action:"post",id:clubId,readingId:clubId,version:0,body:"   ",spoilerPage:null}).success,false);
 console.log("Book club privacy input, schedules and discussion validation passed");
+
+const { challengeSchema, challengeMatches } = require("../lib/challenges.ts");
+const challengeFixture = {id:"e31acccd-9591-40d1-a557-7b7633336754",title:"A year",target:12,startsOn:"2026-01-01",endsOn:"2026-12-31",genre:"fantasy"};
+assert.equal(challengeSchema.safeParse(challengeFixture).success,true);
+assert.equal(challengeSchema.safeParse({...challengeFixture,startsOn:"2026-02-30"}).success,false);
+assert.equal(challengeSchema.safeParse({...challengeFixture,endsOn:"2025-01-01"}).success,false);
+assert.equal(challengeSchema.safeParse({...challengeFixture,target:0}).success,false);
+assert.equal(challengeMatches(challengeFixture,[{date:"2026-01-01",genres:["Fantasy"]},{date:"2026-12-31",genres:["Fantasy"]},{date:"2025-12-31",genres:["Fantasy"]},{date:"2026-02-01",genres:["Crime"]}]).length,2);
+console.log("Reading challenge validation and inclusive genre/date matching passed");
