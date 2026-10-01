@@ -127,7 +127,11 @@ export async function GET(
     }),
   ]);
   const challenges = (await readingChallenges(userId))
-    .filter((c) => c.completions.some((r) => r.workId === workId))
+    .filter(
+      (c) =>
+        c.completions.some((r) => r.workId === workId) ||
+        c.squares.some((s) => s.workId === workId),
+    )
     .map((c) => ({
       id: c.id,
       title: c.title,

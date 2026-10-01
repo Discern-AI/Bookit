@@ -269,3 +269,15 @@ assert.equal(challengeSchema.safeParse({...challengeFixture,endsOn:"2025-01-01"}
 assert.equal(challengeSchema.safeParse({...challengeFixture,target:0}).success,false);
 assert.equal(challengeMatches(challengeFixture,[{date:"2026-01-01",genres:["Fantasy"]},{date:"2026-12-31",genres:["Fantasy"]},{date:"2025-12-31",genres:["Fantasy"]},{date:"2026-02-01",genres:["Crime"]}]).length,2);
 console.log("Reading challenge validation and inclusive genre/date matching passed");
+
+const { bingoLines, squareSchema } = require("../lib/challenges.ts");
+assert.equal(bingoLines(Array(9).fill(true)),8);
+assert.equal(bingoLines([true,false,false,false,true,false,false,false,true]),1);
+assert.equal(bingoLines([true,true,true,false,false,false,false,false,false]),1);
+assert.equal(bingoLines([true,false,false,true,false,false,true,false,false]),1);
+assert.equal(bingoLines([true,true,false,false,false,false,false,false,false]),0);
+assert.equal(challengeSchema.safeParse({...challengeFixture,kind:"bingo",target:9,genre:null,prompts:Array(9).fill("A theme")}).success,true);
+assert.equal(challengeSchema.safeParse({...challengeFixture,kind:"bingo",target:9,genre:null,prompts:Array(8).fill("A theme")}).success,false);
+assert.equal(challengeSchema.safeParse({...challengeFixture,kind:"bingo",target:9,genre:null,prompts:Array(9).fill(" ")}).success,false);
+assert.equal(squareSchema.safeParse({id:challengeFixture.id,squareId:"square",version:-1,workId:null}).success,false);
+console.log("Bingo shape, prompt, version and line checks passed");

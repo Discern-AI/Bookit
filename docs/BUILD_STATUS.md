@@ -282,6 +282,8 @@ User-requested scope addition takes priority before resuming the original phase 
 
 ## Validation
 
+- Themed bingo (1 October 2026): final production build including lint/type checks and unit tests pass. Both bingo browser scenarios passed after correcting the picker accessible name (11.2 seconds); the existing two personal-challenge and three bookshelf scenarios passed in the combined run. Coverage includes creation retry, prompt validation, planned journal links, duplicate and foreign-book denial, save retry, stale selection recovery, date/cancellation and edition-aware progress, bingo lines, export, deletion replay and account cascade. A focused mobile-grid capture also passed (6.3 seconds); the full 390px layout was visually inspected. Applied the additive local bingo migration. No live provider calls, deployment or push.
+
 - Personal challenges (1 October 2026): production build including lint/type checks and unit tests pass. The challenge scenario plus three bookshelf regressions passed (21.3 seconds); both challenge scenarios passed after adding save-retry, legacy finish correction, mobile width and account-cascade checks (10.3 seconds). Coverage includes rereads, cancelled/undated exclusions, inclusive dates, genre matching, journal/export source links, cross-account denial, deletion confirmation and replay rejection. Applied the additive local challenge migration. No live provider calls, deployment or push.
 
 - Book clubs: production build (including lint/type checks), standalone typecheck and unit tests pass. Final verification on 1 October 2026 passed all seven targeted club, bookshelf and account-settings browser scenarios (36.6 seconds). Coverage includes private/open access, invite rotation/revocation, membership replay protection, schedule validation, discussion retries and stale drafts, draft navigation safeguards, spoiler disclosure, own-post journal/export scoping, pagination and account deletion. Mobile club and journal screenshots were visually inspected. Applied the additive local club migration. Live Claude remains deferred; no deployment or remote push.
@@ -362,7 +364,7 @@ Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provid
 
 Next Phase 2 work: live acquisition/availability integrations, plus a successful live-provider check of the edition metadata flow. Reading paths now support manual creation, publishing and following. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
 
-Next build work: community and themed/bingo challenges, extending the initial private personal challenges and bookshelf/journal integration contract. Initial book clubs are implemented. Live account email delivery still requires configuration and provider verification. Later phases include AI gift expansion, further creator tools, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.
+Next build work: community challenge templates and joining, extending private personal and themed bingo challenges with the bookshelf/journal integration contract. Initial book clubs are implemented. Live account email delivery still requires configuration and provider verification. Later phases include AI gift expansion, further creator tools, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment or remote push has been performed.
 
 ## Personal reading challenges - 1 October 2026
 
@@ -370,3 +372,11 @@ Next build work: community and themed/bingo challenges, extending the initial pr
 - Progress is derived from original completed, non-cancelled reading cycles, with a fallback for dated read books that have no cycles. Rereads count separately; undated books are excluded. No shelf, pin or reading record is changed by challenges.
 - Counted readings link to the private book journal. Journals link back to matching challenges using canonical work IDs across editions. Private export includes challenge definitions and their source reading IDs; account deletion cascades definitions.
 - This is the personal challenge foundation. Editing definitions, community challenges, bingo, themed prompts and charity sponsorship remain future work.
+
+## Themed bingo challenges - 1 October 2026
+
+- Personal challenges now offer private 3-by-3 bingo boards. Readers customise nine prompts at creation and explicitly assign books from their own library. Prompt suitability is reader-chosen; no AI or genre classifier silently assigns books.
+- Each canonical work can fill one square per board. A square completes only with an original, non-cancelled finish inside the inclusive challenge dates; editions and rereads can qualify the same square without counting it twice. Rows, columns and diagonals report bingo lines. Corrections, cancellations and removed library copies update progress on reload.
+- Planned and completed selections link into the work's private journal, and boards link back to source book journals. Private export includes prompts, work selections, versions and qualifying source reading IDs. No shelf, pin or progress mutation occurs when assigning a square.
+- Selection edits support failed-save retries, clear/cancel, stale-write protection and explicit discard/reload. User locks coordinate assignment with challenge deletion; deleted challenges reject old assignment and creation requests. Database uniqueness enforces one work per board. Account deletion cascades squares while preserving shared catalogue works.
+- Applied additive local `20261001020000_challenge_bingo` migration. Community sharing/joining, editing existing prompts and charity sponsorship remain future work.

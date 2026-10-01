@@ -1,8 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { BingoBoard, type BingoSquare, type BingoChoice } from "./BingoBoard";
 type Challenge = {
   id: string;
+  kind: string;
+  squares: BingoSquare[];
+  lines: number;
   title: string;
   target: number;
   startsOn: string;
@@ -17,6 +21,19 @@ type Challenge = {
 };
 export function Challenges() {
   const year = new Date().getFullYear();
+  const [kind, setKind] = useState("count"),
+    [choices, setChoices] = useState<BingoChoice[]>([]);
+  const [prompts, setPrompts] = useState([
+    "A new-to-you author",
+    "A translated book",
+    "A favourite genre",
+    "A book recommended by a friend",
+    "A short book",
+    "A book from your unread shelf",
+    "A classic",
+    "A different perspective",
+    "A book outside your usual genres",
+  ]);
   const [items, setItems] = useState<Challenge[]>([]),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
@@ -33,6 +50,7 @@ export function Challenges() {
     const d = await r.json();
     if (!r.ok) throw Error(d.error);
     setItems(d.challenges);
+    setChoices(d.choices);
     setLoaded(true);
   }
   useEffect(() => {
@@ -68,8 +86,8 @@ export function Challenges() {
       </Link>
       <h1 className="font-display text-4xl">Reading challenges</h1>
       <p>
-        Private goals based on your reading history. Each completed reading
-        counts, including rereads. Undated books do not count. Correcting or
+        Private goals based on your reading history. Book-count goals include
+        rereads; bingo boards count each selected book once. Undated books do not count. Correcting or
         reopening a reading updates progress automatically.
       </p>
       {error && (
@@ -95,14 +113,28 @@ export function Challenges() {
           save("POST", {
             id,
             title,
-            target: Number(target),
+            kind,
+            prompts: kind === "bingo" ? prompts : undefined,
+            target: kind === "bingo" ? 9 : Number(target),
             startsOn: start,
             endsOn: end,
-            genre: genre || null,
+            genre: kind === "bingo" ? null : genre || null,
           });
         }}
       >
         <h2 className="text-2xl">New personal challenge</h2>
+        <label className="block">
+          Challenge type
+          <select
+            className="block border rounded p-2"
+            value={kind}
+            disabled={busy}
+            onChange={(e) => setKind(e.target.value)}
+          >
+            <option value="count">Book count</option>
+            <option value="bingo">Themed bingo (3 by 3)</option>
+          </select>
+        </label>
         <label className="block">
           Title
           <input
@@ -114,19 +146,21 @@ export function Challenges() {
             onChange={(e) => setTitle(e.target.value)}
           />
         </label>
-        <label className="block">
-          Book target
-          <input
-            className="block border rounded p-2"
-            type="number"
-            required
-            min={1}
-            max={10000}
-            value={target}
-            disabled={busy}
-            onChange={(e) => setTarget(e.target.value)}
-          />
-        </label>
+        {kind === "count" && (
+          <label className="block">
+            Book target
+            <input
+              className="block border rounded p-2"
+              type="number"
+              required
+              min={1}
+              max={10000}
+              value={target}
+              disabled={busy}
+              onChange={(e) => setTarget(e.target.value)}
+            />
+          </label>
+        )}
         <label className="block">
           Start date
           <input
@@ -150,20 +184,50 @@ export function Challenges() {
             onChange={(e) => setEnd(e.target.value)}
           />
         </label>
-        <label className="block">
-          Genre (optional)
-          <input
-            className="block border rounded p-2 w-full"
-            maxLength={100}
-            value={genre}
-            disabled={busy}
-            onChange={(e) => setGenre(e.target.value)}
-          />
-        </label>
-        <p className="text-sm">
-          Genre must match a genre in the book metadata, ignoring
-          capitalisation. Leave blank to count all genres.
-        </p>
+        {kind === "count" && (
+          <>
+            <label className="block">
+              Genre (optional)
+              <input
+                className="block border rounded p-2 w-full"
+                maxLength={100}
+                value={genre}
+                disabled={busy}
+                onChange={(e) => setGenre(e.target.value)}
+              />
+            </label>
+            <p className="text-sm">
+              Genre must match a genre in the book metadata, ignoring
+              capitalisation. Leave blank to count all genres.
+            </p>
+          </>
+        )}
+        {kind === "bingo" && (
+          <fieldset className="space-y-2">
+            <legend>Nine themed prompts</legend>
+            <p className="text-sm">
+              Customise each prompt before creating your board. You decide which
+              books fit.
+            </p>
+            {prompts.map((prompt, i) => (
+              <label className="block" key={i}>
+                Prompt {i + 1}
+                <input
+                  className="block w-full border rounded p-2"
+                  required
+                  maxLength={160}
+                  disabled={busy}
+                  value={prompt}
+                  onChange={(e) =>
+                    setPrompts(
+                      prompts.map((p, j) => (j === i ? e.target.value : p)),
+                    )
+                  }
+                />
+              </label>
+            ))}
+          </fieldset>
+        )}
         <button disabled={busy} className="border rounded px-4 py-2">
           Create challenge
         </button>
@@ -191,22 +255,32 @@ export function Challenges() {
             max={c.target}
             value={Math.min(c.target, c.completions.length)}
           />
-          <details>
-            <summary>Counted readings ({c.completions.length})</summary>
-            <ul>
-              {c.completions.map((r) => (
-                <li key={r.cycleId || r.userBookId}>
-                  <Link
-                    className="underline"
-                    href={`/library/book/${r.userBookId}`}
-                  >
-                    {r.title}
-                  </Link>{" "}
-                  - {r.date}
-                </li>
-              ))}
-            </ul>
-          </details>
+          {c.kind === "bingo" ? (
+            <BingoBoard
+              id={c.id}
+              squares={c.squares}
+              lines={c.lines}
+              choices={choices}
+              reload={load}
+            />
+          ) : (
+            <details>
+              <summary>Counted readings ({c.completions.length})</summary>
+              <ul>
+                {c.completions.map((r) => (
+                  <li key={r.cycleId || r.userBookId}>
+                    <Link
+                      className="underline"
+                      href={`/library/book/${r.userBookId}`}
+                    >
+                      {r.title}
+                    </Link>{" "}
+                    - {r.date}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
           {confirm === c.id ? (
             <div>
               <p>

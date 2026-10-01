@@ -1,9 +1,19 @@
 import { prisma } from "@/lib/prisma";
-import { challengeMatches, type Completion } from "@/lib/challenges";
+import {
+  bingoLines,
+  challengeMatches,
+  type Completion,
+} from "@/lib/challenges";
 export async function readingChallenges(userId: string) {
   const [challenges, books] = await Promise.all([
     prisma.readingChallenge.findMany({
       where: { userId, deletedAt: null },
+      include: {
+        squares: {
+          orderBy: { position: "asc" },
+          include: { work: { select: { title: true } } },
+        },
+      },
       orderBy: [{ createdAt: "desc" }, { id: "asc" }],
     }),
     prisma.userBook.findMany({
@@ -30,8 +40,21 @@ export async function readingChallenges(userId: string) {
         date: d.date.toISOString().slice(0, 10),
       });
   }
-  return challenges.map((c) => ({
-    ...c,
-    completions: challengeMatches(c, reads),
-  }));
+  return challenges.map((c) => {
+    const eligible = challengeMatches(c, reads);
+    const squares = c.squares.map((s) => ({
+      ...s,
+      completion: eligible.find((r) => r.workId === s.workId) ?? null,
+    }));
+    const completions =
+      c.kind === "bingo"
+        ? squares.flatMap((s) => (s.completion ? [s.completion] : []))
+        : eligible;
+    return {
+      ...c,
+      squares,
+      completions,
+      lines: bingoLines(squares.map((s) => !!s.completion)),
+    };
+  });
 }

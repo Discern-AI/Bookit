@@ -98,6 +98,7 @@ model User {
 // ---------- Book hierarchy ----------
 
 model Work {
+  challengeSquares ChallengeSquare[]
   clubReadings BookClubReading[]
   bookEntries BookEntry[]
   appeals ReviewAppeal[]
@@ -610,6 +611,8 @@ model BookClubPost {
 }
 
 model ReadingChallenge {
+  kind String @default("count")
+  squares ChallengeSquare[]
   id String @id @db.Uuid
   userId String
   title String
@@ -621,4 +624,17 @@ model ReadingChallenge {
   createdAt DateTime @default(now())
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId, createdAt])
+}
+
+model ChallengeSquare {
+  id String @id @default(cuid())
+  challengeId String @db.Uuid
+  position Int
+  prompt String
+  workId String?
+  version Int @default(0)
+  challenge ReadingChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  work Work? @relation(fields: [workId], references: [id], onDelete: SetNull)
+  @@unique([challengeId, position])
+  @@unique([challengeId, workId])
 }
