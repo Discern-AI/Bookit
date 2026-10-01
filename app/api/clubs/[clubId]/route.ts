@@ -146,6 +146,27 @@ export async function PATCH(request: Request, { params }: Context) {
             ? { status: 200 }
             : conflict;
         if ((m?.version ?? null) !== expected) return conflict;
+        if (c.isPair && !owner) {
+          if (c.partnerId && c.partnerId !== s.user.id)
+            return {
+              status: 409,
+              error:
+                "This Reading Together space is reserved for its original pair.",
+            };
+          const others = await db.bookClubMember.count({
+            where: { clubId: c.id, active: true, userId: { not: s.user.id } },
+          });
+          if (others >= 2)
+            return {
+              status: 409,
+              error: "Reading Together has room for two readers only.",
+            };
+          if (!c.partnerId)
+            await db.bookClub.update({
+              where: { id: c.id },
+              data: { partnerId: s.user.id },
+            });
+        }
         if (m)
           await db.bookClubMember.update({
             where: { clubId_userId: { clubId: c.id, userId: s.user.id } },
@@ -228,7 +249,7 @@ export async function PATCH(request: Request, { params }: Context) {
         });
         return { status: 200 };
       }
-      if (!owner)
+      if (!owner && !(c.isPair && d.action === "reading"))
         return { status: 403, error: "Only the club owner can do that." };
       if (d.action === "removeMember") {
         if (d.userId === s.user.id)
@@ -302,6 +323,8 @@ export async function PATCH(request: Request, { params }: Context) {
         return { status: 200 };
       }
       if (c.version !== d.version) return conflict;
+      if (d.action === "update" && c.isPair && d.isPublic)
+        return { status: 400, error: "Reading Together must remain private." };
       if (d.action === "update")
         await db.bookClub.update({
           where: { id: c.id },

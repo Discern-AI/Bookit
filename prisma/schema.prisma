@@ -551,6 +551,9 @@ model BookEntry {
 }
 
 model BookClub {
+  isPair Boolean @default(false)
+  // Reserved partner identity survives departure to prevent disclosure to a replacement.
+  partnerId String?
  id String @id @db.Uuid
  ownerId String
  name String

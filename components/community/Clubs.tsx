@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import type { ClubSummary } from "@/lib/clubs";
 const field = "block w-full border border-ink-200 rounded p-2 bg-paper-50";
-export function Clubs() {
+export function Clubs({ together = false }: { together?: boolean }) {
   const router = useRouter();
   const [clubs, setClubs] = useState<ClubSummary[]>([]),
     [mine, setMine] = useState(true),
@@ -28,7 +28,9 @@ export function Clubs() {
     const abort = new AbortController();
     setLoading(true);
     setError("");
-    fetch(`/api/clubs?mine=${mine}&page=${page}`, { signal: abort.signal })
+    fetch(`/api/clubs?mine=${mine}&page=${page}&together=${together}`, {
+      signal: abort.signal,
+    })
       .then(async (r) => {
         const d = await r.json();
         if (!r.ok) throw Error(d.error);
@@ -42,7 +44,7 @@ export function Clubs() {
         if (!abort.signal.aborted) setLoading(false);
       });
     return () => abort.abort();
-  }, [mine, page, attempt]);
+  }, [mine, page, attempt, together]);
   async function send(url: string, method: string, body: object) {
     setBusy(true);
     setError("");
@@ -67,7 +69,21 @@ export function Clubs() {
       <Link href="/community" className="underline">
         Community
       </Link>
-      <h1 className="font-display text-4xl">Book clubs</h1>
+      <h1 className="font-display text-4xl">
+        {together ? "Reading Together" : "Book clubs"}
+      </h1>
+      {together ? (
+        <p>
+          A private space for you and one reading partner. Plan books and share
+          thoughts using an invitation code. The first partner to join keeps
+          that place, even after leaving; start a new space to read with someone
+          else.
+        </p>
+      ) : (
+        <Link className="underline" href="/community/together">
+          Read with one partner
+        </Link>
+      )}
       <p>
         Read together, make room for discussion. Your private bookshelf and
         notes stay yours.
@@ -88,19 +104,21 @@ export function Clubs() {
             setPage(0);
           }}
         >
-          My clubs
+          {together ? "My reading pairs" : "My clubs"}
         </Button>
-        <Button
-          variant={!mine ? "primary" : "secondary"}
-          onClick={() => {
-            setMine(false);
-            setPage(0);
-          }}
-        >
-          Discover open clubs
-        </Button>
+        {!together && (
+          <Button
+            variant={!mine ? "primary" : "secondary"}
+            onClick={() => {
+              setMine(false);
+              setPage(0);
+            }}
+          >
+            Discover open clubs
+          </Button>
+        )}
         <Button variant="secondary" onClick={() => setCreating(!creating)}>
-          Create a club
+          {together ? "Start Reading Together" : "Create a club"}
         </Button>
       </div>
       {creating && (
@@ -113,14 +131,15 @@ export function Clubs() {
               id,
               name,
               description,
-              isPublic,
+              isPublic: together ? false : isPublic,
+              isPair: together,
               alias,
             });
             if (d) router.push(`/community/clubs/${d.id}`);
           }}
         >
           <label className="block">
-            Club name
+            {together ? "Reading pair name" : "Club name"}
             <input
               required
               maxLength={100}
@@ -151,7 +170,8 @@ export function Clubs() {
           <label className="block">
             <input
               type="checkbox"
-              checked={isPublic}
+              disabled={together}
+              checked={together ? false : isPublic}
               onChange={(e) => setPublic(e.target.checked)}
             />{" "}
             List as an open club anyone signed in can join
@@ -161,7 +181,9 @@ export function Clubs() {
             member count in discovery. Discussion stays members-only. Members
             see your chosen club display name.
           </p>
-          <Button loading={busy}>Save new club</Button>
+          <Button loading={busy}>
+            {together ? "Save reading pair" : "Save new club"}
+          </Button>
         </form>
       )}
       <section
@@ -185,7 +207,12 @@ export function Clubs() {
               </h2>
               <p className="whitespace-pre-wrap break-words">{c.description}</p>
               <p className="text-xs">
-                {c.isPublic ? "Open" : "Private"} / {c.memberCount} members
+                {c.isPair
+                  ? "Reading Together"
+                  : c.isPublic
+                    ? "Open"
+                    : "Private"}{" "}
+                / {c.memberCount} members
               </p>
               <Link
                 className="underline text-shelf-700"
@@ -261,6 +288,14 @@ export function Clubs() {
           >
             <h3 className="font-display text-xl break-words">{preview.name}</h3>
             <p>{preview.description}</p>
+            {preview.isPair && (
+              <p>
+                This is Reading Together for two people. Joining reserves the
+                partner place for you; it cannot be given to someone else later.
+                Your posts are shared with the creator, who can moderate posts
+                and delete this space.
+              </p>
+            )}
             <label>
               Your club display name
               <input

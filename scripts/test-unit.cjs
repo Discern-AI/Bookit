@@ -299,3 +299,7 @@ const pledgeFixture={action:"pledge",id:challengeFixture.id,version:0,label:"A s
 assert.equal(fundraisingSchema.safeParse(pledgeFixture).success,true);
 for(const changes of [{amountPence:1.2},{receivedPence:-1},{capPence:0},{mode:"flat",capPence:100},{amountPence:100000000}]) assert.equal(fundraisingSchema.safeParse({...pledgeFixture,...changes}).success,false);
 console.log("Charity pledge precision, caps, receipts and validation checks passed");
+
+assert.equal(createClubSchema.safeParse({id:challengeFixture.id,name:"Pair",description:"",alias:"Reader",isPublic:false,isPair:true}).success,true);
+assert.equal(createClubSchema.safeParse({id:challengeFixture.id,name:"Pair",description:"",alias:"Reader",isPublic:true,isPair:true}).success,false);
+console.log("Reading Together privacy validation passed");

@@ -7,8 +7,16 @@ export const clubFields = {
 };
 export const aliasSchema = z.string().trim().min(1).max(60);
 export const createClubSchema = z
-  .object({ ...clubFields, id: z.string().uuid(), alias: aliasSchema })
-  .strict();
+  .object({
+    ...clubFields,
+    id: z.string().uuid(),
+    alias: aliasSchema,
+    isPair: z.boolean().default(false),
+  })
+  .strict()
+  .refine((d) => !d.isPair || !d.isPublic, {
+    message: "Reading Together is always private.",
+  });
 const version = z.number().int().min(0);
 const id = z.string().uuid();
 const date = z.string().refine(validDate).nullable();
@@ -62,6 +70,8 @@ export function clubPage(value: string | null) {
   return Number.isInteger(n) && n >= 0 && n < 100000 ? n : 0;
 }
 export type ClubSummary = {
+  isPair: boolean;
+  partnerReserved: boolean;
   id: string;
   name: string;
   description: string;

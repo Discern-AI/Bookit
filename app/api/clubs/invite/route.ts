@@ -21,7 +21,14 @@ export async function POST(request: Request) {
       _count: { select: { members: { where: { active: true } } } },
     },
   });
-  if (!c || c.members[0]?.blocked)
+  if (
+    !c ||
+    c.members[0]?.blocked ||
+    (c.isPair &&
+      c.partnerId &&
+      c.partnerId !== s.user.id &&
+      c.ownerId !== s.user.id)
+  )
     return clubReply({ error: "This invitation is unavailable." }, 404);
   return clubReply({
     club: clubSummary(c, c.members[0], s.user.id, c._count.members),

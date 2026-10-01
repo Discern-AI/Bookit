@@ -11,6 +11,8 @@ export function clubSummary(
 ) {
   return {
     id: club.id,
+    isPair: club.isPair,
+    partnerReserved: !!club.partnerId,
     name: club.name,
     description: club.description,
     isPublic: club.isPublic,

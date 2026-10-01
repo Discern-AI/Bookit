@@ -156,8 +156,12 @@ export function ClubView({
         <>
           <header className="space-y-2">
             <p className="text-xs uppercase tracking-widest text-ink-500">
-              {data.club.isPublic ? "Open club" : "Private club"} /{" "}
-              {data.club.memberCount} members
+              {data.club.isPair
+                ? "Reading Together"
+                : data.club.isPublic
+                  ? "Open club"
+                  : "Private club"}{" "}
+              / {data.club.memberCount} members
             </p>
             <h1 className="font-display text-4xl break-words">
               {data.club.name}
@@ -166,6 +170,17 @@ export function ClubView({
               {data.club.description}
             </p>
           </header>
+          {data.club.isPair && (
+            <p className="border rounded p-3">
+              A private space for one fixed pair.{" "}
+              {data.club.partnerReserved
+                ? "The partner place is reserved; leaving does not open it to someone else."
+                : "Generate an invitation code and share it with your chosen partner."}{" "}
+              Both readers can schedule books and share posts. Personal reading
+              progress and notes stay private unless you write them in a
+              discussion.
+            </p>
+          )}
           {!data.club.membership?.active ? (
             <form
               aria-label="Join club"
@@ -215,6 +230,23 @@ export function ClubView({
                 with members; only your own posts connect to your private book
                 journal.
               </p>
+              {data.club.isPair && !data.club.owner && (
+                <Button
+                  variant="secondary"
+                  disabled={locked || !!post}
+                  onClick={() =>
+                    setSchedule({
+                      id: crypto.randomUUID(),
+                      version: 0,
+                      workId: "",
+                      startsOn: "",
+                      endsOn: "",
+                    })
+                  }
+                >
+                  Suggest a shared reading
+                </Button>
+              )}
               <div className="flex flex-wrap gap-3">
                 {data.club.owner ? (
                   <>
@@ -426,6 +458,7 @@ export function ClubView({
                   <label>
                     <input
                       type="checkbox"
+                      disabled={data.club.isPair}
                       checked={settings.isPublic}
                       onChange={(e) =>
                         setSettings({ ...settings, isPublic: e.target.checked })
@@ -563,7 +596,7 @@ export function ClubView({
                           Your book journal
                         </Link>
                       )}
-                      {data.club.owner && (
+                      {(data.club.owner || data.club.isPair) && (
                         <>
                           <Button
                             variant="ghost"
@@ -580,23 +613,25 @@ export function ClubView({
                           >
                             Edit schedule
                           </Button>
-                          <Button
-                            variant="ghost"
-                            disabled={locked || !!post}
-                            onClick={() =>
-                              setConfirm({
-                                label:
-                                  "Remove this reading and its discussion posts from the club? Personal library records stay unchanged.",
-                                body: {
-                                  action: "removeReading",
-                                  id: r.id,
-                                  version: r.version,
-                                },
-                              })
-                            }
-                          >
-                            Remove reading
-                          </Button>
+                          {data.club.owner && (
+                            <Button
+                              variant="ghost"
+                              disabled={locked || !!post}
+                              onClick={() =>
+                                setConfirm({
+                                  label:
+                                    "Remove this reading and its discussion posts from the club? Personal library records stay unchanged.",
+                                  body: {
+                                    action: "removeReading",
+                                    id: r.id,
+                                    version: r.version,
+                                  },
+                                })
+                              }
+                            >
+                              Remove reading
+                            </Button>
+                          )}
                         </>
                       )}
                     </div>

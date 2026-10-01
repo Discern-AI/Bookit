@@ -12,6 +12,7 @@ export async function GET(request: Request) {
   const clubs = await prisma.bookClub.findMany({
     where: {
       deletedAt: null,
+      ...(p.get("together") === "true" ? { isPair: true } : {}),
       ...(mine
         ? { members: { some: { userId: s.user.id, active: true } } }
         : { isPublic: true }),
@@ -60,7 +61,8 @@ export async function POST(request: Request) {
           old.version === 0 &&
           old.name === d.name &&
           old.description === d.description &&
-          old.isPublic === d.isPublic
+          old.isPublic === d.isPublic &&
+          old.isPair === d.isPair
           ? { status: 200, id: old.id }
           : {
               status: 409,
