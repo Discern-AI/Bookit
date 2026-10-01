@@ -1,10 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Fundraising, type Campaign } from "./Fundraising";
 import { ChallengeSharing } from "./ChallengeSharing";
 import { BingoBoard, type BingoSquare, type BingoChoice } from "./BingoBoard";
 type Challenge = {
   id: string;
+  fundraising: Campaign | null;
   isPublic: boolean;
   shareVersion: number;
   isCommunityCopy: boolean;
@@ -290,13 +292,21 @@ export function Challenges() {
               </ul>
             </details>
           )}
+          {c.kind === "count" && (
+            <Fundraising
+              challengeId={c.id}
+              campaign={c.fundraising}
+              reload={load}
+            />
+          )}
           <ChallengeSharing challenge={c} reload={load} />
           {confirm === c.id ? (
             <div>
               <p>
                 Delete this challenge? If shared, new joins will stop and
                 existing readers will keep their copies. Your books and reading
-                history will be kept.
+                history will be kept. Charity and sponsor records for this
+                challenge will be removed.
               </p>
               <button
                 disabled={busy}

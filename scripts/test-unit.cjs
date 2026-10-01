@@ -288,3 +288,14 @@ assert.equal(shareChallengeSchema.safeParse({id:challengeFixture.id,version:-1,i
 assert.equal(joinChallengeSchema.safeParse({id:challengeFixture.id,sourceId:"invalid",version:0}).success,false);
 assert.deepEqual(Object.keys(publicChallengeSelect).sort(),["id","title","kind","target","startsOn","endsOn","genre","shareVersion","squares"].sort());
 console.log("Community challenge sharing, joining and public field checks passed");
+
+const {fundraisingSchema,pledgeTotals}=require("../lib/fundraising.ts");
+assert.deepEqual(pledgeTotals({mode:"per_book",amountPence:125,capPence:300,receivedPence:50},3),{expectedPence:300,outstandingPence:250,excessPence:0});
+assert.deepEqual(pledgeTotals({mode:"per_book",amountPence:125,capPence:null,receivedPence:200},1),{expectedPence:125,outstandingPence:0,excessPence:75});
+assert.equal(pledgeTotals({mode:"flat",amountPence:500,capPence:null,receivedPence:0},0).expectedPence,500);
+assert.equal(pledgeTotals({mode:"per_book",amountPence:1,capPence:null,receivedPence:0},3).expectedPence,3);
+assert.equal(fundraisingSchema.safeParse({action:"campaign",version:null,charityName:"Local charity",targetPence:null}).success,true);
+const pledgeFixture={action:"pledge",id:challengeFixture.id,version:0,label:"A sponsor",mode:"per_book",amountPence:100,capPence:null,receivedPence:0};
+assert.equal(fundraisingSchema.safeParse(pledgeFixture).success,true);
+for(const changes of [{amountPence:1.2},{receivedPence:-1},{capPence:0},{mode:"flat",capPence:100},{amountPence:100000000}]) assert.equal(fundraisingSchema.safeParse({...pledgeFixture,...changes}).success,false);
+console.log("Charity pledge precision, caps, receipts and validation checks passed");

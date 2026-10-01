@@ -106,7 +106,7 @@ export function ChallengeSharing({
               )}
               <p>
                 Only the information above will be shared. Your account name,
-                selected books, notes and progress stay private. Readers who
+                selected books, notes, sponsor records and progress stay private. Readers who
                 join keep their own copy if you later withdraw this challenge.
               </p>
             </>

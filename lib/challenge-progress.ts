@@ -1,3 +1,4 @@
+import { pledgeTotals } from "@/lib/fundraising";
 import { prisma } from "@/lib/prisma";
 import {
   bingoLines,
@@ -9,6 +10,14 @@ export async function readingChallenges(userId: string) {
     prisma.readingChallenge.findMany({
       where: { userId, deletedAt: null },
       include: {
+        fundraising: {
+          include: {
+            pledges: {
+              where: { deletedAt: null },
+              orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+            },
+          },
+        },
         squares: {
           orderBy: { position: "asc" },
           include: { work: { select: { title: true } } },
@@ -50,8 +59,24 @@ export async function readingChallenges(userId: string) {
       c.kind === "bingo"
         ? squares.flatMap((s) => (s.completion ? [s.completion] : []))
         : eligible;
+    const pledges =
+      c.fundraising?.pledges.map((p) => ({
+        ...p,
+        ...pledgeTotals(p, completions.length),
+      })) || [];
+    const fundraising = c.fundraising
+      ? {
+          ...c.fundraising,
+          pledges,
+          expectedPence: pledges.reduce((n, p) => n + p.expectedPence, 0),
+          receivedPence: pledges.reduce((n, p) => n + p.receivedPence, 0),
+          outstandingPence: pledges.reduce((n, p) => n + p.outstandingPence, 0),
+          excessPence: pledges.reduce((n, p) => n + p.excessPence, 0),
+        }
+      : null;
     return {
       ...c,
+      fundraising,
       squares,
       completions,
       lines: bingoLines(squares.map((s) => !!s.completion)),

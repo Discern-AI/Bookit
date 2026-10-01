@@ -611,6 +611,7 @@ model BookClubPost {
 }
 
 model ReadingChallenge {
+  fundraising CharityCampaign?
   isPublic Boolean @default(false)
   shareVersion Int @default(0)
   isCommunityCopy Boolean @default(false)
@@ -645,4 +646,27 @@ model ChallengeSquare {
   work Work? @relation(fields: [workId], references: [id], onDelete: SetNull)
   @@unique([challengeId, position])
   @@unique([challengeId, workId])
+}
+
+model CharityCampaign {
+  challengeId String @id @db.Uuid
+  charityName String
+  targetPence Int?
+  version Int @default(0)
+  challenge ReadingChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  pledges SponsorPledge[]
+}
+model SponsorPledge {
+  id String @id @db.Uuid
+  campaignId String @db.Uuid
+  label String
+  mode String
+  amountPence Int
+  capPence Int?
+  receivedPence Int @default(0)
+  version Int @default(0)
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  campaign CharityCampaign @relation(fields: [campaignId], references: [challengeId], onDelete: Cascade)
+  @@index([campaignId, createdAt])
 }

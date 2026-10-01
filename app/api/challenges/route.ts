@@ -133,6 +133,10 @@ export async function DELETE(request: Request) {
         shareVersion: { increment: 1 },
       },
     });
+    if (result.count)
+      await tx.charityCampaign.deleteMany({
+        where: { challengeId: input.data.id },
+      });
     return result.count
       ? reply({ ok: true })
       : reply({ error: "Challenge not found." }, 404);
