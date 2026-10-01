@@ -1,9 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ChallengeSharing } from "./ChallengeSharing";
 import { BingoBoard, type BingoSquare, type BingoChoice } from "./BingoBoard";
 type Challenge = {
   id: string;
+  isPublic: boolean;
+  shareVersion: number;
+  isCommunityCopy: boolean;
+  sourceId: string | null;
   kind: string;
   squares: BingoSquare[];
   lines: number;
@@ -85,10 +90,14 @@ export function Challenges() {
         Community
       </Link>
       <h1 className="font-display text-4xl">Reading challenges</h1>
+      <Link className="underline" href="/community/challenges/discover">
+        Discover community challenges
+      </Link>
       <p>
         Private goals based on your reading history. Book-count goals include
-        rereads; bingo boards count each selected book once. Undated books do not count. Correcting or
-        reopening a reading updates progress automatically.
+        rereads; bingo boards count each selected book once. Undated books do
+        not count. Correcting or reopening a reading updates progress
+        automatically.
       </p>
       {error && (
         <div role="alert">
@@ -281,11 +290,13 @@ export function Challenges() {
               </ul>
             </details>
           )}
+          <ChallengeSharing challenge={c} reload={load} />
           {confirm === c.id ? (
             <div>
               <p>
-                Delete this challenge? Your books and reading history will be
-                kept.
+                Delete this challenge? If shared, new joins will stop and
+                existing readers will keep their copies. Your books and reading
+                history will be kept.
               </p>
               <button
                 disabled={busy}

@@ -123,10 +123,15 @@ export async function DELETE(request: Request) {
     .safeParse(await request.json().catch(() => null));
   if (!input.success) return reply({ error: "Invalid challenge." }, 400);
   return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"challenge:" + input.data.id}))`;
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${session.user.id}))`;
     const result = await tx.readingChallenge.updateMany({
       where: { id: input.data.id, userId: session.user.id },
-      data: { deletedAt: new Date() },
+      data: {
+        deletedAt: new Date(),
+        isPublic: false,
+        shareVersion: { increment: 1 },
+      },
     });
     return result.count
       ? reply({ ok: true })

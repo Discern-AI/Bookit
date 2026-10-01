@@ -611,6 +611,12 @@ model BookClubPost {
 }
 
 model ReadingChallenge {
+  isPublic Boolean @default(false)
+  shareVersion Int @default(0)
+  isCommunityCopy Boolean @default(false)
+  sourceId String? @db.Uuid
+  source ReadingChallenge? @relation("ChallengeCopies", fields: [sourceId], references: [id], onDelete: SetNull)
+  copies ReadingChallenge[] @relation("ChallengeCopies")
   kind String @default("count")
   squares ChallengeSquare[]
   id String @id @db.Uuid
@@ -624,6 +630,8 @@ model ReadingChallenge {
   createdAt DateTime @default(now())
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId, createdAt])
+  @@index([isPublic, createdAt])
+  @@index([sourceId, userId])
 }
 
 model ChallengeSquare {

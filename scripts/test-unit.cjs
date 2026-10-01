@@ -281,3 +281,10 @@ assert.equal(challengeSchema.safeParse({...challengeFixture,kind:"bingo",target:
 assert.equal(challengeSchema.safeParse({...challengeFixture,kind:"bingo",target:9,genre:null,prompts:Array(9).fill(" ")}).success,false);
 assert.equal(squareSchema.safeParse({id:challengeFixture.id,squareId:"square",version:-1,workId:null}).success,false);
 console.log("Bingo shape, prompt, version and line checks passed");
+
+const {shareChallengeSchema,joinChallengeSchema,publicChallengeSelect}=require("../lib/community-challenges.ts");
+assert.equal(shareChallengeSchema.safeParse({id:challengeFixture.id,version:0,isPublic:true}).success,true);
+assert.equal(shareChallengeSchema.safeParse({id:challengeFixture.id,version:-1,isPublic:true}).success,false);
+assert.equal(joinChallengeSchema.safeParse({id:challengeFixture.id,sourceId:"invalid",version:0}).success,false);
+assert.deepEqual(Object.keys(publicChallengeSelect).sort(),["id","title","kind","target","startsOn","endsOn","genre","shareVersion","squares"].sort());
+console.log("Community challenge sharing, joining and public field checks passed");

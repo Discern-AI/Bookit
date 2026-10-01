@@ -94,6 +94,7 @@ export function AccountSettings({
         uploaded article images. Gift claims you made on other lists will be
         released. Your saved chats, journal entries and club posts are removed.
         Clubs you own and all their discussions are deleted for every member.
+        Shared challenges are withdrawn; other readers keep copies they already joined.
         This cannot be undone.
       </p>
       <p>
