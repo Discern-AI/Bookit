@@ -92,7 +92,9 @@ export function AccountSettings({
         Permanently remove your account, library, reading history, imports, gift
         lists, profiles, reviews, comments, paths and articles, including
         uploaded article images. Gift claims you made on other lists will be
-        released. This cannot be undone.
+        released. Your saved chats, journal entries and club posts are removed.
+        Clubs you own and all their discussions are deleted for every member.
+        This cannot be undone.
       </p>
       <p>
         Shared catalogue books and other readers&apos; accounts remain.
@@ -133,7 +135,8 @@ export function AccountSettings({
         >
           <p>
             This deletes your saved account data and ends access on all devices.
-            Enter your current password and type DELETE to confirm.
+            Clubs you own and all their discussions are also deleted for every
+            member. Enter your current password and type DELETE to confirm.
           </p>
           <label className="block">
             Password for account deletion

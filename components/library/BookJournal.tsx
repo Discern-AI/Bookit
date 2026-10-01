@@ -41,6 +41,19 @@ type Journal = {
   }[];
   paths: { id: string; title: string }[];
   gifts: { id: string; name: string }[];
+  clubReadings: {
+    id: string;
+    startsOn: string | null;
+    endsOn: string | null;
+    club: { id: string; name: string };
+  }[];
+  clubPosts: {
+    id: string;
+    body: string;
+    spoilerPage: number | null;
+    createdAt: string;
+    reading: { id: string; club: { id: string; name: string } };
+  }[];
   hasMore: boolean;
 };
 export function BookJournal({
@@ -85,6 +98,8 @@ export function BookJournal({
                   articles: [...old.articles, ...d.articles],
                   paths: [...old.paths, ...d.paths],
                   gifts: [...old.gifts, ...d.gifts],
+                  clubReadings: [...old.clubReadings, ...d.clubReadings],
+                  clubPosts: [...old.clubPosts, ...d.clubPosts],
                 }
               : d,
           );
@@ -450,6 +465,51 @@ export function BookJournal({
               </p>
             ))}
           </section>
+          {(data.clubReadings.length > 0 || data.clubPosts.length > 0) && (
+            <section aria-label="Your book club activity" className="space-y-3">
+              <h2 className="font-display text-2xl">Your book clubs</h2>
+              <p className="text-sm text-ink-500">
+                Your posts and shared readings appear while you are a member.
+                Other members&apos; posts stay in the club discussion.
+              </p>
+              {data.clubReadings.map((r) => (
+                <p key={r.id}>
+                  <Link
+                    className="underline text-shelf-700"
+                    href={`/community/clubs/${r.club.id}?reading=${r.id}`}
+                  >
+                    {r.club.name}
+                  </Link>{" "}
+                  / {r.startsOn?.slice(0, 10) ?? "Start date open"} /{" "}
+                  {r.endsOn?.slice(0, 10) ?? "Finish date open"}
+                </p>
+              ))}
+              {data.clubPosts.map((p) => (
+                <article key={p.id} className="border rounded p-3 space-y-2">
+                  <p className="text-xs text-ink-500">
+                    Your post in {p.reading.club.name} /{" "}
+                    {p.createdAt.slice(0, 10)}
+                  </p>
+                  {p.spoilerPage ? (
+                    <details>
+                      <summary>Spoilers through page {p.spoilerPage}</summary>
+                      <p className="whitespace-pre-wrap break-words">
+                        {p.body}
+                      </p>
+                    </details>
+                  ) : (
+                    <p className="whitespace-pre-wrap break-words">{p.body}</p>
+                  )}
+                  <Link
+                    className="underline text-shelf-700"
+                    href={`/community/clubs/${p.reading.club.id}?reading=${p.reading.id}#post-${p.id}`}
+                  >
+                    Open club discussion
+                  </Link>
+                </article>
+              ))}
+            </section>
+          )}
           {data.hasMore && (
             <Button
               disabled={busy || !!error}

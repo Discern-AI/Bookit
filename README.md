@@ -119,3 +119,7 @@ Chat now includes your personal reading bookshelf: finished reads to the left, c
 Chat conversations are saved privately from this update onward. Use Talking about to select a book, or let an unambiguous full-title mention identify it; use each message's Filed under selector to correct associations. Save as book note works without the Claude key. Library export includes journal and chat records. Previously unsaved chats cannot be reconstructed.
 
 The [bookshelf and journal integration requirements](docs/BOOKSHELF_AND_JOURNAL.md) extend the original brief and apply to future clubs, challenges, creator/video/social features and reading plans.
+
+Book clubs are available from Community. Create a private club or explicitly list an open one, choose a club display name, schedule books and discuss them with members. Owners can generate/revoke invitation codes, remove members and manage discussions. Spoiler-marked posts are collapsed until opened. Club scheduling never changes personal shelves or Up next pins.
+
+Your book journal links to club readings and collects only your own posts while you remain a member. Edits/deletions update at their source; leaving or losing access removes journal links. Private export follows the same membership gate. AI club facilitation and notifications are not included in this first version.

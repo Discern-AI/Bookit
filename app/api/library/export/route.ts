@@ -1,3 +1,4 @@
+import { ownClubPostsWhere } from "@/lib/club-journal";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -18,9 +19,33 @@ export async function GET() {
     where: { userId: session.user.id, deletedAt: null },
     orderBy: { createdAt: "asc" },
   });
+  const clubPosts = await prisma.bookClubPost.findMany({
+    where: ownClubPostsWhere(session.user.id),
+    select: {
+      id: true,
+      body: true,
+      authorAlias: true,
+      spoilerPage: true,
+      createdAt: true,
+      updatedAt: true,
+      reading: {
+        select: {
+          id: true,
+          workId: true,
+          club: { select: { id: true, name: true } },
+        },
+      },
+    },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+  });
   return new Response(
     JSON.stringify(
-      { exportedAt: new Date().toISOString(), books, journalEntries },
+      {
+        exportedAt: new Date().toISOString(),
+        books,
+        journalEntries,
+        clubPosts,
+      },
       null,
       2,
     ),

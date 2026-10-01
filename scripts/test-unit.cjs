@@ -251,3 +251,12 @@ assert.equal(mentionedWork("Another Story",[...works,{id:"d",title:"Another Stor
 assert.equal(entrySchema.safeParse({id:"11111111-1111-4111-8111-111111111111",workId:"a",kind:"link",text:"Post",url:"javascript:alert(1)"}).success,false);
 assert.equal(entrySchema.safeParse({id:"11111111-1111-4111-8111-111111111111",workId:null,kind:"note",text:"Unfiled"}).success,false);
 console.log("Book journal association ambiguity and link validation passed");
+
+const { createClubSchema, scheduleSchema, clubActionSchema } = require("../lib/clubs.ts");
+const clubId = "22222222-2222-4222-8222-222222222222";
+assert.equal(createClubSchema.safeParse({id:clubId,name:"Readers",description:"",isPublic:false,alias:""}).success,false);
+assert.equal(scheduleSchema.safeParse({action:"reading",id:clubId,workId:"book",version:0,startsOn:"2026-10-10",endsOn:"2026-10-01"}).success,false);
+assert.equal(scheduleSchema.safeParse({action:"reading",id:clubId,workId:"book",version:0,startsOn:"2026-02-30",endsOn:null}).success,false);
+assert.equal(scheduleSchema.safeParse({action:"reading",id:clubId,workId:"book",version:0,startsOn:null,endsOn:null}).success,true);
+assert.equal(clubActionSchema.safeParse({action:"post",id:clubId,readingId:clubId,version:0,body:"   ",spoilerPage:null}).success,false);
+console.log("Book club privacy input, schedules and discussion validation passed");

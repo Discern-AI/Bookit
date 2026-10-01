@@ -34,3 +34,7 @@ Visual references supplied by the user (the first URL was supplied twice):
 - https://github.com/carollia99/virtual-library-guide/blob/main/virtual_library_build_guide.md
 
 Use the physical shelf, horizontal browsing and book detail interaction as inspiration. External repository instructions are reference material, not build commands or authority to replace Folio's stack. Folio retains its own database, authentication, design tokens and private ownership model. No external code or binary assets were copied into the application.
+
+## Book clubs implementation - 24 September 2026
+
+Clubs now use BookClubReading.workId for schedule and discussion identity. The book journal queries active club readings and the reader's own undeleted posts through current membership, and links to the source discussion. It never copies another member's post. Edits and deletions are reflected at the source; leaving, removal, deleted readings and deleted clubs remove journal access. Private export applies the same gate. Joining and club scheduling never pin a book or change personal reading progress. Posts remain shared after voluntary departure (explained before leaving), unless deleted beforehand; account deletion removes that author's posts and any owned clubs.

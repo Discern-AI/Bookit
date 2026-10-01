@@ -48,6 +48,9 @@ model VerificationToken {
 }
 
 model User {
+  ownedClubs BookClub[]
+  clubMemberships BookClubMember[]
+  clubPosts BookClubPost[]
   bookEntries BookEntry[]
   showUpNext Boolean @default(true)
   articleReports ArticleReport[]
@@ -94,6 +97,7 @@ model User {
 // ---------- Book hierarchy ----------
 
 model Work {
+  clubReadings BookClubReading[]
   bookEntries BookEntry[]
   appeals ReviewAppeal[]
   id             String   @id @default(cuid())
@@ -542,4 +546,64 @@ model BookEntry {
   work Work? @relation(fields: [workId], references: [id], onDelete: Cascade)
   @@index([userId, workId, createdAt])
   @@index([userId, conversationId, createdAt])
+}
+
+model BookClub {
+ id String @id @db.Uuid
+ ownerId String
+ name String
+ description String @default("")
+ isPublic Boolean @default(false)
+ inviteHash String? @unique
+ version Int @default(0)
+ deletedAt DateTime?
+ createdAt DateTime @default(now())
+ owner User @relation(fields:[ownerId],references:[id],onDelete:Cascade)
+ members BookClubMember[]
+ readings BookClubReading[]
+ @@index([isPublic,createdAt])
+}
+model BookClubMember {
+ clubId String @db.Uuid
+ userId String
+ alias String
+ active Boolean @default(true)
+ blocked Boolean @default(false)
+ version Int @default(0)
+ joinedAt DateTime @default(now())
+ club BookClub @relation(fields:[clubId],references:[id],onDelete:Cascade)
+ user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+ @@id([clubId,userId])
+ @@index([userId,active])
+}
+model BookClubReading {
+ id String @id @db.Uuid
+ clubId String @db.Uuid
+ workId String
+ startsOn DateTime?
+ endsOn DateTime?
+ version Int @default(0)
+ deletedAt DateTime?
+ createdAt DateTime @default(now())
+ club BookClub @relation(fields:[clubId],references:[id],onDelete:Cascade)
+ work Work @relation(fields:[workId],references:[id],onDelete:Cascade)
+ posts BookClubPost[]
+ @@index([clubId,startsOn])
+ @@index([workId,clubId])
+}
+model BookClubPost {
+ id String @id @db.Uuid
+ readingId String @db.Uuid
+ userId String
+ authorAlias String
+ body String
+ spoilerPage Int?
+ version Int @default(0)
+ deletedAt DateTime?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ reading BookClubReading @relation(fields:[readingId],references:[id],onDelete:Cascade)
+ user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+ @@index([readingId,createdAt])
+ @@index([userId,readingId])
 }
