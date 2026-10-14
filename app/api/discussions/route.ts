@@ -15,6 +15,7 @@ export async function GET(request: Request) {
   const p = new URL(request.url).searchParams,
     thread = p.get("thread"),
     workId = p.get("work"),
+    authorName = p.get("author"),
     communityId = p.get("community"),
     page = Number(p.get("page") || 0);
   if (
@@ -23,6 +24,7 @@ export async function GET(request: Request) {
     page > 100000 ||
     (thread && !z.string().uuid().safeParse(thread).success) ||
     (workId && workId.length > 100) ||
+    (authorName !== null && (!authorName.trim() || authorName.length > 500)) ||
     (communityId !== null && !discussionCommunity(communityId))
   )
     return reply({ error: "Invalid discussion page." }, 400);
@@ -68,6 +70,7 @@ export async function GET(request: Request) {
         parentId: null,
         deletedAt: null,
         ...(workId ? { workId } : {}),
+        ...(authorName ? { work: { authorName } } : {}),
         ...(communityId ? { communityId } : {}),
       },
       select: { ...select, body: false },

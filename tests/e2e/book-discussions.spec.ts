@@ -525,3 +525,137 @@ test("genre and topic spaces filter originals and retain book journal associatio
     ),
   ).toBe(true);
 });
+
+test("author communities group catalogue books and original discussions without sharing private records", async ({
+  page,
+}) => {
+  const owner = await login(page, "authors");
+  const author = `Author ${stamp} & Co`;
+  const first = await add(owner.id, `BoardBook ${stamp} author 00`);
+  const second = await add(owner.id, `BoardBook ${stamp} author 01`);
+  const other = await add(owner.id, `BoardBook ${stamp} outsider`);
+  await db.work.updateMany({
+    where: { id: { in: [first.id, second.id] } },
+    data: { authorName: author },
+  });
+  await db.work.createMany({
+    data: Array.from({ length: 20 }, (_, i) => ({
+      title: `BoardBook ${stamp} author ${String(i + 2).padStart(2, "0")}`,
+      authorName: author,
+      genres: [],
+      themes: [],
+      embedding: [],
+    })),
+  });
+  const roots = Array.from({ length: 21 }, (_, i) => ({
+    ...post(i % 2 ? first.id : second.id),
+    title: `Author thread ${i}`,
+  }));
+  for (const root of roots)
+    expect(
+      (await page.request.patch("/api/discussions", { data: root })).ok(),
+    ).toBe(true);
+  expect(
+    (
+      await page.request.patch("/api/discussions", {
+        data: { ...post(other.id), title: "Unrelated thread" },
+      })
+    ).ok(),
+  ).toBe(true);
+  await page.goto("/community/authors");
+  await page.getByLabel("Find an author").fill(`Author ${stamp}`);
+  await page.getByRole("button", { name: "Search authors" }).click();
+  await page.getByRole("link", { name: author, exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: `Books by ${author}`, exact: true }),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole("region", { name: "Books by this author" })
+      .getByRole("article"),
+  ).toHaveCount(20);
+  await page
+    .getByRole("navigation", { name: "Author book pages" })
+    .getByRole("link", { name: "Next page" })
+    .click();
+  await expect(
+    page
+      .getByRole("region", { name: "Books by this author" })
+      .getByRole("article"),
+  ).toHaveCount(2);
+  const feedUrl = `/api/discussions?author=${encodeURIComponent(author)}`;
+  const feed = await (await page.request.get(feedUrl)).json();
+  const next = await (await page.request.get(`${feedUrl}&page=1`)).json();
+  expect(feed.threads).toHaveLength(20);
+  expect(next.threads).toHaveLength(1);
+  expect(
+    new Set([...feed.threads, ...next.threads].map((p: { id: string }) => p.id))
+      .size,
+  ).toBe(21);
+  expect(JSON.stringify(feed)).not.toContain("PRIVATE_LIBRARY_NOTES");
+  expect(JSON.stringify(feed)).not.toContain("Unrelated thread");
+  expect(feed.threads[0]).not.toHaveProperty("body");
+  expect(
+    (await (await page.request.get(`${feedUrl}&work=${other.id}`)).json())
+      .threads,
+  ).toHaveLength(0);
+  expect((await page.request.get("/api/discussions?author=%20")).status()).toBe(
+    400,
+  );
+  await page.goto(`/community/authors?author=${encodeURIComponent(author)}`);
+  await page
+    .getByRole("link", { name: `Discuss ${first.title}`, exact: true })
+    .click();
+  await page.getByRole("button", { name: "Start a discussion" }).click();
+  await page
+    .getByLabel("Discussion title")
+    .fill("Author community contribution");
+  await page.getByLabel("Discussion display name").fill("A reader");
+  await page
+    .getByLabel("Your post", { exact: true })
+    .fill("A shared author observation");
+  await page.getByRole("button", { name: "Publish post", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Author community contribution" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", {
+      name: `More discussions about books by ${author}`,
+    }),
+  ).toBeVisible();
+  const book = await db.userBook.findFirstOrThrow({
+    where: { userId: owner.id, edition: { workId: first.id } },
+  });
+  const journal = await (
+    await page.request.get(`/api/library/${book.id}/journal`)
+  ).json();
+  expect(
+    journal.discussionPosts.some(
+      (p: { title: string }) => p.title === "Author community contribution",
+    ),
+  ).toBe(true);
+  // Catalogue corrections update discovery, while work-based journal ownership stays stable.
+  await db.work.update({
+    where: { id: first.id },
+    data: { authorName: `Corrected ${stamp}` },
+  });
+  const corrected = await (await page.request.get(feedUrl)).json();
+  expect(
+    corrected.threads.every((p: { workId: string }) => p.workId === second.id),
+  ).toBe(true);
+  expect(
+    (await (await page.request.get(`/api/library/${book.id}/journal`)).json())
+      .discussionPosts,
+  ).toHaveLength(journal.discussionPosts.length);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/community/authors?author=${encodeURIComponent(author)}`);
+  await expect(
+    page.getByRole("heading", { name: `Books by ${author}`, exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({ path: "test-results/author-community-mobile.png" });
+});

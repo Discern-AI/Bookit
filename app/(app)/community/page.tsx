@@ -15,6 +15,9 @@ export default async function Page({
   const following = searchParams.feed === "following";
   return (
     <main className="max-w-2xl mx-auto p-6 space-y-6">
+      <Link className="underline" href="/community/authors">
+        Author communities
+      </Link>
       <h1 className="font-display text-4xl">Community</h1>
       <Link className="underline" href="/community/spaces">
         Genre and topic communities

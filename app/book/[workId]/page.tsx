@@ -81,6 +81,14 @@ export default async function BookPage({
       >
         Discuss this book
       </Link>
+      <p>
+        <Link
+          className="underline"
+          href={`/community/authors?author=${encodeURIComponent(work.authorName)}`}
+        >
+          Explore the author community
+        </Link>
+      </p>
       <nav
         aria-label="Book navigation"
         className="flex justify-between text-shelf-700"

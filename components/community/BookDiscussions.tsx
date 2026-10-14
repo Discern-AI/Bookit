@@ -36,10 +36,12 @@ export function BookDiscussions({
   threadId,
   workId,
   communityId,
+  authorName,
 }: {
   threadId?: string;
   workId?: string;
   communityId?: string;
+  authorName?: string;
 }) {
   const router = useRouter();
   const [data, setData] = useState<{
@@ -71,7 +73,7 @@ export function BookDiscussions({
     setLoading(true);
     setError("");
     fetch(
-      `/api/discussions?page=${page}${threadId ? `&thread=${encodeURIComponent(threadId)}` : workId ? `&work=${encodeURIComponent(workId)}` : ""}${!threadId && communityId ? `&community=${encodeURIComponent(communityId)}` : ""}`,
+      `/api/discussions?page=${page}${threadId ? `&thread=${encodeURIComponent(threadId)}` : workId ? `&work=${encodeURIComponent(workId)}` : ""}${!threadId && authorName ? `&author=${encodeURIComponent(authorName)}` : ""}${!threadId && communityId ? `&community=${encodeURIComponent(communityId)}` : ""}`,
       { signal: c.signal },
     )
       .then(async (r) => {
@@ -89,7 +91,7 @@ export function BookDiscussions({
         if (!c.signal.aborted) setLoading(false);
       });
     return () => c.abort();
-  }, [page, attempt, threadId, workId, communityId]);
+  }, [page, attempt, threadId, workId, communityId, authorName]);
   useEffect(() => {
     const c = new AbortController();
     fetch("/api/bookshelf", { signal: c.signal })
@@ -222,6 +224,9 @@ export function BookDiscussions({
         <Link className="underline" href="/community/spaces">
           Genre and topic communities
         </Link>
+        <Link className="underline" href="/community/authors">
+          Author communities
+        </Link>
       </nav>
       {community && (
         <p>
@@ -238,7 +243,9 @@ export function BookDiscussions({
         {data?.thread?.title ||
           (data?.book
             ? `Discuss ${data.book.title}`
-            : community?.name || "Book discussions")}
+            : authorName
+              ? `Discussions about books by ${authorName}`
+              : community?.name || "Book discussions")}
       </h1>
       <p>
         Posts are shared with signed-in Folio readers under the display name you
@@ -268,6 +275,12 @@ export function BookDiscussions({
           <Link className="underline" href={`/book/${data.thread.workId}`}>
             {data.thread.work.title}
           </Link>
+          <Link
+            className="underline"
+            href={`/community/authors?author=${encodeURIComponent(data.thread.work.authorName)}`}
+          >
+            More discussions about books by {data.thread.work.authorName}
+          </Link>
           <p>
             {data.thread.spoilers
               ? "Spoilers allowed; content starts collapsed."
@@ -288,13 +301,20 @@ export function BookDiscussions({
       )}
       {data?.threads && (
         <>
-          <button
-            className="border rounded px-3 py-2"
-            disabled={locked}
-            onClick={() => fresh(null)}
-          >
-            Start a discussion
-          </button>
+          {authorName ? (
+            <p>
+              Choose a book above to start a discussion. Existing threads across
+              this author name appear below.
+            </p>
+          ) : (
+            <button
+              className="border rounded px-3 py-2"
+              disabled={locked}
+              onClick={() => fresh(null)}
+            >
+              Start a discussion
+            </button>
+          )}
           {!data.threads.length && <p>No discussions on this page.</p>}
           {data.threads.map((t) => (
             <article key={t.id} className="border rounded-xl p-4 space-y-2">

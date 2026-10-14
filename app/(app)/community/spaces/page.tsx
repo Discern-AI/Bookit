@@ -6,6 +6,9 @@ export default function Page() {
       <Link className="underline" href="/community">
         Community
       </Link>
+      <Link className="underline" href="/community/authors">
+        Author communities
+      </Link>
       <h1 className="font-display text-3xl">Genre and topic communities</h1>
       <p>
         Find readers exploring similar books and ideas. Choose a space to browse
