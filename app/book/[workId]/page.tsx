@@ -75,6 +75,12 @@ export default async function BookPage({
   });
   return (
     <main className="max-w-4xl mx-auto px-4 sm:px-8 py-8 space-y-8">
+      <Link
+        className="underline"
+        href={`/community/discussions?work=${work.id}`}
+      >
+        Discuss this book
+      </Link>
       <nav
         aria-label="Book navigation"
         className="flex justify-between text-shelf-700"

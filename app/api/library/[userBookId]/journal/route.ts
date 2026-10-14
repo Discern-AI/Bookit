@@ -1,3 +1,4 @@
+import { ownDiscussionWhere, discussionSelect } from "@/lib/book-discussions";
 import { readingChallenges } from "@/lib/challenge-progress";
 import { ownClubPostsWhere } from "@/lib/club-journal";
 import { auth } from "@/auth";
@@ -31,6 +32,7 @@ export async function GET(
     gifts,
     clubReadings,
     clubPosts,
+    discussionPosts,
   ] = await Promise.all([
     prisma.userBook.findMany({
       where: { userId, edition: { workId } },
@@ -125,6 +127,13 @@ export async function GET(
       skip,
       take: 51,
     }),
+    prisma.bookDiscussion.findMany({
+      where: ownDiscussionWhere(userId, workId),
+      select: discussionSelect,
+      orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+      skip,
+      take: 51,
+    }),
   ]);
   const challenges = (await readingChallenges(userId))
     .filter(
@@ -157,6 +166,7 @@ export async function GET(
       gifts: gifts.slice(0, 50),
       clubReadings: clubReadings.slice(0, 50),
       clubPosts: clubPosts.slice(0, 50),
+      discussionPosts: discussionPosts.slice(0, 50),
       hasMore: [
         entries,
         sessions,
@@ -165,6 +175,7 @@ export async function GET(
         gifts,
         clubReadings,
         clubPosts,
+        discussionPosts,
       ].some((a) => a.length > 50),
     },
     { headers: { "Cache-Control": "no-store" } },

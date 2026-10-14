@@ -303,3 +303,12 @@ console.log("Charity pledge precision, caps, receipts and validation checks pass
 assert.equal(createClubSchema.safeParse({id:challengeFixture.id,name:"Pair",description:"",alias:"Reader",isPublic:false,isPair:true}).success,true);
 assert.equal(createClubSchema.safeParse({id:challengeFixture.id,name:"Pair",description:"",alias:"Reader",isPublic:true,isPair:true}).success,false);
 console.log("Reading Together privacy validation passed");
+
+const {discussionPostSchema,discussionActionSchema,discussionModerationSchema}=require("../lib/book-discussions.ts");
+const discussionFixture={action:"post",id:challengeFixture.id,workId:"work",parentId:null,title:"A question",body:"My thought",alias:"Reader",spoilers:false,version:0};
+assert.equal(discussionPostSchema.safeParse(discussionFixture).success,true);
+for(const change of [{body:" "},{title:""},{alias:""},{version:-1},{body:"x".repeat(5001)}])assert.equal(discussionPostSchema.safeParse({...discussionFixture,...change}).success,false);
+assert.equal(discussionPostSchema.safeParse({...discussionFixture,parentId:challengeFixture.id,title:""}).success,true);
+assert.equal(discussionActionSchema.safeParse({action:"report",id:challengeFixture.id,postId:challengeFixture.id,reason:" "}).success,false);
+assert.equal(discussionModerationSchema.safeParse({id:challengeFixture.id,version:0,decision:"remove"}).success,true);
+console.log("Book discussion, reply and report validation passed");

@@ -48,6 +48,8 @@ model VerificationToken {
 }
 
 model User {
+  discussionPosts BookDiscussion[]
+  discussionReports DiscussionReport[]
   readingChallenges ReadingChallenge[]
   ownedClubs BookClub[]
   clubMemberships BookClubMember[]
@@ -98,6 +100,7 @@ model User {
 // ---------- Book hierarchy ----------
 
 model Work {
+  discussions BookDiscussion[]
   challengeSquares ChallengeSquare[]
   clubReadings BookClubReading[]
   bookEntries BookEntry[]
@@ -672,4 +675,37 @@ model SponsorPledge {
   createdAt DateTime @default(now())
   campaign CharityCampaign @relation(fields: [campaignId], references: [challengeId], onDelete: Cascade)
   @@index([campaignId, createdAt])
+}
+
+model BookDiscussion {
+ id String @id @db.Uuid
+ workId String
+ userId String
+ parentId String? @db.Uuid
+ title String @default("")
+ body String
+ alias String
+ spoilers Boolean @default(false)
+ version Int @default(0)
+ deletedAt DateTime?
+ createdAt DateTime @default(now())
+ user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+ work Work @relation(fields:[workId],references:[id],onDelete:Cascade)
+ parent BookDiscussion? @relation("DiscussionReplies",fields:[parentId],references:[id],onDelete:Cascade)
+ replies BookDiscussion[] @relation("DiscussionReplies")
+ reports DiscussionReport[]
+ @@index([workId, parentId, createdAt])
+ @@index([userId, createdAt])
+}
+model DiscussionReport {
+ id String @id @db.Uuid
+ postId String @db.Uuid
+ userId String
+ reason String
+ status String @default("pending")
+ createdAt DateTime @default(now())
+ post BookDiscussion @relation(fields:[postId],references:[id],onDelete:Cascade)
+ user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+ @@unique([postId,userId])
+ @@index([status,createdAt])
 }

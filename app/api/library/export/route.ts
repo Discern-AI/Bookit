@@ -1,3 +1,4 @@
+import { ownDiscussionWhere, discussionSelect } from "@/lib/book-discussions";
 import { readingChallenges } from "@/lib/challenge-progress";
 import { ownClubPostsWhere } from "@/lib/club-journal";
 import { auth } from "@/auth";
@@ -7,6 +8,11 @@ export async function GET() {
   const session = await auth();
   if (!session?.user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const discussionPosts = await prisma.bookDiscussion.findMany({
+    where: ownDiscussionWhere(session.user.id),
+    select: discussionSelect,
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+  });
   const challenges = await readingChallenges(session.user.id);
   const books = await prisma.userBook.findMany({
     where: { userId: session.user.id },
@@ -48,6 +54,7 @@ export async function GET() {
         journalEntries,
         clubPosts,
         challenges,
+        discussionPosts,
       },
       null,
       2,

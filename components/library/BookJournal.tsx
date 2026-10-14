@@ -4,6 +4,13 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import type { JournalEntry } from "@/lib/book-journal";
 type Journal = {
+  discussionPosts: {
+    id: string;
+    parentId: string | null;
+    title: string;
+    body: string;
+    spoilers: boolean;
+  }[];
   challenges: { id: string; title: string; count: number; target: number }[];
   book: {
     id: string;
@@ -101,6 +108,10 @@ export function BookJournal({
                   gifts: [...old.gifts, ...d.gifts],
                   clubReadings: [...old.clubReadings, ...d.clubReadings],
                   clubPosts: [...old.clubPosts, ...d.clubPosts],
+                  discussionPosts: [
+                    ...old.discussionPosts,
+                    ...d.discussionPosts,
+                  ],
                 }
               : d,
           );
@@ -466,6 +477,40 @@ export function BookJournal({
               </p>
             ))}
           </section>
+          {!!data.discussionPosts?.length && (
+            <section
+              aria-label="Your community discussions"
+              className="space-y-3"
+            >
+              <h2 className="font-display text-2xl">
+                Your community discussions
+              </h2>
+              <p>
+                Only your own contributions appear here. These posts are shared
+                with signed-in readers.
+              </p>
+              {data.discussionPosts.map((p) => (
+                <article key={p.id} className="border rounded p-3 space-y-2">
+                  <Link
+                    className="underline"
+                    href={`/community/discussions/${p.parentId || p.id}`}
+                  >
+                    {p.title || "Open discussion for your reply"}
+                  </Link>
+                  {p.spoilers ? (
+                    <details>
+                      <summary>Reveal your spoiler content</summary>
+                      <p className="whitespace-pre-wrap break-words">
+                        {p.body}
+                      </p>
+                    </details>
+                  ) : (
+                    <p className="whitespace-pre-wrap break-words">{p.body}</p>
+                  )}
+                </article>
+              ))}
+            </section>
+          )}
           {!!data.challenges?.length && (
             <section aria-label="Your reading challenges">
               <h2 className="font-display text-2xl">Your reading challenges</h2>
