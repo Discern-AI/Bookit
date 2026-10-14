@@ -604,3 +604,142 @@ test("private video clips upload, seek, reject other readers and delete", async 
     0,
   );
 });
+
+test("camera recordings stay local until upload and release devices", async ({
+  page,
+}) => {
+  const user = await login(page, "recorder");
+  const work = await add(user.id, `Video ${stamp} Recording`);
+  const project = await db.videoProject.create({
+    data: {
+      id: crypto.randomUUID(),
+      userId: user.id,
+      title: "Recording plan",
+      books: { create: { workId: work.id, position: 0 } },
+    },
+  });
+  await page.addInitScript(() => {
+    const state = window as any;
+    state.captureMode = "denied";
+    state.capturedTracks = [];
+    Object.defineProperty(navigator.mediaDevices, "getUserMedia", {
+      value: async (constraints: any) => {
+        state.captureConstraints = constraints;
+        if (state.captureMode === "denied")
+          throw new DOMException("Denied", "NotAllowedError");
+        if (state.captureMode === "pending")
+          await new Promise((resolve) => {
+            state.resolveCamera = resolve;
+          });
+        const canvas = document.createElement("canvas");
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext("2d")!;
+        const stream = canvas.captureStream(10);
+        state.capturedTracks.push(...stream.getTracks());
+        let i = 0;
+        const timer = setInterval(() => {
+          ctx.fillStyle = i++ % 2 ? "red" : "blue";
+          ctx.fillRect(0, 0, 64, 64);
+          if (stream.getTracks().every((t) => t.readyState === "ended"))
+            clearInterval(timer);
+        }, 100);
+        return stream;
+      },
+    });
+  });
+  await page.goto(`/creator/videos/edit?project=${project.id}`);
+  const region = page.getByRole("region", {
+    name: "Record video",
+    exact: true,
+  });
+  await region.getByRole("button", { name: "Start camera recording" }).click();
+  await expect(region.getByRole("alert")).toContainText(
+    "Camera or microphone could not be opened",
+  );
+  await page.evaluate(() => {
+    (window as any).captureMode = "pending";
+  });
+  await region.getByRole("button", { name: "Start camera recording" }).click();
+  await region.getByRole("button", { name: "Cancel recording" }).click();
+  await page.evaluate(() => {
+    (window as any).resolveCamera();
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        (window as any).capturedTracks.every(
+          (t: MediaStreamTrack) => t.readyState === "ended",
+        ),
+      ),
+    )
+    .toBe(true);
+  await page.evaluate(() => {
+    (window as any).captureMode = "allow";
+  });
+  await region.getByRole("button", { name: "Start camera recording" }).click();
+  await expect(region.getByRole("status")).toContainText("Recording: 1s");
+  await region.getByRole("button", { name: "Stop recording" }).click();
+  await expect(region.getByLabel("Recorded video preview")).toBeVisible();
+  expect(
+    await page.evaluate(() => (window as any).captureConstraints.audio),
+  ).toBe(true);
+  expect(
+    await page.evaluate(() =>
+      (window as any).capturedTracks.every(
+        (t: MediaStreamTrack) => t.readyState === "ended",
+      ),
+    ),
+  ).toBe(true);
+  expect(await db.videoClip.count({ where: { projectId: project.id } })).toBe(
+    0,
+  );
+  const url = `/api/video-projects/${project.id}/clip`;
+  await page.route("**" + url, (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "Temporary upload failure" }),
+    }),
+  );
+  await page.getByRole("button", { name: "Upload private clip" }).click();
+  await expect(page.getByText("Temporary upload failure")).toBeVisible();
+  await expect(region.getByLabel("Recorded video preview")).toBeVisible();
+  await page.unroute("**" + url);
+  await page.getByRole("button", { name: "Upload private clip" }).click();
+  await expect(page.getByLabel("Private video playback")).toBeVisible();
+  expect(await db.videoClip.count({ where: { projectId: project.id } })).toBe(
+    1,
+  );
+  await page.getByRole("button", { name: "Remove clip", exact: true }).click();
+  await page.getByRole("button", { name: "Confirm remove clip" }).click();
+  await expect(page.getByLabel("Choose private video")).toBeEnabled();
+  await region.getByRole("button", { name: "Start camera recording" }).click();
+  await expect(region.getByRole("status")).toContainText("Recording: 1s");
+  await region.getByRole("button", { name: "Stop recording" }).click();
+  await region.getByRole("button", { name: "Discard recording" }).click();
+  await expect(
+    page.getByRole("button", { name: "Upload private clip" }),
+  ).toBeDisabled();
+  expect(await db.videoClip.count({ where: { projectId: project.id } })).toBe(
+    0,
+  );
+  await region.getByRole("button", { name: "Start camera recording" }).click();
+  await expect(region.getByRole("status")).toContainText("Recording:");
+  await expect
+    .poll(() =>
+      region
+        .getByLabel("Camera preview")
+        .evaluate((v: HTMLVideoElement) => !!v.srcObject),
+    )
+    .toBe(true);
+  await page.getByRole("link", { name: "Video plans", exact: true }).click();
+  await expect(page).toHaveURL(/\/creator\/videos$/);
+  expect(
+    await page.evaluate(() =>
+      (window as any).capturedTracks.every(
+        (t: MediaStreamTrack) => t.readyState === "ended",
+      ),
+    ),
+  ).toBe(true);
+});

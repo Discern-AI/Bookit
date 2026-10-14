@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { VideoRecorder } from "./VideoRecorder";
 import { Button } from "@/components/ui/Button";
 export function VideoClip({ projectId }: { projectId: string }) {
   const [clip, setClip] = useState<{ id: string } | null>(null);
@@ -8,6 +9,8 @@ export function VideoClip({ projectId }: { projectId: string }) {
     [ready, setReady] = useState(false);
   const [file, setFile] = useState<File | null>(null),
     [confirm, setConfirm] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [recorded, setRecorded] = useState(false);
   const url = `/api/video-projects/${projectId}/clip`;
   useEffect(() => {
     let active = true;
@@ -45,6 +48,7 @@ export function VideoClip({ projectId }: { projectId: string }) {
       if (!r.ok) throw Error(d.error || "Could not save clip.");
       setClip(remove ? null : d.clip);
       setFile(null);
+      setRecorded(false);
       setConfirm(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save clip.");
@@ -98,11 +102,19 @@ export function VideoClip({ projectId }: { projectId: string }) {
       ) : (
         ready && (
           <>
+            <VideoRecorder
+              disabled={busy}
+              onActive={setRecording}
+              onFile={(value) => {
+                setFile(value);
+                setRecorded(!!value);
+              }}
+            />
             <input
               aria-label="Choose private video"
               type="file"
               accept="video/mp4,video/webm,.mp4,.webm"
-              disabled={busy}
+              disabled={busy || recording || recorded}
               onChange={(e) => {
                 setFile(e.target.files?.[0] || null);
                 setError("");
@@ -110,7 +122,9 @@ export function VideoClip({ projectId }: { projectId: string }) {
             />
             <Button
               type="button"
-              disabled={busy || !file || file.size > 25 * 1024 * 1024}
+              disabled={
+                busy || recording || !file || file.size > 25 * 1024 * 1024
+              }
               onClick={() => void change(false)}
             >
               Upload private clip
