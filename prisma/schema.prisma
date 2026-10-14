@@ -48,6 +48,7 @@ model VerificationToken {
 }
 
 model User {
+  cardProjects CardProject[]
   discussionPosts BookDiscussion[]
   discussionReports DiscussionReport[]
   readingChallenges ReadingChallenge[]
@@ -100,6 +101,7 @@ model User {
 // ---------- Book hierarchy ----------
 
 model Work {
+  cardProjects CardProjectBook[]
   discussions BookDiscussion[]
   challengeSquares ChallengeSquare[]
   clubReadings BookClubReading[]
@@ -710,4 +712,36 @@ model DiscussionReport {
  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
  @@unique([postId,userId])
  @@index([status,createdAt])
+}
+
+model CardProject {
+ id String @id @db.Uuid
+ userId String
+ title String
+ kind String
+ format String
+ theme String
+ caption String @default("")
+ quote String @default("")
+ reference String @default("")
+ heading String @default("")
+ includeByline Boolean @default(false)
+ version Int @default(1)
+ deletedAt DateTime?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+ books CardProjectBook[]
+ @@index([userId, deletedAt, updatedAt])
+}
+model CardProjectBook {
+ projectId String @db.Uuid
+ workId String
+ editionId String
+ position Int
+ project CardProject @relation(fields:[projectId],references:[id],onDelete:Cascade)
+ work Work @relation(fields:[workId],references:[id],onDelete:Cascade)
+ @@id([projectId, workId])
+ @@unique([projectId, position])
+ @@index([workId])
 }

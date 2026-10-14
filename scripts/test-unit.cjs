@@ -333,3 +333,11 @@ for (const value of [{suggestions:[{...proposed,workId:"invented"}]},{suggestion
 assert.throws(() => parseGiftSuggestions(JSON.stringify({suggestions:[proposed]}),candidates,["candidate"]));
 assert.throws(() => parseGiftSuggestions("not JSON",candidates,[]));
 console.log("Gift AI privacy allowlist, candidate identity, duplicate and output validation passed");
+
+const {cardProjectSchema,cardProjectAction}=require("../lib/card-projects.ts");
+const cardDraft={title:"My card",kind:"book",format:"square",theme:"paper",caption:"",quote:"",reference:"",heading:"",includeByline:false,books:[{workId:"work",editionId:"edition"}]};
+assert.equal(cardProjectSchema.safeParse(cardDraft).success,true);
+for(const change of [{title:" "},{books:[]},{caption:"x".repeat(181)},{kind:"recap"},{books:[...cardDraft.books,...cardDraft.books]}]) assert.equal(cardProjectSchema.safeParse({...cardDraft,...change}).success,false);
+assert.equal(cardProjectSchema.safeParse({...cardDraft,kind:"shelfie",books:Array.from({length:6},(_,i)=>({workId:`w${i}`,editionId:`e${i}`}))}).success,true);
+assert.equal(cardProjectAction.safeParse({action:"save",id:challengeFixture.id,version:-1,project:cardDraft}).success,false);
+console.log("Private card project shape, bounds, work uniqueness and version validation passed");

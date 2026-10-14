@@ -33,6 +33,7 @@ export async function GET(
     clubReadings,
     clubPosts,
     discussionPosts,
+    cardProjects,
   ] = await Promise.all([
     prisma.userBook.findMany({
       where: { userId, edition: { workId } },
@@ -134,6 +135,13 @@ export async function GET(
       skip,
       take: 51,
     }),
+    prisma.cardProject.findMany({
+      where: { userId, deletedAt: null, books: { some: { workId } } },
+      select: { id: true, title: true },
+      orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
+      skip,
+      take: 51,
+    }),
   ]);
   const challenges = (await readingChallenges(userId))
     .filter(
@@ -167,6 +175,7 @@ export async function GET(
       clubReadings: clubReadings.slice(0, 50),
       clubPosts: clubPosts.slice(0, 50),
       discussionPosts: discussionPosts.slice(0, 50),
+      cardProjects: cardProjects.slice(0, 50),
       hasMore: [
         entries,
         sessions,
@@ -176,6 +185,7 @@ export async function GET(
         clubReadings,
         clubPosts,
         discussionPosts,
+        cardProjects,
       ].some((a) => a.length > 50),
     },
     { headers: { "Cache-Control": "no-store" } },

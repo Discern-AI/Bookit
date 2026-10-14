@@ -508,3 +508,274 @@ test("shelfie selection, ordering and exports preserve private library data", as
     (await db.user.findUniqueOrThrow({ where: { id: owner.id } })).blogEnabled,
   ).toBe(false);
 });
+
+test("private card projects reopen, retain drafts and follow original journal records", async ({
+  page,
+  browser,
+}) => {
+  test.setTimeout(120000);
+  const owner = await login(page, "projects");
+  const first = await add(owner.id, `Card ${stamp} Project first`);
+  const second = await add(owner.id, `Card ${stamp} Project second`);
+  const copies = await db.userBook.findMany({
+    where: { userId: owner.id },
+    include: { edition: true },
+  });
+  const one = copies.find((copy) => copy.edition.workId === first.id)!;
+  const two = copies.find((copy) => copy.edition.workId === second.id)!;
+  await page.goto("/creator/cards");
+  await page
+    .getByRole("button", { name: `${first.title} / A. Reader`, exact: true })
+    .click();
+  await page
+    .getByLabel("Project name", { exact: true })
+    .fill("Private project title");
+  await page
+    .getByLabel("Caption (optional)", { exact: true })
+    .fill("Private project caption");
+  let captured: any;
+  await page.route("**/api/card-projects", async (route) => {
+    captured = route.request().postDataJSON();
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "Save unavailable; draft retained." }),
+    });
+  });
+  await page.getByRole("button", { name: "Save project", exact: true }).click();
+  await expect(
+    page.getByRole("region", { name: "Save card project" }).getByRole("alert"),
+  ).toContainText("draft retained");
+  await expect(
+    page.getByLabel("Caption (optional)", { exact: true }),
+  ).toHaveValue("Private project caption");
+  await page.unroute("**/api/card-projects");
+  await page.getByRole("button", { name: "Save project", exact: true }).click();
+  await expect(page).toHaveURL(/creator\/cards\?project=/);
+  const id = new URL(page.url()).searchParams.get("project")!;
+  expect(id).toBe(captured.id);
+  expect(
+    (await page.request.patch("/api/card-projects", { data: captured })).ok(),
+  ).toBe(true);
+  expect(await db.cardProject.count({ where: { id } })).toBe(1);
+  await page.reload();
+  await expect(
+    page.getByLabel("Caption (optional)", { exact: true }),
+  ).toHaveValue("Private project caption");
+  await expect(
+    page.getByRole("button", { name: "Download PNG", exact: true }),
+  ).toBeEnabled();
+  const journal = async (bookId: string) =>
+    (await page.request.get(`/api/library/${bookId}/journal`)).json();
+  expect(
+    (await journal(one.id)).cardProjects.map((p: { id: string }) => p.id),
+  ).toEqual([id]);
+  expect((await journal(two.id)).cardProjects).toEqual([]);
+  const exported = await (await page.request.get("/api/library/export")).json();
+  expect(exported.cardProjects[0].caption).toBe("Private project caption");
+  expect(exported.cardProjects[0].books[0].workId).toBe(first.id);
+  const otherContext = await browser.newContext();
+  const otherPage = await otherContext.newPage();
+  await login(otherPage, "project-other");
+  // A streamed Next.js not-found page may already have sent HTTP 200.
+  await otherPage.goto(`/creator/cards?project=${id}`);
+  await expect(
+    otherPage.getByText("This page could not be found.", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    otherPage.getByLabel("Project name", { exact: true }),
+  ).toHaveCount(0);
+  expect(await otherPage.locator("body").innerText()).not.toContain(
+    "Private project caption",
+  );
+  expect(
+    (
+      await otherPage.request.patch("/api/card-projects", {
+        data: { ...captured, version: 1 },
+      })
+    ).status(),
+  ).toBe(404);
+  expect(
+    (
+      await otherPage.request.patch("/api/card-projects", {
+        data: { ...captured, id: crypto.randomUUID() },
+      })
+    ).status(),
+  ).toBe(400);
+  expect(
+    (await (await otherPage.request.get("/api/library/export")).json())
+      .cardProjects,
+  ).toEqual([]);
+  await otherContext.close();
+  expect(
+    (
+      await page.request.patch("/api/card-projects", {
+        data: captured,
+        headers: { Origin: "https://other.example" },
+      })
+    ).status(),
+  ).toBe(403);
+  // Another tab updates the original; this tab must keep its unsaved text.
+  const update = {
+    ...captured,
+    version: 1,
+    project: { ...captured.project, caption: "Other tab" },
+  };
+  expect(
+    (await page.request.patch("/api/card-projects", { data: update })).ok(),
+  ).toBe(true);
+  await page
+    .getByLabel("Caption (optional)", { exact: true })
+    .fill("Retained conflicting draft");
+  await page.getByRole("button", { name: "Save project", exact: true }).click();
+  await expect(
+    page.getByRole("region", { name: "Save card project" }).getByRole("alert"),
+  ).toContainText("changed or was deleted");
+  await expect(
+    page.getByLabel("Caption (optional)", { exact: true }),
+  ).toHaveValue("Retained conflicting draft");
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.reload();
+  await expect(
+    page.getByLabel("Caption (optional)", { exact: true }),
+  ).toHaveValue("Other tab");
+  await page
+    .getByRole("combobox", { name: "Card type" })
+    .selectOption("shelfie");
+  await page
+    .getByRole("button", { name: `${first.title} / A. Reader`, exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: `${second.title} / A. Reader`, exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: `Move ${second.title} up`, exact: true })
+    .click();
+  await page.getByRole("button", { name: "Save project", exact: true }).click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Project saved privately" }),
+  ).toBeVisible();
+  await page.reload();
+  const selected = page.getByRole("list", { name: "Selected books" });
+  await expect(selected.getByRole("listitem").first()).toContainText(
+    second.title,
+  );
+  expect(
+    (await journal(two.id)).cardProjects.map((p: { id: string }) => p.id),
+  ).toEqual([id]);
+  await page
+    .getByRole("button", { name: `Remove ${first.title}`, exact: true })
+    .click();
+  await page.getByRole("button", { name: "Save project", exact: true }).click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Project saved privately" }),
+  ).toBeVisible();
+  expect((await journal(one.id)).cardProjects).toEqual([]);
+  await page
+    .getByRole("button", { name: "Delete project", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Keep project", exact: true }).click();
+  expect(
+    (await db.cardProject.findUniqueOrThrow({ where: { id } })).deletedAt,
+  ).toBeNull();
+  await page
+    .getByRole("button", { name: "Delete project", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Confirm delete project", exact: true })
+    .click();
+  await expect(page).toHaveURL("/creator/cards/projects");
+  expect((await journal(two.id)).cardProjects).toEqual([]);
+  expect(
+    (await (await page.request.get("/api/library/export")).json()).cardProjects,
+  ).toEqual([]);
+  expect(
+    (
+      await page.request.patch("/api/card-projects", { data: captured })
+    ).status(),
+  ).toBe(409);
+  const tombstone = await db.cardProject.findUniqueOrThrow({
+    where: { id },
+    include: { books: true },
+  });
+  expect(tombstone.caption).toBe("");
+  expect(tombstone.title).toBe("");
+  expect(tombstone.books).toHaveLength(0);
+  expect(
+    (await db.userBook.findUniqueOrThrow({ where: { id: two.id } }))
+      .privateNotes,
+  ).toBe("PRIVATE_LIBRARY_NOTES");
+});
+
+test("project directory paginates and account deletion removes saved designs without deleting works", async ({
+  page,
+}) => {
+  const owner = await login(page, "project-pages");
+  const work = await add(owner.id, `Card ${stamp} Retained project book`);
+  const copy = await db.userBook.findFirstOrThrow({
+    where: { userId: owner.id },
+  });
+  const project = {
+    title: "Retained design",
+    kind: "quote",
+    format: "portrait",
+    theme: "night",
+    caption: "",
+    quote: "A private quotation",
+    reference: "p. 7",
+    heading: "",
+    includeByline: true,
+    books: [{ workId: work.id, editionId: copy.editionId }],
+  };
+  const id = crypto.randomUUID();
+  const request = { action: "save", id, version: 0, project };
+  expect(
+    (await page.request.patch("/api/card-projects", { data: request })).ok(),
+  ).toBe(true);
+  await db.userBook.delete({ where: { id: copy.id } });
+  expect(
+    (
+      await page.request.patch("/api/card-projects", {
+        data: {
+          ...request,
+          version: 1,
+          project: { ...project, reference: "p. 8" },
+        },
+      })
+    ).ok(),
+  ).toBe(true);
+  await page.goto(`/creator/cards?project=${id}`);
+  await expect(page.getByLabel("Quote", { exact: true })).toHaveValue(
+    "A private quotation",
+  );
+  await expect(page.getByLabel("Page or reference (optional)")).toHaveValue(
+    "p. 8",
+  );
+  const additional = Array.from({ length: 21 }, (_, i) => ({
+    id: crypto.randomUUID(),
+    userId: owner.id,
+    title: `Project ${i}`,
+    kind: "book",
+    format: "square",
+    theme: "paper",
+  }));
+  await db.cardProject.createMany({ data: additional });
+  await page.goto("/creator/cards/projects");
+  await expect(page.getByRole("article")).toHaveCount(20);
+  await page.getByRole("link", { name: "Next page", exact: true }).click();
+  await expect(page.getByRole("article")).toHaveCount(2);
+  expect(
+    (
+      await page.request.post("/api/settings/account", {
+        data: {
+          action: "delete",
+          currentPassword: password,
+          confirmation: "DELETE",
+        },
+      })
+    ).ok(),
+  ).toBe(true);
+  expect(await db.cardProject.count({ where: { userId: owner.id } })).toBe(0);
+  expect(await db.cardProjectBook.count({ where: { projectId: id } })).toBe(0);
+  expect(await db.work.findUnique({ where: { id: work.id } })).not.toBeNull();
+});

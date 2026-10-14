@@ -27,6 +27,9 @@ export default async function Page({
       <Link href="/creator/recap" className="underline">
         Your reading-year recap
       </Link>
+      <Link href="/creator/cards/projects" className="underline">
+        Saved card projects
+      </Link>
       <Link href="/creator/cards" className="underline">
         Make shareable cards
       </Link>

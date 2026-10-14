@@ -49,6 +49,7 @@ type Journal = {
   }[];
   paths: { id: string; title: string }[];
   gifts: { id: string; name: string }[];
+  cardProjects: { id: string; title: string }[];
   clubReadings: {
     id: string;
     startsOn: string | null;
@@ -106,6 +107,7 @@ export function BookJournal({
                   articles: [...old.articles, ...d.articles],
                   paths: [...old.paths, ...d.paths],
                   gifts: [...old.gifts, ...d.gifts],
+                  cardProjects: [...old.cardProjects, ...d.cardProjects],
                   clubReadings: [...old.clubReadings, ...d.clubReadings],
                   clubPosts: [...old.clubPosts, ...d.clubPosts],
                   discussionPosts: [
@@ -477,6 +479,21 @@ export function BookJournal({
               </p>
             ))}
           </section>
+          {!!data.cardProjects?.length && (
+            <section aria-label="Your card projects" className="space-y-3">
+              <h2 className="font-display text-2xl">Your card projects</h2>
+              {data.cardProjects.map((project) => (
+                <p key={project.id}>
+                  <Link
+                    className="underline"
+                    href={`/creator/cards?project=${project.id}`}
+                  >
+                    {project.title}
+                  </Link>
+                </p>
+              ))}
+            </section>
+          )}
           {!!data.discussionPosts?.length && (
             <section
               aria-label="Your community discussions"

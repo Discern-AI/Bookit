@@ -1,3 +1,4 @@
+import { cardProjectInclude, serializeCardProject } from "@/lib/card-projects";
 import { ownDiscussionWhere, discussionSelect } from "@/lib/book-discussions";
 import { readingChallenges } from "@/lib/challenge-progress";
 import { ownClubPostsWhere } from "@/lib/club-journal";
@@ -13,6 +14,13 @@ export async function GET() {
     select: discussionSelect,
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
   });
+  const cardProjects = (
+    await prisma.cardProject.findMany({
+      where: { userId: session.user.id, deletedAt: null },
+      include: cardProjectInclude,
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    })
+  ).map(serializeCardProject);
   const challenges = await readingChallenges(session.user.id);
   const books = await prisma.userBook.findMany({
     where: { userId: session.user.id },
@@ -55,6 +63,7 @@ export async function GET() {
         clubPosts,
         challenges,
         discussionPosts,
+        cardProjects,
       },
       null,
       2,
