@@ -424,3 +424,183 @@ test("video plans enforce ownership, paginate and cascade with account deletion"
   );
   expect(await db.work.findUnique({ where: { id: work.id } })).not.toBeNull();
 });
+
+test("private video clips upload, seek, reject other readers and delete", async ({
+  page,
+  browser,
+}) => {
+  test.setTimeout(120000);
+  const user = await login(page, "clips");
+  const work = await add(user.id, `Video ${stamp} Clip`);
+  const project = await db.videoProject.create({
+    data: {
+      id: crypto.randomUUID(),
+      userId: user.id,
+      title: "Clip plan",
+      books: { create: { workId: work.id, position: 0 } },
+    },
+  });
+  const url = `/api/video-projects/${project.id}/clip`;
+  const origin = new URL(test.info().project.use.baseURL!).origin;
+  await page.goto(`/creator/videos/edit?project=${project.id}`);
+  const bytes = await page.evaluate(async () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext("2d")!;
+    const stream = canvas.captureStream(10),
+      recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+    const chunks: Blob[] = [];
+    const result = new Promise<number[]>((resolve) => {
+      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.onstop = async () =>
+        resolve(
+          Array.from(new Uint8Array(await new Blob(chunks).arrayBuffer())),
+        );
+    });
+    recorder.start();
+    ctx.fillStyle = "red";
+    ctx.fillRect(0, 0, 64, 64);
+    for (let i = 0; i < 10; i++) {
+      ctx.fillStyle = i % 2 ? "blue" : "red";
+      ctx.fillRect(0, 0, 64, 64);
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    recorder.stop();
+    stream.getTracks().forEach((t) => t.stop());
+    return result;
+  });
+  expect(
+    (
+      await page.request.post(url, {
+        headers: { Origin: origin },
+        data: Buffer.from("fake video"),
+      })
+    ).status(),
+  ).toBe(400);
+  expect(
+    (
+      await page.request.post(url, {
+        headers: { Origin: origin },
+        data: Buffer.alloc(25 * 1024 * 1024 + 1),
+      })
+    ).status(),
+  ).toBe(413);
+  expect(
+    (
+      await page.request.post(url, {
+        headers: { Origin: "https://other.test" },
+        data: Buffer.from(bytes),
+      })
+    ).status(),
+  ).toBe(403);
+  const section = page.getByRole("region", { name: "Private video clip" });
+  await section.getByLabel("Choose private video").setInputFiles({
+    name: "clip.webm",
+    mimeType: "video/webm",
+    buffer: Buffer.from(bytes),
+  });
+  await section.getByRole("button", { name: "Upload private clip" }).click();
+  await expect(section.locator("video")).toBeVisible();
+  await expect
+    .poll(() =>
+      section.locator("video").evaluate((v: HTMLVideoElement) => v.readyState),
+    )
+    .toBeGreaterThanOrEqual(1);
+  await section.locator("video").evaluate(async (v: HTMLVideoElement) => {
+    v.muted = true;
+    await v.play();
+  });
+  await expect
+    .poll(() =>
+      section.locator("video").evaluate((v: HTMLVideoElement) => v.currentTime),
+    )
+    .toBeGreaterThan(0);
+  const downloaded = page.waitForEvent("download");
+  await section.getByRole("link", { name: "Download video" }).click();
+  const download = await downloaded;
+  expect(await readFile((await download.path())!)).toEqual(Buffer.from(bytes));
+  const clip = (await (await page.request.get(url + "?metadata")).json()).clip;
+  const playback = url + `?id=${clip.id}`;
+  const range = await page.request.get(playback, {
+    headers: { Range: "bytes=2-9" },
+  });
+  expect(range.status()).toBe(206);
+  expect(await range.body()).toEqual(Buffer.from(bytes.slice(2, 10)));
+  expect(
+    (
+      await page.request.get(playback, {
+        headers: { Range: "bytes=999999999-" },
+      })
+    ).status(),
+  ).toBe(416);
+  expect(
+    (
+      await page.request.post(url, {
+        headers: { Origin: origin },
+        data: Buffer.from(bytes),
+      })
+    ).status(),
+  ).toBe(409);
+  const other = await browser.newContext(),
+    otherPage = await other.newPage();
+  expect((await otherPage.request.get(playback)).status()).toBe(404);
+  await login(otherPage, "clipother");
+  expect((await otherPage.request.get(playback)).status()).toBe(404);
+  expect(
+    (
+      await otherPage.request.delete(playback, { headers: { Origin: origin } })
+    ).status(),
+  ).toBe(404);
+  await other.close();
+  await section
+    .getByRole("button", { name: "Remove clip", exact: true })
+    .click();
+  await section.getByRole("button", { name: "Keep clip" }).click();
+  expect((await page.request.get(playback)).status()).toBe(200);
+  await section
+    .getByRole("button", { name: "Remove clip", exact: true })
+    .click();
+  await section.getByRole("button", { name: "Confirm remove clip" }).click();
+  await expect(section.getByLabel("Choose private video")).toBeVisible();
+  expect((await page.request.get(playback)).status()).toBe(404);
+  expect(
+    (
+      await page.request.post(url, {
+        headers: { Origin: origin },
+        data: Buffer.from(bytes),
+      })
+    ).status(),
+  ).toBe(201);
+  expect(
+    (
+      await page.request.patch("/api/video-projects", {
+        headers: { Origin: origin },
+        data: { action: "delete", id: project.id, version: 1 },
+      })
+    ).status(),
+  ).toBe(200);
+  expect(await db.videoClip.count({ where: { projectId: project.id } })).toBe(
+    0,
+  );
+  expect(
+    (
+      await page.request.post(url, {
+        headers: { Origin: origin },
+        data: Buffer.from(bytes),
+      })
+    ).status(),
+  ).toBe(404);
+  const cascade = await db.videoProject.create({
+    data: {
+      id: crypto.randomUUID(),
+      userId: user.id,
+      title: "Cascade clip",
+      clip: { create: { mimeType: "video/webm", data: Buffer.from(bytes) } },
+    },
+  });
+  await db.user.delete({ where: { id: user.id } });
+  expect(await db.videoClip.count({ where: { projectId: cascade.id } })).toBe(
+    0,
+  );
+});

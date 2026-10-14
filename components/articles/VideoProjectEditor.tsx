@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { VideoClip } from "./VideoClip";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { VIDEO_PLATFORMS, VIDEO_STATUSES } from "@/lib/video-projects";
@@ -452,14 +453,20 @@ export function VideoProjectEditor({
           unsaved edits stay in this open page.
         </p>
       </form>
+      {id ? (
+        <VideoClip projectId={id} />
+      ) : (
+        <p>Save your plan to upload a private video clip.</p>
+      )}
       {confirmDelete && (
         <section
           aria-label="Confirm video plan deletion"
           className="border rounded p-4 space-y-3"
         >
           <p>
-            Delete this video plan and its book links, including unsaved
-            changes? Your library and any video posted elsewhere will remain.
+            Delete this video plan, its uploaded clip and book links, including
+            unsaved changes? Your library and any video posted elsewhere will
+            remain.
           </p>
           <Button
             disabled={busy}

@@ -42,6 +42,7 @@ export async function PATCH(request: Request) {
         if (!old) return reply({ error: "Project not found." }, 404);
         if (old.deletedAt) return reply({ ok: true });
         if (old.version !== d.version) return stale();
+        await tx.videoClip.deleteMany({ where: { projectId: d.id } });
         await tx.videoProjectBook.deleteMany({ where: { projectId: d.id } });
         await tx.videoProject.update({
           where: { id: d.id },

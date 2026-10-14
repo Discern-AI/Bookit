@@ -349,3 +349,11 @@ assert.equal(videoProjectSchema.safeParse({...videoDraft,status:"published",publ
 for(const change of [{title:" "},{books:[]},{books:[{workId:"work"},{workId:"work"}]},{script:"x".repeat(20001)},{status:"published"},{publishedUrl:"https://example.test/video"},{status:"published",publishedUrl:"javascript:alert(1)"},{status:"published",publishedUrl:"https://name:password@example.test/video"}]) assert.equal(videoProjectSchema.safeParse({...videoDraft,...change}).success,false);
 assert.equal(videoProjectAction.safeParse({action:"save",id:challengeFixture.id,version:-1,project:videoDraft}).success,false);
 console.log("Video plan text bounds, book identity, version and posted-link validation passed");
+
+const {videoRange,videoMime}=require("../lib/video-clips.ts");
+assert.deepEqual(videoRange("bytes=2-5",10),{start:2,end:5});
+assert.deepEqual(videoRange("bytes=-3",10),{start:7,end:9});
+assert.deepEqual(videoRange("bytes=7-",10),{start:7,end:9});
+for(const range of ["bytes=10-","bytes=-0","bytes=4-2","bytes=0-1,3-4","bytes=-","bytes=99999999999999999999-"]) assert.equal(videoRange(range,10),false);
+assert.equal(videoMime(Buffer.from("fake video")),null);
+console.log("Video container rejection and byte range validation passed");

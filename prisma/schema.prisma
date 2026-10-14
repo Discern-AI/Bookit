@@ -764,6 +764,7 @@ model VideoProject {
  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
  books VideoProjectBook[]
  @@index([userId, deletedAt, updatedAt])
+  clip VideoClip?
 }
 model VideoProjectBook {
  projectId String @db.Uuid
@@ -774,4 +775,13 @@ model VideoProjectBook {
  @@id([projectId, workId])
  @@unique([projectId, position])
  @@index([workId])
+}
+
+model VideoClip {
+  id String @id @default(uuid()) @db.Uuid
+  projectId String @unique @db.Uuid
+  mimeType String
+  data Bytes
+  createdAt DateTime @default(now())
+  project VideoProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
