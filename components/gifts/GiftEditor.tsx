@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { GIFT_PRIORITY, parsePounds } from "@/lib/gifts";
+import { GiftSuggestions } from "./GiftSuggestions";
 import type { GiftData } from "@/lib/gift-data";
 type Book = { id: string; title: string; authorName: string };
 export function GiftEditor({ initial }: { initial?: GiftData }) {
@@ -421,6 +422,40 @@ export function GiftEditor({ initial }: { initial?: GiftData }) {
               </article>
             ))}
           </section>
+          {initial ? (
+            <GiftSuggestions
+              contactId={initial.id}
+              version={initial.version}
+              tasteNotes={taste}
+              budget={budget}
+              excluded={items.map((item) => item.workId)}
+              onAdd={(suggestion) =>
+                change(() =>
+                  setItems((list) =>
+                    list.some((item) => item.workId === suggestion.workId) ||
+                    list.length >= 100
+                      ? list
+                      : [
+                          ...list,
+                          {
+                            workId: suggestion.workId,
+                            work: suggestion.work,
+                            status: "planned",
+                            priority: suggestion.priority,
+                            price: "",
+                            pricePence: null,
+                            note: `AI suggestion: ${suggestion.reason}`,
+                          },
+                        ],
+                  ),
+                )
+              }
+            />
+          ) : (
+            <p className="text-sm">
+              Save this person first to ask AI for additional gift ideas.
+            </p>
+          )}
           <section className="space-y-3">
             <h2 className="font-display text-2xl">Add from the catalogue</h2>
             <Input

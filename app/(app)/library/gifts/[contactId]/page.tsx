@@ -79,6 +79,12 @@ export default async function GiftPage({
               {contact.tasteNotes || "No preferences recorded yet."}
             </p>
           </section>
+          <Link
+            className="text-shelf-700 underline"
+            href={`/library/gifts/${contact.id}/edit#gift-suggestions`}
+          >
+            Expand gift ideas with AI
+          </Link>
           <section>
             <h2 className="font-display text-xl">Budget per gift</h2>
             <p>{pounds(contact.budgetPence)}</p>

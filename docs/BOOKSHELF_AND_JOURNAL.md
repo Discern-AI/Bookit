@@ -55,3 +55,6 @@ Genre/topic communities (14 October 2026) classify original book discussion reco
 
 
 Author communities (14 October 2026) derive discovery from the original work's current catalogue author name. Author pages aggregate shared threads, never private library records. Starting a discussion still requires a canonical work ID; journals and exports retain the original own-post relationship if catalogue author names are corrected. Future verified contributor identities must update discovery without replacing work IDs or copying posts into separate author records.
+
+
+AI gift expansion (14 October 2026) returns unsaved, validated suggestions against existing catalogue work IDs. Requesting or dismissing suggestions never creates gift items or journal links. Explicitly adding to the editor draft and saving uses the original GiftItem/Contact records; journals follow the existing owner-scoped work association, including later removal. AI explanations are marked in private gift notes. No reading history, shelf or Up next pin changes occur, and private book notes/chat context are excluded from generation. Existing shared gift lists receive accepted book entries only on save, with the editor explaining this; explanations remain private.

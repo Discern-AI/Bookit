@@ -352,3 +352,155 @@ test("gift retries, invalid input and stale edits preserve saved data and drafts
     .click();
   await expect(page).toHaveURL(`/library/gifts/${body.id}`);
 });
+
+test("AI gift suggestions require review and preserve drafts, ownership and journal links", async ({
+  page,
+  browser,
+}) => {
+  test.setTimeout(120000);
+  const userId = await login(page, "ai-owner");
+  const book = await work("AI suggestion");
+  const libraryBook = await db.userBook.create({
+    data: {
+      userId,
+      editionId: book.editions[0].id,
+      shelf: "tbr",
+      privateNotes: "PRIVATE_BOOK_NOTE",
+    },
+  });
+  const contact = await db.giftContact.create({
+    data: {
+      userId,
+      name: "PRIVATE_RECIPIENT",
+      tasteNotes: "Mystery novels",
+      budgetPence: 2000,
+    },
+  });
+  const endpoint = `/api/gifts/${contact.id}/ai`;
+  const input = {
+    version: contact.version,
+    tasteNotes: "Mystery novels",
+    budgetPence: 2000,
+    excludeWorkIds: [],
+  };
+  const otherContext = await browser.newContext();
+  const otherPage = await otherContext.newPage();
+  expect(
+    (await otherPage.request.post(endpoint, { data: input })).status(),
+  ).toBe(401);
+  await login(otherPage, "ai-other");
+  expect(
+    (await otherPage.request.post(endpoint, { data: input })).status(),
+  ).toBe(404);
+  expect(
+    (
+      await page.request.post(endpoint, {
+        data: input,
+        headers: { Origin: "https://other.example" },
+      })
+    ).status(),
+  ).toBe(403);
+  expect(
+    (
+      await page.request.post(endpoint, { data: { ...input, version: 999 } })
+    ).status(),
+  ).toBe(409);
+  expect(
+    (
+      await page.request.post(endpoint, { data: { ...input, tasteNotes: " " } })
+    ).status(),
+  ).toBe(400);
+  // The success flow uses a fixture; never call a live model from this suite.
+  if (!process.env.ANTHROPIC_API_KEY)
+    expect((await page.request.post(endpoint, { data: input })).status()).toBe(
+      503,
+    );
+  await otherContext.close();
+  let fail = true;
+  await page.route(`**${endpoint}`, async (route) => {
+    expect(route.request().postDataJSON()).toEqual(input);
+    await route.fulfill({
+      status: fail ? 503 : 200,
+      contentType: "application/json",
+      body: JSON.stringify(
+        fail
+          ? { error: "Suggestions unavailable; your draft is safe." }
+          : {
+              suggestions: [
+                {
+                  workId: book.id,
+                  priority: "might_like",
+                  reason: "A possible fit for mystery readers.",
+                  work: {
+                    id: book.id,
+                    title: book.title,
+                    authorName: book.authorName,
+                  },
+                },
+              ],
+            },
+      ),
+    });
+  });
+  await page.goto(`/library/gifts/${contact.id}/edit`);
+  const ask = page.getByRole("button", { name: "Ask AI to expand this list" });
+  await ask.click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Suggestions unavailable" }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel("Reading preferences", { exact: true }),
+  ).toHaveValue("Mystery novels");
+  fail = false;
+  await ask.click();
+  await expect(
+    page.getByText("A possible fit for mystery readers.", { exact: true }),
+  ).toBeVisible();
+  expect(await db.giftItem.count({ where: { contactId: contact.id } })).toBe(0);
+  const add = page.getByRole("button", {
+    name: `Add suggestion ${book.title}`,
+    exact: true,
+  });
+  await add.click();
+  await expect(add).toBeDisabled();
+  expect(await db.giftItem.count({ where: { contactId: contact.id } })).toBe(0);
+  await page
+    .getByRole("button", { name: "Save gift list", exact: true })
+    .click();
+  await expect(page).toHaveURL(`/library/gifts/${contact.id}`);
+  const item = await db.giftItem.findUniqueOrThrow({
+    where: { contactId_workId: { contactId: contact.id, workId: book.id } },
+  });
+  expect(item.note).toBe("AI suggestion: A possible fit for mystery readers.");
+  expect(item.pricePence).toBeNull();
+  expect(item.status).toBe("planned");
+  const journal = await (
+    await page.request.get(`/api/library/${libraryBook.id}/journal`)
+  ).json();
+  expect(
+    journal.gifts.some((gift: { id: string }) => gift.id === contact.id),
+  ).toBe(true);
+  expect(
+    (await db.userBook.findUniqueOrThrow({ where: { id: libraryBook.id } }))
+      .privateNotes,
+  ).toBe("PRIVATE_BOOK_NOTE");
+  expect(
+    (await db.userBook.findUniqueOrThrow({ where: { id: libraryBook.id } }))
+      .shelf,
+  ).toBe("tbr");
+  await page.goto(`/library/gifts/${contact.id}/edit`);
+  await page
+    .getByRole("button", { name: `Remove ${book.title}`, exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Save gift list", exact: true })
+    .click();
+  await expect(page).toHaveURL(`/library/gifts/${contact.id}`);
+  expect(
+    (
+      await (
+        await page.request.get(`/api/library/${libraryBook.id}/journal`)
+      ).json()
+    ).gifts,
+  ).toHaveLength(0);
+});
