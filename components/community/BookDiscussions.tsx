@@ -1,10 +1,15 @@
 "use client";
+import {
+  discussionCommunities,
+  discussionCommunity,
+} from "@/lib/discussion-communities";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 export type Discussion = {
   id: string;
   workId: string;
+  communityId: string | null;
   parentId: string | null;
   title: string;
   body: string;
@@ -18,6 +23,7 @@ export type Discussion = {
 type Draft = {
   id: string;
   workId: string;
+  communityId: string | null;
   parentId: string | null;
   title: string;
   body: string;
@@ -29,9 +35,11 @@ type Draft = {
 export function BookDiscussions({
   threadId,
   workId,
+  communityId,
 }: {
   threadId?: string;
   workId?: string;
+  communityId?: string;
 }) {
   const router = useRouter();
   const [data, setData] = useState<{
@@ -63,7 +71,7 @@ export function BookDiscussions({
     setLoading(true);
     setError("");
     fetch(
-      `/api/discussions?page=${page}${threadId ? `&thread=${encodeURIComponent(threadId)}` : workId ? `&work=${encodeURIComponent(workId)}` : ""}`,
+      `/api/discussions?page=${page}${threadId ? `&thread=${encodeURIComponent(threadId)}` : workId ? `&work=${encodeURIComponent(workId)}` : ""}${!threadId && communityId ? `&community=${encodeURIComponent(communityId)}` : ""}`,
       { signal: c.signal },
     )
       .then(async (r) => {
@@ -81,7 +89,7 @@ export function BookDiscussions({
         if (!c.signal.aborted) setLoading(false);
       });
     return () => c.abort();
-  }, [page, attempt, threadId, workId]);
+  }, [page, attempt, threadId, workId, communityId]);
   useEffect(() => {
     const c = new AbortController();
     fetch("/api/bookshelf", { signal: c.signal })
@@ -131,6 +139,7 @@ export function BookDiscussions({
     setDraft({
       id: crypto.randomUUID(),
       workId: parent?.workId || workId || "",
+      communityId: parent ? parent.communityId : communityId || null,
       parentId: parent?.id || null,
       title: "",
       body: "",
@@ -197,18 +206,39 @@ export function BookDiscussions({
       </article>
     );
   }
+  const community = discussionCommunity(
+    data?.thread?.communityId || communityId || "",
+  );
   const field = "block w-full border rounded p-2";
   return (
     <main className="max-w-2xl mx-auto p-6 space-y-5">
-      <Link className="underline" href="/community">
-        Community
-      </Link>{" "}
-      <Link className="underline" href="/community/discussions">
-        All book discussions
-      </Link>
+      <nav aria-label="Discussion navigation" className="flex flex-wrap gap-3">
+        <Link className="underline" href="/community">
+          Community
+        </Link>{" "}
+        <Link className="underline" href="/community/discussions">
+          All book discussions
+        </Link>
+        <Link className="underline" href="/community/spaces">
+          Genre and topic communities
+        </Link>
+      </nav>
+      {community && (
+        <p>
+          <Link
+            className="underline"
+            href={`/community/discussions?community=${community.id}`}
+          >
+            {community.name}
+          </Link>{" "}
+          / {community.description}
+        </p>
+      )}
       <h1 className="font-display text-3xl break-words">
         {data?.thread?.title ||
-          (data?.book ? `Discuss ${data.book.title}` : "Book discussions")}
+          (data?.book
+            ? `Discuss ${data.book.title}`
+            : community?.name || "Book discussions")}
       </h1>
       <p>
         Posts are shared with signed-in Folio readers under the display name you
@@ -279,6 +309,14 @@ export function BookDiscussions({
               <p className="break-words">
                 {t.work.title} / {t.alias}
               </p>
+              {t.communityId && (
+                <Link
+                  className="underline"
+                  href={`/community/discussions?community=${t.communityId}`}
+                >
+                  {discussionCommunity(t.communityId)?.name}
+                </Link>
+              )}
               <p>{t.spoilers ? "Spoilers allowed" : "Spoiler-free"}</p>
             </article>
           ))}
@@ -302,6 +340,27 @@ export function BookDiscussions({
             }
           }}
         >
+          {!draft.parentId && !draft.editing && (
+            <label className="block">
+              Community
+              <select
+                className={field}
+                aria-label="Community"
+                disabled={busy || !!communityId}
+                value={draft.communityId || ""}
+                onChange={(e) =>
+                  setDraft({ ...draft, communityId: e.target.value || null })
+                }
+              >
+                <option value="">General book discussions</option>
+                {discussionCommunities.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           {!draft.parentId && !draft.editing && !workId && (
             <label className="block">
               Book from your library
@@ -374,8 +433,8 @@ export function BookDiscussions({
           )}
           <p className="text-sm">
             Keep titles free of spoilers. The spoiler setting is fixed when the
-            thread is created and applies to all replies. Only write information
-            you want to share.
+            thread is created and applies to all replies. The book and community
+            are also fixed. Only write information you want to share.
           </p>
           <button className="border rounded px-3 py-2" disabled={busy}>
             {draft.editing ? "Save post changes" : "Publish post"}
@@ -415,7 +474,9 @@ export function BookDiscussions({
               ) {
                 setRemove(null);
                 if (!remove.parentId)
-                  router.push(`/community/discussions?work=${remove.workId}`);
+                  router.push(
+                    `/community/discussions?work=${remove.workId}${remove.communityId ? `&community=${remove.communityId}` : ""}`,
+                  );
                 else setAttempt((a) => a + 1);
               }
             }}

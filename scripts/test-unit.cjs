@@ -312,3 +312,8 @@ assert.equal(discussionPostSchema.safeParse({...discussionFixture,parentId:chall
 assert.equal(discussionActionSchema.safeParse({action:"report",id:challengeFixture.id,postId:challengeFixture.id,reason:" "}).success,false);
 assert.equal(discussionModerationSchema.safeParse({id:challengeFixture.id,version:0,decision:"remove"}).success,true);
 console.log("Book discussion, reply and report validation passed");
+
+assert.equal(discussionPostSchema.parse(discussionFixture).communityId, null);
+assert.equal(discussionPostSchema.safeParse({...discussionFixture,communityId:"translation"}).success,true);
+assert.equal(discussionPostSchema.safeParse({...discussionFixture,communityId:"invented"}).success,false);
+console.log("Discussion community compatibility and validation passed");

@@ -1,3 +1,4 @@
+import { discussionCommunity } from "@/lib/discussion-communities";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { sameOriginJson } from "@/lib/book-journal";
@@ -14,13 +15,15 @@ export async function GET(request: Request) {
   const p = new URL(request.url).searchParams,
     thread = p.get("thread"),
     workId = p.get("work"),
+    communityId = p.get("community"),
     page = Number(p.get("page") || 0);
   if (
     !Number.isSafeInteger(page) ||
     page < 0 ||
     page > 100000 ||
     (thread && !z.string().uuid().safeParse(thread).success) ||
-    (workId && workId.length > 100)
+    (workId && workId.length > 100) ||
+    (communityId !== null && !discussionCommunity(communityId))
   )
     return reply({ error: "Invalid discussion page." }, 400);
   const select = {
@@ -61,7 +64,12 @@ export async function GET(request: Request) {
   }
   const [posts, book] = await Promise.all([
     prisma.bookDiscussion.findMany({
-      where: { parentId: null, deletedAt: null, ...(workId ? { workId } : {}) },
+      where: {
+        parentId: null,
+        deletedAt: null,
+        ...(workId ? { workId } : {}),
+        ...(communityId ? { communityId } : {}),
+      },
       select: { ...select, body: false },
       orderBy: [{ createdAt: "desc" }, { id: "asc" }],
       skip: page * 20,
@@ -131,7 +139,11 @@ export async function PATCH(request: Request) {
             where: { id: d.parentId, workId, parentId: null, deletedAt: null },
           });
           if (!parent) return reply({ error: "Discussion not found." }, 404);
-          if (parent.spoilers !== d.spoilers) return stale();
+          if (
+            parent.spoilers !== d.spoilers ||
+            parent.communityId !== d.communityId
+          )
+            return stale();
         }
         const old = await tx.bookDiscussion.findUnique({ where: { id: d.id } });
         if (
@@ -141,7 +153,11 @@ export async function PATCH(request: Request) {
             old.parentId !== d.parentId)
         )
           return reply({ error: "Post not found." }, 404);
-        if (old?.deletedAt || (old && old.spoilers !== d.spoilers))
+        if (
+          old?.deletedAt ||
+          (old &&
+            (old.spoilers !== d.spoilers || old.communityId !== d.communityId))
+        )
           return stale();
         const same =
           old &&
@@ -159,6 +175,7 @@ export async function PATCH(request: Request) {
               id: d.id,
               userId: session.user.id,
               workId,
+              communityId: d.communityId,
               parentId: d.parentId,
               title: d.title,
               body: d.body,

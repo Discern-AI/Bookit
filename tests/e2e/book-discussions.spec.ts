@@ -231,7 +231,13 @@ test("book discussions preserve spoiler controls, drafts, own journals and priva
       })
     ).status(),
   ).toBe(409);
-  expect((await page.request.patch("/api/discussions", {data:{...update,body:"Stale overwrite"}})).status()).toBe(409);
+  expect(
+    (
+      await page.request.patch("/api/discussions", {
+        data: { ...update, body: "Stale overwrite" },
+      })
+    ).status(),
+  ).toBe(409);
   await modPage.goto("/community/moderation/discussions");
   await modPage
     .getByRole("button", { name: "Remove reported content" })
@@ -361,8 +367,12 @@ test("discussion pagination, author deletion and account cascade preserve source
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
-  await expect(page.getByRole("heading", { name: "A book question", exact: true })).toBeVisible();
-  await expect(page.getByRole("article", { name: "Discussion contribution" }).first()).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "A book question", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("article", { name: "Discussion contribution" }).first(),
+  ).toBeVisible();
   await page.screenshot({ path: "test-results/discussion-mobile.png" });
   await page
     .getByRole("article", { name: "Discussion contribution" })
@@ -407,4 +417,111 @@ test("discussion pagination, author deletion and account cascade preserve source
   expect(await db.userBook.count({ where: { id: otherBook.id } })).toBe(1);
   expect(await db.work.count({ where: { id: work.id } })).toBe(1);
   await ctx.close();
+});
+
+test("genre and topic spaces filter originals and retain book journal associations", async ({
+  page,
+}) => {
+  const owner = await login(page, "spaces");
+  const work = await add(owner.id, `BoardBook ${stamp} communities`);
+  const book = await db.userBook.findFirstOrThrow({
+    where: { userId: owner.id },
+  });
+  await page.goto("/community/spaces");
+  await page
+    .getByRole("link", { name: "Reading in translation", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Start a discussion" }).click();
+  await expect(page.getByLabel("Community", { exact: true })).toBeDisabled();
+  await page.getByLabel("Discussion book").selectOption(work.id);
+  await page.getByLabel("Discussion title").fill("Comparing translations");
+  await page.getByLabel("Discussion display name").fill("Translation reader");
+  await page
+    .getByLabel("Your post", { exact: true })
+    .fill("A thought about the translation");
+  await page.getByRole("button", { name: "Publish post", exact: true }).click();
+  await expect(page).toHaveURL(/community\/discussions\/[a-f0-9-]+$/);
+  const id = page.url().split("/").pop()!;
+  await expect(
+    page.getByRole("heading", { name: "Comparing translations" }),
+  ).toBeVisible();
+  const root = await db.bookDiscussion.findUniqueOrThrow({ where: { id } });
+  expect(root.communityId).toBe("translation");
+  const general = post(work.id);
+  expect(
+    (await page.request.patch("/api/discussions", { data: general })).ok(),
+  ).toBe(true);
+  const listing = await (
+    await page.request.get(
+      `/api/discussions?community=translation&work=${work.id}`,
+    )
+  ).json();
+  expect(listing.threads.map((t: { id: string }) => t.id)).toEqual([id]);
+  expect(listing.threads[0]).not.toHaveProperty("body");
+  expect(listing.threads[0]).not.toHaveProperty("userId");
+  expect(
+    (
+      await (
+        await page.request.get(
+          `/api/discussions?community=crime&work=${work.id}`,
+        )
+      ).json()
+    ).threads,
+  ).toEqual([]);
+  expect(
+    (await page.request.get("/api/discussions?community=unknown")).status(),
+  ).toBe(400);
+  const wrong = { ...post(work.id, id), communityId: "crime" };
+  expect(
+    (await page.request.patch("/api/discussions", { data: wrong })).status(),
+  ).toBe(409);
+  await page.getByRole("button", { name: "Write a reply" }).click();
+  await page.getByLabel("Discussion display name").fill("Translation reader");
+  await page
+    .getByLabel("Your post", { exact: true })
+    .fill("A reply in the same community");
+  await page.getByRole("button", { name: "Publish post", exact: true }).click();
+  await expect(
+    page.getByText("A reply in the same community", { exact: true }),
+  ).toBeVisible();
+  const journal = await (
+    await page.request.get(`/api/library/${book.id}/journal`)
+  ).json();
+  expect(
+    journal.discussionPosts.filter(
+      (p: { communityId: string | null }) => p.communityId === "translation",
+    ),
+  ).toHaveLength(2);
+  const exported = await (await page.request.get("/api/library/export")).json();
+  expect(
+    exported.discussionPosts.filter(
+      (p: { communityId: string | null }) => p.communityId === "translation",
+    ),
+  ).toHaveLength(2);
+  const move = {
+    ...post(work.id),
+    id,
+    title: root.title,
+    body: root.body,
+    alias: root.alias,
+    communityId: "crime",
+  };
+  expect(
+    (await page.request.patch("/api/discussions", { data: move })).status(),
+  ).toBe(409);
+  expect(
+    (await db.userBook.findUniqueOrThrow({ where: { id: book.id } }))
+      .privateNotes,
+  ).toBe("PRIVATE_LIBRARY_NOTES");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/community/spaces");
+  await expect(
+    page.getByRole("heading", { name: "Genre and topic communities" }),
+  ).toBeVisible();
+  await page.screenshot({ path: "test-results/communities-mobile.png" });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
 });

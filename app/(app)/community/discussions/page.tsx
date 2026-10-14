@@ -2,7 +2,13 @@ import { BookDiscussions } from "@/components/community/BookDiscussions";
 export default function Page({
   searchParams,
 }: {
-  searchParams: { work?: string };
+  searchParams: { work?: string; community?: string };
 }) {
-  return <BookDiscussions workId={searchParams.work} />;
+  return (
+    <BookDiscussions
+      key={`${searchParams.work || ""}:${searchParams.community || ""}`}
+      workId={searchParams.work}
+      communityId={searchParams.community}
+    />
+  );
 }

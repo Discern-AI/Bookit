@@ -16,6 +16,9 @@ export default async function Page({
   return (
     <main className="max-w-2xl mx-auto p-6 space-y-6">
       <h1 className="font-display text-4xl">Community</h1>
+      <Link className="underline" href="/community/spaces">
+        Genre and topic communities
+      </Link>
       <Link className="underline" href="/community/discussions">
         Book discussions
       </Link>

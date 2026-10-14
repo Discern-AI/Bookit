@@ -678,6 +678,7 @@ model SponsorPledge {
 }
 
 model BookDiscussion {
+ communityId String?
  id String @id @db.Uuid
  workId String
  userId String
@@ -695,6 +696,7 @@ model BookDiscussion {
  replies BookDiscussion[] @relation("DiscussionReplies")
  reports DiscussionReport[]
  @@index([workId, parentId, createdAt])
+ @@index([communityId, parentId, createdAt])
  @@index([userId, createdAt])
 }
 model DiscussionReport {

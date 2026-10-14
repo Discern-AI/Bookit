@@ -1,9 +1,15 @@
+import { discussionCommunity } from "./discussion-communities";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 export const discussionPostSchema = z
   .object({
     action: z.literal("post"),
     id: z.string().uuid(),
+    communityId: z
+      .string()
+      .refine((id) => !!discussionCommunity(id), "Unknown community")
+      .nullable()
+      .default(null),
     workId: z.string().min(1).max(100),
     parentId: z.string().uuid().nullable(),
     title: z.string().trim().max(160),
@@ -48,6 +54,7 @@ export function ownDiscussionWhere(
 export const discussionSelect = {
   id: true,
   workId: true,
+  communityId: true,
   parentId: true,
   title: true,
   body: true,
