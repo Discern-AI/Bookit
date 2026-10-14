@@ -341,3 +341,11 @@ for(const change of [{title:" "},{books:[]},{caption:"x".repeat(181)},{kind:"rec
 assert.equal(cardProjectSchema.safeParse({...cardDraft,kind:"shelfie",books:Array.from({length:6},(_,i)=>({workId:`w${i}`,editionId:`e${i}`}))}).success,true);
 assert.equal(cardProjectAction.safeParse({action:"save",id:challengeFixture.id,version:-1,project:cardDraft}).success,false);
 console.log("Private card project shape, bounds, work uniqueness and version validation passed");
+
+const {videoProjectSchema,videoProjectAction}=require("../lib/video-projects.ts");
+const videoDraft={title:"Video plan",platform:"youtube",status:"scripting",script:"A script",notes:"Filming notes",publishedUrl:"",books:[{workId:"work"}]};
+assert.equal(videoProjectSchema.safeParse(videoDraft).success,true);
+assert.equal(videoProjectSchema.safeParse({...videoDraft,status:"published",publishedUrl:"https://example.test/video"}).success,true);
+for(const change of [{title:" "},{books:[]},{books:[{workId:"work"},{workId:"work"}]},{script:"x".repeat(20001)},{status:"published"},{publishedUrl:"https://example.test/video"},{status:"published",publishedUrl:"javascript:alert(1)"},{status:"published",publishedUrl:"https://name:password@example.test/video"}]) assert.equal(videoProjectSchema.safeParse({...videoDraft,...change}).success,false);
+assert.equal(videoProjectAction.safeParse({action:"save",id:challengeFixture.id,version:-1,project:videoDraft}).success,false);
+console.log("Video plan text bounds, book identity, version and posted-link validation passed");

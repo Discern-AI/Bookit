@@ -48,6 +48,7 @@ model VerificationToken {
 }
 
 model User {
+  videoProjects VideoProject[]
   cardProjects CardProject[]
   discussionPosts BookDiscussion[]
   discussionReports DiscussionReport[]
@@ -101,6 +102,7 @@ model User {
 // ---------- Book hierarchy ----------
 
 model Work {
+  videoProjects VideoProjectBook[]
   cardProjects CardProjectBook[]
   discussions BookDiscussion[]
   challengeSquares ChallengeSquare[]
@@ -740,6 +742,34 @@ model CardProjectBook {
  editionId String
  position Int
  project CardProject @relation(fields:[projectId],references:[id],onDelete:Cascade)
+ work Work @relation(fields:[workId],references:[id],onDelete:Cascade)
+ @@id([projectId, workId])
+ @@unique([projectId, position])
+ @@index([workId])
+}
+
+model VideoProject {
+ id String @id @db.Uuid
+ userId String
+ title String
+ platform String @default("other")
+ status String @default("idea")
+ script String @default("")
+ notes String @default("")
+ publishedUrl String @default("")
+ version Int @default(1)
+ deletedAt DateTime?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+ books VideoProjectBook[]
+ @@index([userId, deletedAt, updatedAt])
+}
+model VideoProjectBook {
+ projectId String @db.Uuid
+ workId String
+ position Int
+ project VideoProject @relation(fields:[projectId],references:[id],onDelete:Cascade)
  work Work @relation(fields:[workId],references:[id],onDelete:Cascade)
  @@id([projectId, workId])
  @@unique([projectId, position])

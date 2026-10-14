@@ -143,3 +143,6 @@ Personal reading challenges are available under Community. Set a private book ta
 Reading Together is available under Community for private two-person reading spaces. Invite one fixed partner, plan books together and share spoiler-aware posts. Only your own posts appear in your bookshelf journal; leaving never opens the pair to a replacement reader.
 
 Book discussion boards are available from Community and individual book pages. Readers explicitly publish threads/replies under a chosen display name, with fixed spoiler controls. Your own contributions link into your bookshelf journal. Reporting and moderator removal are included; private notes and progress are never automatically published.
+
+
+Creator > Video plans provides private scripts, production notes, platform/status tracking and ordered book links. Save and reopen plans, download the current script as text, or record a video URL after posting it elsewhere. Linked book journals show the original plan and any recorded posted link. This is planning and record keeping; native uploads, video playback and automatic cross-posting are not implemented yet. No Claude key is required.

@@ -10,6 +10,7 @@ export default async function Page({
   searchParams: { project?: string };
 }) {
   const session = await auth();
+  if (!session?.user.id) return null;
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: session!.user.id },
     select: { profilePublic: true, publicName: true, username: true },

@@ -1,4 +1,5 @@
 "use client";
+import { VIDEO_STATUSES } from "@/lib/video-projects";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
@@ -50,6 +51,12 @@ type Journal = {
   paths: { id: string; title: string }[];
   gifts: { id: string; name: string }[];
   cardProjects: { id: string; title: string }[];
+  videoProjects: {
+    id: string;
+    title: string;
+    status: keyof typeof VIDEO_STATUSES;
+    publishedUrl: string;
+  }[];
   clubReadings: {
     id: string;
     startsOn: string | null;
@@ -108,6 +115,7 @@ export function BookJournal({
                   paths: [...old.paths, ...d.paths],
                   gifts: [...old.gifts, ...d.gifts],
                   cardProjects: [...old.cardProjects, ...d.cardProjects],
+                  videoProjects: [...old.videoProjects, ...d.videoProjects],
                   clubReadings: [...old.clubReadings, ...d.clubReadings],
                   clubPosts: [...old.clubPosts, ...d.clubPosts],
                   discussionPosts: [
@@ -479,6 +487,32 @@ export function BookJournal({
               </p>
             ))}
           </section>
+          {!!data.videoProjects?.length && (
+            <section aria-label="Your video plans" className="space-y-3">
+              <h2 className="font-display text-2xl">Your video plans</h2>
+              {data.videoProjects.map((project) => (
+                <div key={project.id}>
+                  <Link
+                    className="underline"
+                    href={`/creator/videos/edit?project=${project.id}`}
+                  >
+                    {project.title}
+                  </Link>
+                  <p>{VIDEO_STATUSES[project.status]}</p>
+                  {project.status === "published" && project.publishedUrl && (
+                    <a
+                      className="underline"
+                      href={project.publishedUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Open recorded video link
+                    </a>
+                  )}
+                </div>
+              ))}
+            </section>
+          )}
           {!!data.cardProjects?.length && (
             <section aria-label="Your card projects" className="space-y-3">
               <h2 className="font-display text-2xl">Your card projects</h2>

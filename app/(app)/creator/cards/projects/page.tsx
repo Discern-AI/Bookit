@@ -8,6 +8,7 @@ export default async function Page({
   searchParams: { page?: string };
 }) {
   const session = await auth();
+  if (!session?.user.id) return null;
   const page = Number(searchParams.page || 0);
   if (!Number.isSafeInteger(page) || page < 0 || page > 100000) notFound();
   const projects = await prisma.cardProject.findMany({

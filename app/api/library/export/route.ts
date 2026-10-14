@@ -1,3 +1,7 @@
+import {
+  videoProjectInclude,
+  serializeVideoProject,
+} from "@/lib/video-projects";
 import { cardProjectInclude, serializeCardProject } from "@/lib/card-projects";
 import { ownDiscussionWhere, discussionSelect } from "@/lib/book-discussions";
 import { readingChallenges } from "@/lib/challenge-progress";
@@ -21,6 +25,13 @@ export async function GET() {
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     })
   ).map(serializeCardProject);
+  const videoProjects = (
+    await prisma.videoProject.findMany({
+      where: { userId: session.user.id, deletedAt: null },
+      include: videoProjectInclude,
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    })
+  ).map(serializeVideoProject);
   const challenges = await readingChallenges(session.user.id);
   const books = await prisma.userBook.findMany({
     where: { userId: session.user.id },
@@ -64,6 +75,7 @@ export async function GET() {
         challenges,
         discussionPosts,
         cardProjects,
+        videoProjects,
       },
       null,
       2,
