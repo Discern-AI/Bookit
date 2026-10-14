@@ -14,6 +14,18 @@ npm run db:migrate
 npm run dev
 ```
 
+For a production build on a machine with limited available memory, opt into one build worker:
+
+```powershell
+$env:FOLIO_LOW_MEMORY_BUILD = "1"
+$env:NODE_OPTIONS = "--max-old-space-size=768"
+npm run build
+Remove-Item Env:FOLIO_LOW_MEMORY_BUILD
+Remove-Item Env:NODE_OPTIONS
+```
+
+This reduces build concurrency; ordinary builds retain Next.js defaults. It does not free memory used by other applications.
+
 Set `DATABASE_URL`, a random `NEXTAUTH_SECRET`, and `NEXTAUTH_URL` in `.env` before starting. `AUTH_TRUST_HOST=true` is configured for the local server; hosted environments must supply the correct public origin and trusted proxy configuration. Generate a secret with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
 
 Open http://localhost:3000 and create an account. Settings contains Goodreads import, edition-match reviews and library export. In Library, choose Reading diary for your timeline and goal, or Log pages on a current read. Chat also accepts commands such as "Read another 30 pages" and asks you to confirm before saving. These logging commands work without a Claude API key.

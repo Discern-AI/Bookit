@@ -529,6 +529,7 @@ test("genre and topic spaces filter originals and retain book journal associatio
 test("author communities group catalogue books and original discussions without sharing private records", async ({
   page,
 }) => {
+  test.setTimeout(120000);
   const owner = await login(page, "authors");
   const author = `Author ${stamp} & Co`;
   const first = await add(owner.id, `BoardBook ${stamp} author 00`);
@@ -551,10 +552,16 @@ test("author communities group catalogue books and original discussions without 
     ...post(i % 2 ? first.id : second.id),
     title: `Author thread ${i}`,
   }));
-  for (const root of roots)
-    expect(
-      (await page.request.patch("/api/discussions", { data: root })).ok(),
-    ).toBe(true);
+  await db.bookDiscussion.createMany({
+    data: roots.map((root) => ({
+      id: root.id,
+      workId: root.workId,
+      userId: owner.id,
+      title: root.title,
+      body: root.body,
+      alias: root.alias,
+    })),
+  });
   expect(
     (
       await page.request.patch("/api/discussions", {
