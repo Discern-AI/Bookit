@@ -390,3 +390,23 @@ const shopFixture={title:"My books",introduction:"",isPublic:false,entries:[{wor
 assert.equal(shopDraftSchema.safeParse(shopFixture).success,true);
 for(const change of [{title:" "},{entries:[...shopFixture.entries,...shopFixture.entries]},{isPublic:true,entries:[]},{entries:[{...shopFixture.entries[0],retailerUrl:""}]},{entries:[{...shopFixture.entries[0],retailerUrl:"https://name:password@example.test/book"}]},{entries:[{...shopFixture.entries[0],retailerUrl:"javascript:alert(1)"}]}])assert.equal(shopDraftSchema.safeParse({...shopFixture,...change}).success,false);
 console.log("Curator shop publication, book uniqueness and affiliate URL validation passed");
+
+const {contextProfileSchema,emptyContext}=require("../lib/reading-context.ts");
+const {contextKey,encryptContext,decryptContext}=require("../lib/context-encryption.ts");
+const contextCrypto=require("node:crypto");
+const contextTestKey=contextCrypto.randomBytes(32),contextText=JSON.stringify({...emptyContext,lifeContext:"PRIVATE_CONTEXT_MARKER"});
+const sealed=encryptContext(contextText,"reader-a",contextTestKey);
+assert.equal(Buffer.from(sealed).includes(Buffer.from("PRIVATE_CONTEXT_MARKER")),false);
+assert.equal(decryptContext(sealed,"reader-a",contextTestKey),contextText);
+assert.notDeepEqual(sealed,encryptContext(contextText,"reader-a",contextTestKey));
+assert.throws(()=>decryptContext(sealed,"reader-b",contextTestKey));
+assert.throws(()=>decryptContext(sealed,"reader-a",contextCrypto.randomBytes(32)));
+const damaged=Uint8Array.from(sealed);damaged[damaged.length-1]^=1;assert.throws(()=>decryptContext(damaged,"reader-a",contextTestKey));
+assert.equal(contextProfileSchema.safeParse({...emptyContext,lifeContext:"x".repeat(5001)}).success,false);
+assert.equal(contextProfileSchema.safeParse({...emptyContext,readingTimes:["Lunch","Lunch"]}).success,false);
+const priorContextKey=process.env.FOLIO_CONTEXT_KEY,priorContextFile=process.env.FOLIO_CONTEXT_KEY_FILE;
+delete process.env.FOLIO_CONTEXT_KEY;delete process.env.FOLIO_CONTEXT_KEY_FILE;assert.throws(()=>contextKey());
+process.env.FOLIO_CONTEXT_KEY="invalid";assert.throws(()=>contextKey());
+if(priorContextKey===undefined)delete process.env.FOLIO_CONTEXT_KEY;else process.env.FOLIO_CONTEXT_KEY=priorContextKey;
+if(priorContextFile===undefined)delete process.env.FOLIO_CONTEXT_KEY_FILE;else process.env.FOLIO_CONTEXT_KEY_FILE=priorContextFile;
+console.log("Context encryption randomness, authentication, owner binding, key failure and validation passed");

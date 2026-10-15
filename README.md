@@ -18,7 +18,7 @@ For a production build on a machine with limited available memory, opt into one 
 
 ```powershell
 $env:FOLIO_LOW_MEMORY_BUILD = "1"
-$env:NODE_OPTIONS = "--max-old-space-size=768"
+$env:NODE_OPTIONS = "--max-old-space-size=1024 --max-semi-space-size=1"
 npm run build
 Remove-Item Env:FOLIO_LOW_MEMORY_BUILD
 Remove-Item Env:NODE_OPTIONS
@@ -148,3 +148,10 @@ Book discussion boards are available from Community and individual book pages. R
 Creator > Video plans provides private scripts, production notes, platform/status tracking and ordered book links. Save and reopen plans, download the current script as text, or record a primary video URL and up to five additional platform links after posting it elsewhere. Linked book journals show the original plan and any recorded posted link. Saved plans also accept one private MP4 or WebM clip up to 25 MB, with playback, seeking, download and confirmed removal. Clips use private database storage and are deleted with the plan or account. Browser codec support varies; container signature checks do not transcode or validate every frame. Download clips separately from the JSON library export. Supported browsers can also record up to two minutes with camera and microphone, review or download locally, and explicitly upload the clip. Recording requires HTTPS (or localhost) and browser permission. Private clips support manually supplied WebVTT captions: import or edit timed text, save, play with captions and download the saved .vtt separately. Caption changes use version checks; removing a clip removes its captions. Download posting files packages the saved video, saved captions and an ordered book-credit list into a ZIP, without private scripts or production notes. It does not publish anything or update the plan status. Transcoding, public video publishing and automatic cross-posting remain future work. No Claude key is required.
 
 Creator > Your curated book shop supports up to twenty ordered recommendations with optional HTTPS retailer links and affiliate disclosures. Shops start private; publishing requires a public profile and exposes only deliberately entered shop content. Public profiles link to published shops. Book journals and JSON export retain the original canonical book associations. Folio does not enrol curators in affiliate programmes, process checkout or pay commissions.
+
+
+Private reading context is available in Settings. Life context and reading-time preferences are encrypted in PostgreSQL with a dedicated AES-256-GCM key. This is server-managed encryption, not end-to-end encryption. This first step does not inject context into chat or public/book-journal views. Exporting context is an explicit, separate plaintext download.
+
+For local setup, run `node scripts/init-context-key.cjs`, then set `$env:FOLIO_CONTEXT_KEY_FILE='.local/context-encryption.key'` before starting the server. The script never overwrites an existing key or prints it. The local file is Git-ignored; on Windows its permissions follow the containing directory. For hosting, provision `FOLIO_CONTEXT_KEY` as a canonical base64-encoded random 32-byte secret through the deployment's secret store, or mount a protected file and configure `FOLIO_CONTEXT_KEY_FILE`. The environment key takes precedence. Do not reuse authentication secrets. All app instances must use the same key.
+
+Back up the encryption key separately from the database and restrict access to both. Losing or replacing the key makes existing context unreadable; automatic key rotation is not implemented. Missing/malformed keys or failed authentication disable reads/saves, with no plaintext fallback. Owners can still delete unreadable context. Deletion clears the live encrypted payload and retains only a version marker until account deletion; database backups follow the operator's retention policy.

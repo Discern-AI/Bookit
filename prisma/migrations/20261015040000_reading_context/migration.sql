@@ -1,0 +1,1 @@
+CREATE TABLE "ReadingContext" ("userId" TEXT PRIMARY KEY, "encryptedData" BYTEA, "version" INTEGER NOT NULL DEFAULT 1, CONSTRAINT "ReadingContext_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE);

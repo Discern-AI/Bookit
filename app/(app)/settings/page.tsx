@@ -25,6 +25,9 @@ export default async function SettingsPage() {
       <Link className="block text-shelf-700 underline" href="/settings/shelves">
         Manage shelf sharing
       </Link>
+      <Link className="block text-shelf-700 underline" href="/settings/context">
+        Your private reading context
+      </Link>
       <AccountSettings
         userId={session!.user.id}
         initialName={user.name || ""}
