@@ -357,3 +357,11 @@ assert.deepEqual(videoRange("bytes=7-",10),{start:7,end:9});
 for(const range of ["bytes=10-","bytes=-0","bytes=4-2","bytes=0-1,3-4","bytes=-","bytes=99999999999999999999-"]) assert.equal(videoRange(range,10),false);
 assert.equal(videoMime(Buffer.from("fake video")),null);
 console.log("Video container rejection and byte range validation passed");
+
+const {normalizeCaptions}=require("../lib/video-captions.ts");
+const captionFixture="WEBVTT\n\n00:00:00.000 --> 00:00:03.000\nHello reader.\n";
+assert.equal(normalizeCaptions(captionFixture),captionFixture);
+assert.equal(normalizeCaptions(captionFixture.replace(/\n/g,"\r\n")),captionFixture);
+assert.equal(normalizeCaptions("  "),"");
+for(const value of ["not vtt","WEBVTT",captionFixture.replace("03.000","00.000"),captionFixture.replace("Hello reader.","<script>bad</script>"),captionFixture.replace("03.000","63.000"),captionFixture+"\n00:00:00.000 --> 00:00:03.000\n", "x".repeat(100001)])assert.throws(()=>normalizeCaptions(value));
+console.log("Caption normalization, timing, bounds and plain text validation passed");

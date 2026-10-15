@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { MAX_VIDEO_BYTES, videoMime, videoRange } from "@/lib/video-clips";
+import { normalizeCaptions } from "@/lib/video-captions";
 import { z } from "zod";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,12 +25,24 @@ export async function GET(request: Request, { params }: Context) {
   if (!(await owner(params.projectId))) return reply("Video not found.", 404);
   const meta = await prisma.videoClip.findUnique({
     where: { projectId: params.projectId },
-    select: { id: true, mimeType: true, createdAt: true },
+    select: {
+      id: true,
+      mimeType: true,
+      createdAt: true,
+      captions: true,
+      captionVersion: true,
+    },
   });
   if (new URL(request.url).searchParams.has("metadata"))
     return Response.json({ clip: meta }, { headers });
   if (!meta || new URL(request.url).searchParams.get("id") !== meta.id)
     return reply("Video not found.", 404);
+  if (new URL(request.url).searchParams.has("captions")) {
+    if (!meta.captions) return reply("Captions not found.", 404);
+    return new Response(meta.captions, {
+      headers: { ...headers, "Content-Type": "text/vtt; charset=utf-8" },
+    });
+  }
   const clip = await prisma.videoClip.findFirst({
     where: { id: meta.id, project: { deletedAt: null } },
     select: { data: true },
@@ -109,7 +122,13 @@ export async function POST(request: Request, { params }: Context) {
           mimeType,
           data: new Uint8Array(data),
         },
-        select: { id: true, mimeType: true, createdAt: true },
+        select: {
+          id: true,
+          mimeType: true,
+          createdAt: true,
+          captions: true,
+          captionVersion: true,
+        },
       });
       return Response.json({ clip }, { status: 201, headers });
     });
@@ -131,4 +150,82 @@ export async function DELETE(request: Request, { params }: Context) {
     where: { id: id!, projectId: params.projectId },
   });
   return Response.json({ ok: true }, { headers });
+}
+
+export async function PATCH(request: Request, { params }: Context) {
+  if (
+    request.headers.get("origin") !== new URL(request.url).origin ||
+    !request.headers.get("content-type")?.startsWith("application/json")
+  )
+    return reply("Invalid request.", 403);
+  if (!(await owner(params.projectId))) return reply("Video not found.", 404);
+  let body: unknown;
+  try {
+    const reader = request.body?.getReader();
+    if (!reader) return reply("Invalid captions.", 400);
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    while (true) {
+      const part = await reader.read();
+      if (part.done) break;
+      size += part.value.length;
+      if (size > 650000) {
+        await reader.cancel();
+        return reply("Caption request is too large.", 413);
+      }
+      chunks.push(part.value);
+    }
+    body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  } catch {
+    return reply("Invalid captions.", 400);
+  }
+  const parsed = z
+    .object({
+      id: z.string().uuid(),
+      version: z.number().int().min(1),
+      captions: z.string().max(100000),
+    })
+    .safeParse(body);
+  if (!parsed.success) return reply("Invalid captions.", 400);
+  let captions: string;
+  try {
+    captions = normalizeCaptions(parsed.data.captions);
+  } catch (e) {
+    return reply(e instanceof Error ? e.message : "Invalid captions.", 400);
+  }
+  try {
+    const d = parsed.data;
+    return await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"video-project:" + params.projectId}))`;
+      const old = await tx.videoClip.findFirst({
+        where: {
+          id: d.id,
+          projectId: params.projectId,
+          project: { deletedAt: null },
+        },
+        select: { captions: true, captionVersion: true },
+      });
+      if (!old) return reply("Video not found.", 404);
+      if (old.captionVersion !== d.version) {
+        if (old.captionVersion === d.version + 1 && old.captions === captions)
+          return Response.json(old, { headers });
+        return reply(
+          "Captions changed elsewhere. Your draft is kept; reload in another tab to compare before saving.",
+          409,
+        );
+      }
+      if (old.captions === captions) return Response.json(old, { headers });
+      const saved = await tx.videoClip.update({
+        where: { id: d.id },
+        data: { captions, captionVersion: { increment: 1 } },
+        select: { captions: true, captionVersion: true },
+      });
+      return Response.json(saved, { headers });
+    });
+  } catch {
+    return reply(
+      "Could not save captions. Your draft is kept; try again.",
+      503,
+    );
+  }
 }

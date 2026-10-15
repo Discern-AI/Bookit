@@ -780,6 +780,8 @@ model VideoProjectBook {
 model VideoClip {
   id String @id @default(uuid()) @db.Uuid
   projectId String @unique @db.Uuid
+  captions String @default("")
+  captionVersion Int @default(1)
   mimeType String
   data Bytes
   createdAt DateTime @default(now())

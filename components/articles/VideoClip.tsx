@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
+import { VideoCaptions, type CaptionData } from "./VideoCaptions";
 import { VideoRecorder } from "./VideoRecorder";
 import { Button } from "@/components/ui/Button";
 export function VideoClip({ projectId }: { projectId: string }) {
-  const [clip, setClip] = useState<{ id: string } | null>(null);
+  const [clip, setClip] = useState<({ id: string } & CaptionData) | null>(null);
   const [busy, setBusy] = useState(true),
     [error, setError] = useState(""),
     [ready, setReady] = useState(false);
@@ -82,6 +83,24 @@ export function VideoClip({ projectId }: { projectId: string }) {
                 "This video cannot play in your browser. You can download it or upload another encoding.",
               )
             }
+          >
+            {clip.captions && (
+              <track
+                key={clip.captionVersion}
+                kind="captions"
+                label="Captions"
+                default
+                src={`${url}?id=${clip.id}&captions&v=${clip.captionVersion}`}
+              />
+            )}
+          </video>
+          <VideoCaptions
+            key={clip.id}
+            url={url}
+            id={clip.id}
+            initial={clip}
+            disabled={busy}
+            onSaved={(data) => setClip({ ...clip, ...data })}
           />
           <a
             className="underline"
@@ -138,8 +157,8 @@ export function VideoClip({ projectId }: { projectId: string }) {
       {confirm && (
         <div>
           <p>
-            Permanently remove this uploaded clip? Your script and book links
-            remain.
+            Permanently remove this uploaded clip and its captions? Your script
+            and book links remain.
           </p>
           <Button
             type="button"

@@ -522,6 +522,88 @@ test("private video clips upload, seek, reject other readers and delete", async 
   expect(await readFile((await download.path())!)).toEqual(Buffer.from(bytes));
   const clip = (await (await page.request.get(url + "?metadata")).json()).clip;
   const playback = url + `?id=${clip.id}`;
+  const captions = page.getByRole("region", {
+    name: "Video captions",
+    exact: true,
+  });
+  const vtt =
+    "WEBVTT\n\n00:00:00.000 --> 00:00:03.000\nA private book caption.\n";
+  await captions.getByLabel("Timed captions").fill(vtt);
+  await page.route("**" + url, (route) =>
+    route.request().method() === "PATCH"
+      ? route.fulfill({
+          status: 503,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "Caption save failed" }),
+        })
+      : route.continue(),
+  );
+  await captions.getByRole("button", { name: "Save captions" }).click();
+  await expect(captions.getByRole("alert")).toContainText(
+    "Caption save failed",
+  );
+  await expect(captions.getByLabel("Timed captions")).toHaveValue(vtt);
+  await page.unroute("**" + url);
+  await captions.getByRole("button", { name: "Save captions" }).click();
+  await expect(captions.getByRole("status")).toContainText(
+    "Captions saved privately",
+  );
+  await expect
+    .poll(() =>
+      section
+        .locator("video track")
+        .evaluate((track: HTMLTrackElement) => track.readyState),
+    )
+    .toBe(2);
+  expect(
+    await section
+      .locator("video")
+      .evaluate(
+        (video: HTMLVideoElement) =>
+          (video.textTracks[0].cues![0] as VTTCue).text,
+      ),
+  ).toBe("A private book caption.");
+  const captionUrl = playback + "&captions";
+  expect(await (await page.request.get(captionUrl)).text()).toBe(vtt);
+  const captionDownload = page.waitForEvent("download");
+  await captions.getByRole("link", { name: "Download saved captions" }).click();
+  expect(await readFile((await (await captionDownload).path())!, "utf8")).toBe(
+    vtt,
+  );
+  const update = { id: clip.id, version: 1, captions: vtt };
+  expect(
+    (
+      await page.request.patch(url, {
+        headers: { Origin: origin },
+        data: update,
+      })
+    ).status(),
+  ).toBe(200);
+  expect(
+    (
+      await page.request.patch(url, {
+        headers: { Origin: origin },
+        data: { ...update, captions: vtt.replace("private", "changed") },
+      })
+    ).status(),
+  ).toBe(409);
+  expect(
+    (
+      await page.request.patch(url, {
+        headers: { Origin: origin },
+        data: { ...update, version: 2, captions: "not captions" },
+      })
+    ).status(),
+  ).toBe(400);
+  expect(
+    (
+      await page.request.patch(url, {
+        headers: { Origin: "https://other.test" },
+        data: update,
+      })
+    ).status(),
+  ).toBe(403);
+
   const range = await page.request.get(playback, {
     headers: { Range: "bytes=2-9" },
   });
@@ -546,6 +628,16 @@ test("private video clips upload, seek, reject other readers and delete", async 
     otherPage = await other.newPage();
   expect((await otherPage.request.get(playback)).status()).toBe(404);
   await login(otherPage, "clipother");
+  expect((await otherPage.request.get(captionUrl)).status()).toBe(404);
+  expect(
+    (
+      await otherPage.request.patch(url, {
+        headers: { Origin: origin },
+        data: update,
+      })
+    ).status(),
+  ).toBe(404);
+
   expect((await otherPage.request.get(playback)).status()).toBe(404);
   expect(
     (
@@ -553,6 +645,22 @@ test("private video clips upload, seek, reject other readers and delete", async 
     ).status(),
   ).toBe(404);
   await other.close();
+  await captions.getByLabel("Timed captions").fill("");
+  await captions.getByRole("button", { name: "Save captions" }).click();
+  await expect(captions.getByRole("status")).toContainText("Captions removed");
+  expect((await page.request.get(captionUrl)).status()).toBe(404);
+  await captions
+    .getByLabel("Import captions (.vtt)")
+    .setInputFiles({
+      name: "captions.vtt",
+      mimeType: "text/vtt",
+      buffer: Buffer.from(vtt),
+    });
+  await expect(captions.getByLabel("Timed captions")).toHaveValue(vtt);
+  await captions.getByRole("button", { name: "Save captions" }).click();
+  await expect(captions.getByRole("status")).toContainText(
+    "Captions saved privately",
+  );
   await section
     .getByRole("button", { name: "Remove clip", exact: true })
     .click();
@@ -564,6 +672,7 @@ test("private video clips upload, seek, reject other readers and delete", async 
   await section.getByRole("button", { name: "Confirm remove clip" }).click();
   await expect(section.getByLabel("Choose private video")).toBeVisible();
   expect((await page.request.get(playback)).status()).toBe(404);
+  expect((await page.request.get(captionUrl)).status()).toBe(404);
   expect(
     (
       await page.request.post(url, {
