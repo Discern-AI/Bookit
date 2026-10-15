@@ -23,6 +23,7 @@ export function VideoProjectEditor({
     script: initial?.script || "",
     notes: initial?.notes || "",
     publishedUrl: initial?.publishedUrl || "",
+    additionalLinks: initial?.additionalLinks || [],
   });
   const [selected, setSelected] = useState<VideoBook[]>(initial?.books || []);
   const [id, setId] = useState(initial?.id || "");
@@ -213,6 +214,8 @@ export function VideoProjectEditor({
                 setDraft({
                   ...draft,
                   status: e.target.value as VideoDraft["status"],
+                  additionalLinks:
+                    e.target.value === "published" ? draft.additionalLinks : [],
                   publishedUrl:
                     e.target.value === "published" ? draft.publishedUrl : "",
                 })
@@ -241,10 +244,105 @@ export function VideoProjectEditor({
               />
             </label>
           )}
+          {draft.status === "published" && (
+            <section aria-label="Additional posted links" className="space-y-3">
+              <h2 className="font-display text-xl">Additional posted links</h2>
+              <p>
+                Record up to five more URLs where you posted this video.
+                Platform labels are your own records; Folio does not verify
+                them.
+              </p>
+              {draft.additionalLinks.map((link, index) => (
+                <div key={index} className="border rounded p-3 space-y-2">
+                  <label className="block">
+                    Platform {index + 1}
+                    <select
+                      aria-label={`Platform ${index + 1}`}
+                      className={field}
+                      value={link.platform}
+                      onChange={(e) =>
+                        setDraft({
+                          ...draft,
+                          additionalLinks: draft.additionalLinks.map(
+                            (item, i) =>
+                              i === index
+                                ? {
+                                    ...item,
+                                    platform: e.target
+                                      .value as typeof link.platform,
+                                  }
+                                : item,
+                          ),
+                        })
+                      }
+                    >
+                      {Object.entries(VIDEO_PLATFORMS).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block">
+                    Additional video URL {index + 1}
+                    <input
+                      aria-label={`Additional video URL ${index + 1}`}
+                      className={field}
+                      type="url"
+                      required
+                      maxLength={2000}
+                      value={link.url}
+                      onChange={(e) =>
+                        setDraft({
+                          ...draft,
+                          additionalLinks: draft.additionalLinks.map(
+                            (item, i) =>
+                              i === index
+                                ? { ...item, url: e.target.value }
+                                : item,
+                          ),
+                        })
+                      }
+                    />
+                  </label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() =>
+                      setDraft({
+                        ...draft,
+                        additionalLinks: draft.additionalLinks.filter(
+                          (_, i) => i !== index,
+                        ),
+                      })
+                    }
+                  >
+                    Remove posted link {index + 1}
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={draft.additionalLinks.length >= 5}
+                onClick={() =>
+                  setDraft({
+                    ...draft,
+                    additionalLinks: [
+                      ...draft.additionalLinks,
+                      { platform: "other", url: "" },
+                    ],
+                  })
+                }
+              >
+                Add posted link
+              </Button>
+            </section>
+          )}
           <p className="text-sm">
             Posted elsewhere records a link you provide; Folio does not verify
-            or publish it. Returning to an earlier status clears that link when
-            you save. Your plan remains private in every status.
+            or publish it. Returning to an earlier status clears all recorded
+            links when you save. Your plan remains private in every status.
           </p>
           <label className="block">
             Video script

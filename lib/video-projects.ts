@@ -13,6 +13,14 @@ export const VIDEO_STATUSES = {
   editing: "Editing",
   published: "Posted elsewhere",
 };
+export const additionalVideoLinksSchema = z
+  .array(
+    z.object({
+      platform: z.enum(["youtube", "tiktok", "instagram", "other"]),
+      url: z.string().trim().min(1).max(2000),
+    }),
+  )
+  .max(5);
 export const videoProjectSchema = z
   .object({
     title: z.string().trim().min(1).max(120),
@@ -21,6 +29,7 @@ export const videoProjectSchema = z
     script: z.string().max(20000),
     notes: z.string().max(5000),
     publishedUrl: z.string().trim().max(2000),
+    additionalLinks: additionalVideoLinksSchema.default([]),
     books: z
       .array(z.object({ workId: z.string().min(1).max(100) }))
       .min(1)
@@ -29,8 +38,34 @@ export const videoProjectSchema = z
   .superRefine((d, ctx) => {
     if (new Set(d.books.map((b) => b.workId)).size !== d.books.length)
       ctx.addIssue({ code: "custom", message: "Select each book once." });
+    const seen = new Set<string>();
+    for (const value of [
+      d.publishedUrl,
+      ...d.additionalLinks.map((link) => link.url),
+    ].filter(Boolean)) {
+      try {
+        const url = new URL(value);
+        if (
+          !["http:", "https:"].includes(url.protocol) ||
+          url.username ||
+          url.password
+        )
+          throw Error();
+        if (seen.has(url.href))
+          ctx.addIssue({
+            code: "custom",
+            message: "Record each video URL once.",
+          });
+        seen.add(url.href);
+      } catch {
+        ctx.addIssue({
+          code: "custom",
+          message: "Use http or https video links without login details.",
+        });
+      }
+    }
     if (d.status !== "published") {
-      if (d.publishedUrl)
+      if (d.publishedUrl || d.additionalLinks.length)
         ctx.addIssue({
           code: "custom",
           message: "Only posted videos have a publication link.",
@@ -90,6 +125,7 @@ export function serializeVideoProject(
     script: p.script,
     notes: p.notes,
     publishedUrl: p.publishedUrl,
+    additionalLinks: additionalVideoLinksSchema.parse(p.additionalLinks),
     books: p.books.map((b) => ({
       workId: b.workId,
       title: b.work.title,

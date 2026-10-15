@@ -145,7 +145,13 @@ export async function GET(
     }),
     prisma.videoProject.findMany({
       where: { userId, deletedAt: null, books: { some: { workId } } },
-      select: { id: true, title: true, status: true, publishedUrl: true },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        publishedUrl: true,
+        additionalLinks: true,
+      },
       orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
       skip,
       take: 51,

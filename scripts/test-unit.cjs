@@ -378,3 +378,9 @@ assert.equal(archiveBytes.readUInt16LE(archiveBytes.length-12),1);
 for(const name of ["../notes.txt","a/b.txt","a\\b.txt",""])assert.throws(()=>storedZip([{name,data:Buffer.alloc(0)}]));
 assert.throws(()=>storedZip([{name:"a.txt",data:Buffer.alloc(0)},{name:"a.txt",data:Buffer.alloc(0)}]));
 console.log("Stored ZIP CRC, directory, size and filename bounds passed");
+
+const multiPosted={...videoDraft,status:"published",publishedUrl:"https://example.test/primary",additionalLinks:[{platform:"tiktok",url:"https://example.test/second"}]};
+assert.equal(videoProjectSchema.safeParse(multiPosted).success,true);
+for(const change of [{status:"editing"},{additionalLinks:[{platform:"tiktok",url:"javascript:alert(1)"}]},{additionalLinks:[{platform:"other",url:"https://name:password@example.test"}]},{additionalLinks:[{platform:"tiktok",url:"https://example.test/primary"}]},{additionalLinks:Array.from({length:6},(_,i)=>({platform:"other",url:`https://example.test/${i}`}))},{additionalLinks:[{platform:"other",url:"https://example.test"},{platform:"other",url:"https://example.test/"}]}])assert.equal(videoProjectSchema.safeParse({...multiPosted,...change}).success,false);
+assert.deepEqual(videoProjectSchema.parse(videoDraft).additionalLinks,[]);
+console.log("Multi-platform video link bounds, duplicate URLs and legacy defaults passed");

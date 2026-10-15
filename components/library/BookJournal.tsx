@@ -1,5 +1,5 @@
 "use client";
-import { VIDEO_STATUSES } from "@/lib/video-projects";
+import { VIDEO_STATUSES, VIDEO_PLATFORMS } from "@/lib/video-projects";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
@@ -56,6 +56,7 @@ type Journal = {
     title: string;
     status: keyof typeof VIDEO_STATUSES;
     publishedUrl: string;
+    additionalLinks: { platform: keyof typeof VIDEO_PLATFORMS; url: string }[];
   }[];
   clubReadings: {
     id: string;
@@ -509,6 +510,20 @@ export function BookJournal({
                       Open recorded video link
                     </a>
                   )}
+                  {project.status === "published" &&
+                    project.additionalLinks?.map((link, index) => (
+                      <p key={index}>
+                        <a
+                          className="underline"
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Open recorded {VIDEO_PLATFORMS[link.platform]} video
+                          link
+                        </a>
+                      </p>
+                    ))}
                 </div>
               ))}
             </section>

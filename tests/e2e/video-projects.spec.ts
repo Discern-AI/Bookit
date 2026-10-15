@@ -196,12 +196,52 @@ test("video plans save drafts and posted links against original book journals", 
   await page
     .getByLabel("Posted video link", { exact: true })
     .fill("https://example.test/my-video");
+  await page.getByRole("button", { name: "Add posted link" }).click();
+  await page.getByLabel("Platform 1", { exact: true }).selectOption("tiktok");
+  await page
+    .getByLabel("Additional video URL 1", { exact: true })
+    .fill("https://example.test/tiktok-video");
+  await page.getByRole("button", { name: "Add posted link" }).click();
+  await page
+    .getByLabel("Platform 2", { exact: true })
+    .selectOption("instagram");
+  await page
+    .getByLabel("Additional video URL 2", { exact: true })
+    .fill("https://example.test/instagram-video");
+
   await page
     .getByRole("button", { name: "Save video plan", exact: true })
     .click();
   await expect(
     editor.getByRole("status").filter({ hasText: "saved privately" }),
   ).toBeVisible();
+
+  const postedExport = (
+    await (await page.request.get("/api/library/export")).json()
+  ).videoProjects.find((p: any) => p.id === id);
+  expect(postedExport.additionalLinks).toEqual([
+    { platform: "tiktok", url: "https://example.test/tiktok-video" },
+    { platform: "instagram", url: "https://example.test/instagram-video" },
+  ]);
+  const unchanged = await page.request.patch("/api/video-projects", {
+    data: {
+      action: "save",
+      id,
+      version: postedExport.version,
+      project: postedExport,
+    },
+  });
+  expect(unchanged.status()).toBe(200);
+  expect((await unchanged.json()).version).toBe(postedExport.version);
+  const retry = await page.request.patch("/api/video-projects", {
+    data: {
+      action: "save",
+      id,
+      version: postedExport.version - 1,
+      project: postedExport,
+    },
+  });
+  expect(retry.status()).toBe(200);
   await page.goto(`/library/book/${one.id}`);
   const videoSection = page.getByRole("region", { name: "Your video plans" });
   await expect(
@@ -210,6 +250,14 @@ test("video plans save drafts and posted links against original book journals", 
       exact: true,
     }),
   ).toHaveAttribute("href", "https://example.test/my-video");
+  await expect(
+    videoSection.getByRole("link", { name: "Open recorded TikTok video link" }),
+  ).toHaveAttribute("href", "https://example.test/tiktok-video");
+  await expect(
+    videoSection.getByRole("link", {
+      name: "Open recorded Instagram video link",
+    }),
+  ).toHaveAttribute("href", "https://example.test/instagram-video");
   await videoSection
     .getByRole("link", { name: "Private video plan", exact: true })
     .click();
@@ -230,6 +278,7 @@ test("video plans save drafts and posted links against original book journals", 
   ).toBeVisible();
   expect((await journal(one.id)).videoProjects).toEqual([]);
   expect((await journal(two.id)).videoProjects[0].publishedUrl).toBe("");
+  expect((await journal(two.id)).videoProjects[0].additionalLinks).toEqual([]);
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(
     page.getByRole("heading", { name: "Edit video plan", exact: true }),
@@ -273,6 +322,7 @@ test("video plans save drafts and posted links against original book journals", 
   expect(deleted.script).toBe("");
   expect(deleted.notes).toBe("");
   expect(deleted.publishedUrl).toBe("");
+  expect(deleted.additionalLinks).toEqual([]);
   expect(deleted.books).toHaveLength(0);
   expect(
     (await db.userBook.findUniqueOrThrow({ where: { id: two.id } }))

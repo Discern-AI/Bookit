@@ -1,7 +1,11 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { sameOriginJson } from "@/lib/book-journal";
-import { videoProjectAction, videoProjectInclude } from "@/lib/video-projects";
+import {
+  additionalVideoLinksSchema,
+  videoProjectAction,
+  videoProjectInclude,
+} from "@/lib/video-projects";
 const reply = (data: unknown, status = 200) =>
   Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
 export async function PATCH(request: Request) {
@@ -16,7 +20,7 @@ export async function PATCH(request: Request) {
     return reply(
       {
         error:
-          "Check the name, script/notes lengths and book selections. Posted videos need an http or https link without login details; drafts must not include a publication link.",
+          "Check the name, text lengths and book selections. Use unique http/https video links without login details, with at most five additional links. Drafts must not include posted links.",
       },
       400,
     );
@@ -51,6 +55,7 @@ export async function PATCH(request: Request) {
             script: "",
             notes: "",
             publishedUrl: "",
+            additionalLinks: [],
             platform: "other",
             status: "idea",
             deletedAt: new Date(),
@@ -63,8 +68,12 @@ export async function PATCH(request: Request) {
       const { books, ...fields } = d.project;
       const same =
         old &&
-        Object.entries(fields).every(
-          ([key, value]) => old[key as keyof typeof old] === value,
+        Object.entries(fields).every(([key, value]) =>
+          key === "additionalLinks"
+            ? JSON.stringify(
+                additionalVideoLinksSchema.parse(old.additionalLinks),
+              ) === JSON.stringify(value)
+            : old[key as keyof typeof old] === value,
         ) &&
         JSON.stringify(old.books.map(({ workId }) => ({ workId }))) ===
           JSON.stringify(books);

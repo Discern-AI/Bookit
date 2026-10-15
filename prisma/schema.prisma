@@ -765,6 +765,7 @@ model VideoProject {
  books VideoProjectBook[]
  @@index([userId, deletedAt, updatedAt])
   clip VideoClip?
+  additionalLinks Json @default("[]")
 }
 model VideoProjectBook {
  projectId String @db.Uuid
