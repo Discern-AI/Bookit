@@ -365,3 +365,16 @@ assert.equal(normalizeCaptions(captionFixture.replace(/\n/g,"\r\n")),captionFixt
 assert.equal(normalizeCaptions("  "),"");
 for(const value of ["not vtt","WEBVTT",captionFixture.replace("03.000","00.000"),captionFixture.replace("Hello reader.","<script>bad</script>"),captionFixture.replace("03.000","63.000"),captionFixture+"\n00:00:00.000 --> 00:00:03.000\n", "x".repeat(100001)])assert.throws(()=>normalizeCaptions(value));
 console.log("Caption normalization, timing, bounds and plain text validation passed");
+
+const {storedZip,crc32}=require("../lib/stored-zip.ts");
+assert.equal(crc32(Buffer.from("123456789")),0xcbf43926);
+assert.equal(crc32(Buffer.alloc(0)),0);
+const archive=storedZip([{name:"book-credits.txt",data:Buffer.from("A book")}]);
+const archiveBytes=Buffer.concat(archive.parts);
+assert.equal(archive.size,archiveBytes.length);
+assert.equal(archiveBytes.readUInt32LE(0),0x04034b50);
+assert.equal(archiveBytes.readUInt32LE(archiveBytes.length-22),0x06054b50);
+assert.equal(archiveBytes.readUInt16LE(archiveBytes.length-12),1);
+for(const name of ["../notes.txt","a/b.txt","a\\b.txt",""])assert.throws(()=>storedZip([{name,data:Buffer.alloc(0)}]));
+assert.throws(()=>storedZip([{name:"a.txt",data:Buffer.alloc(0)},{name:"a.txt",data:Buffer.alloc(0)}]));
+console.log("Stored ZIP CRC, directory, size and filename bounds passed");

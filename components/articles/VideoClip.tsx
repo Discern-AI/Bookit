@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { VideoCaptions, type CaptionData } from "./VideoCaptions";
+import { VideoPostingFiles } from "./VideoPostingFiles";
 import { VideoRecorder } from "./VideoRecorder";
 import { Button } from "@/components/ui/Button";
 export function VideoClip({ projectId }: { projectId: string }) {
@@ -94,6 +95,7 @@ export function VideoClip({ projectId }: { projectId: string }) {
               />
             )}
           </video>
+          <VideoPostingFiles projectId={projectId} clipId={clip.id} />
           <VideoCaptions
             key={clip.id}
             url={url}

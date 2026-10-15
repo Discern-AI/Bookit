@@ -564,6 +564,68 @@ test("private video clips upload, seek, reject other readers and delete", async 
       ),
   ).toBe("A private book caption.");
   const captionUrl = playback + "&captions";
+  const exportUrl = `/api/video-projects/${project.id}/export?clip=${clip.id}`;
+  await db.videoProject.update({
+    where: { id: project.id },
+    data: { script: "DO_NOT_EXPORT_SCRIPT", notes: "DO_NOT_EXPORT_NOTES" },
+  });
+  const posting = page.getByRole("region", {
+    name: "Posting files",
+    exact: true,
+  });
+  await page.route("**/export?clip=*", (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "Download unavailable" }),
+    }),
+  );
+  await posting.getByRole("button", { name: "Download posting files" }).click();
+  await expect(posting.getByRole("alert")).toContainText(
+    "Download unavailable",
+  );
+  await page.unroute("**/export?clip=*");
+  const bundleDownload = page.waitForEvent("download");
+  await posting.getByRole("button", { name: "Download posting files" }).click();
+  const bundle = await bundleDownload;
+  await bundle.saveAs(test.info().outputPath("posting-files.zip"));
+  const zip = await readFile((await bundle.path())!);
+  const entries = new Map<string, Buffer>();
+  let position = 0;
+  while (zip.readUInt32LE(position) === 0x04034b50) {
+    const size = zip.readUInt32LE(position + 18),
+      nameLength = zip.readUInt16LE(position + 26),
+      extra = zip.readUInt16LE(position + 28);
+    const name = zip
+      .subarray(position + 30, position + 30 + nameLength)
+      .toString("ascii");
+    const start = position + 30 + nameLength + extra;
+    entries.set(name, zip.subarray(start, start + size));
+    position = start + size;
+  }
+  expect([...entries.keys()].sort()).toEqual([
+    "book-credits.txt",
+    "captions.vtt",
+    "read-me.txt",
+    "video.webm",
+  ]);
+  expect(entries.get("video.webm")).toEqual(Buffer.from(bytes));
+  expect(entries.get("captions.vtt")!.toString("utf8")).toBe(vtt);
+  expect(entries.get("book-credits.txt")!.toString("utf8")).toContain(
+    work.title + " - A. Reader",
+  );
+  expect(zip.includes(Buffer.from("DO_NOT_EXPORT"))).toBe(false);
+  expect(zip.includes(Buffer.from("PRIVATE_LIBRARY_NOTES"))).toBe(false);
+  expect(
+    (await db.videoProject.findUniqueOrThrow({ where: { id: project.id } }))
+      .status,
+  ).toBe("idea");
+  expect(
+    (
+      await page.request.get(exportUrl.replace(clip.id, crypto.randomUUID()))
+    ).status(),
+  ).toBe(404);
+
   expect(await (await page.request.get(captionUrl)).text()).toBe(vtt);
   const captionDownload = page.waitForEvent("download");
   await captions.getByRole("link", { name: "Download saved captions" }).click();
@@ -627,7 +689,9 @@ test("private video clips upload, seek, reject other readers and delete", async 
   const other = await browser.newContext(),
     otherPage = await other.newPage();
   expect((await otherPage.request.get(playback)).status()).toBe(404);
+  expect((await otherPage.request.get(exportUrl)).status()).toBe(404);
   await login(otherPage, "clipother");
+  expect((await otherPage.request.get(exportUrl)).status()).toBe(404);
   expect((await otherPage.request.get(captionUrl)).status()).toBe(404);
   expect(
     (
@@ -649,13 +713,11 @@ test("private video clips upload, seek, reject other readers and delete", async 
   await captions.getByRole("button", { name: "Save captions" }).click();
   await expect(captions.getByRole("status")).toContainText("Captions removed");
   expect((await page.request.get(captionUrl)).status()).toBe(404);
-  await captions
-    .getByLabel("Import captions (.vtt)")
-    .setInputFiles({
-      name: "captions.vtt",
-      mimeType: "text/vtt",
-      buffer: Buffer.from(vtt),
-    });
+  await captions.getByLabel("Import captions (.vtt)").setInputFiles({
+    name: "captions.vtt",
+    mimeType: "text/vtt",
+    buffer: Buffer.from(vtt),
+  });
   await expect(captions.getByLabel("Timed captions")).toHaveValue(vtt);
   await captions.getByRole("button", { name: "Save captions" }).click();
   await expect(captions.getByRole("status")).toContainText(
@@ -673,6 +735,7 @@ test("private video clips upload, seek, reject other readers and delete", async 
   await expect(section.getByLabel("Choose private video")).toBeVisible();
   expect((await page.request.get(playback)).status()).toBe(404);
   expect((await page.request.get(captionUrl)).status()).toBe(404);
+  expect((await page.request.get(exportUrl)).status()).toBe(404);
   expect(
     (
       await page.request.post(url, {
