@@ -26,6 +26,7 @@ export default async function Page({
       publicName: true,
       bio: true,
       blogEnabled: true,
+      curatorShop: { select: { isPublic: true } },
     },
   });
   if (!user) notFound();
@@ -81,6 +82,11 @@ export default async function Page({
       ) : (
         <Link className="underline" href="/login">
           Sign in to follow readers
+        </Link>
+      )}
+      {user.curatorShop?.isPublic && (
+        <Link className="underline" href={`/shop/${user.username}`}>
+          Curated book shop
         </Link>
       )}
       <nav aria-label="Profile sections" className="flex flex-wrap gap-4">

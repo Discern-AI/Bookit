@@ -48,6 +48,7 @@ model VerificationToken {
 }
 
 model User {
+  curatorShop CuratorShop?
   videoProjects VideoProject[]
   cardProjects CardProject[]
   discussionPosts BookDiscussion[]
@@ -102,6 +103,7 @@ model User {
 // ---------- Book hierarchy ----------
 
 model Work {
+  shopEntries CuratorShopEntry[]
   videoProjects VideoProjectBook[]
   cardProjects CardProjectBook[]
   discussions BookDiscussion[]
@@ -787,4 +789,27 @@ model VideoClip {
   data Bytes
   createdAt DateTime @default(now())
   project VideoProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model CuratorShop {
+  userId String @id
+  title String
+  introduction String @default("")
+  isPublic Boolean @default(false)
+  version Int @default(1)
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  entries CuratorShopEntry[]
+}
+model CuratorShopEntry {
+  userId String
+  workId String
+  position Int
+  note String @default("")
+  retailerUrl String @default("")
+  affiliate Boolean @default(false)
+  shop CuratorShop @relation(fields:[userId],references:[userId],onDelete:Cascade)
+  work Work @relation(fields:[workId],references:[id],onDelete:Cascade)
+  @@id([userId,workId])
+  @@unique([userId,position])
+  @@index([workId])
 }

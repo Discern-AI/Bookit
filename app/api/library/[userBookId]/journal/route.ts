@@ -22,6 +22,16 @@ export async function GET(
   const userId = session.user.id,
     workId = book.edition.workId,
     skip = page * 50;
+  const shopEntry =
+    page === 0
+      ? await prisma.curatorShopEntry.findUnique({
+          where: { userId_workId: { userId, workId } },
+          select: {
+            note: true,
+            shop: { select: { title: true, isPublic: true } },
+          },
+        })
+      : null;
   const [
     copies,
     entries,
@@ -191,6 +201,7 @@ export async function GET(
       discussionPosts: discussionPosts.slice(0, 50),
       cardProjects: cardProjects.slice(0, 50),
       videoProjects: videoProjects.slice(0, 50),
+      shopEntry,
       hasMore: [
         entries,
         sessions,

@@ -1,3 +1,4 @@
+import { shopData, shopInclude } from "@/lib/curator-shop";
 import {
   videoProjectInclude,
   serializeVideoProject,
@@ -32,6 +33,10 @@ export async function GET() {
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     })
   ).map(serializeVideoProject);
+  const shop = await prisma.curatorShop.findUnique({
+    where: { userId: session.user.id },
+    include: shopInclude,
+  });
   const challenges = await readingChallenges(session.user.id);
   const books = await prisma.userBook.findMany({
     where: { userId: session.user.id },
@@ -76,6 +81,7 @@ export async function GET() {
         discussionPosts,
         cardProjects,
         videoProjects,
+        curatorShop: shop ? shopData(shop) : null,
       },
       null,
       2,

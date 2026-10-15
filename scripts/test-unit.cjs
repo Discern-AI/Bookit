@@ -384,3 +384,9 @@ assert.equal(videoProjectSchema.safeParse(multiPosted).success,true);
 for(const change of [{status:"editing"},{additionalLinks:[{platform:"tiktok",url:"javascript:alert(1)"}]},{additionalLinks:[{platform:"other",url:"https://name:password@example.test"}]},{additionalLinks:[{platform:"tiktok",url:"https://example.test/primary"}]},{additionalLinks:Array.from({length:6},(_,i)=>({platform:"other",url:`https://example.test/${i}`}))},{additionalLinks:[{platform:"other",url:"https://example.test"},{platform:"other",url:"https://example.test/"}]}])assert.equal(videoProjectSchema.safeParse({...multiPosted,...change}).success,false);
 assert.deepEqual(videoProjectSchema.parse(videoDraft).additionalLinks,[]);
 console.log("Multi-platform video link bounds, duplicate URLs and legacy defaults passed");
+
+const {shopDraftSchema}=require("../lib/curator-shop.ts");
+const shopFixture={title:"My books",introduction:"",isPublic:false,entries:[{workId:"work",note:"My recommendation",retailerUrl:"https://example.test/book",affiliate:true}]};
+assert.equal(shopDraftSchema.safeParse(shopFixture).success,true);
+for(const change of [{title:" "},{entries:[...shopFixture.entries,...shopFixture.entries]},{isPublic:true,entries:[]},{entries:[{...shopFixture.entries[0],retailerUrl:""}]},{entries:[{...shopFixture.entries[0],retailerUrl:"https://name:password@example.test/book"}]},{entries:[{...shopFixture.entries[0],retailerUrl:"javascript:alert(1)"}]}])assert.equal(shopDraftSchema.safeParse({...shopFixture,...change}).success,false);
+console.log("Curator shop publication, book uniqueness and affiliate URL validation passed");

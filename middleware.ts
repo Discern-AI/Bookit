@@ -12,7 +12,7 @@ export default auth((req) => {
     ["/forgot-password", "/account-link"].includes(req.nextUrl.pathname);
 
   const isPublicBook =
-    /^\/(?:book|path|profile|review|shelf|article)\/[^/]+\/?$/.test(
+    /^\/(?:book|path|profile|review|shelf|article|shop)\/[^/]+\/?$/.test(
       req.nextUrl.pathname,
     );
   const isBlogFeed = /^\/blog\/[^/]+\/rss\/?$/.test(req.nextUrl.pathname);

@@ -24,6 +24,9 @@ export default async function Page({
   return (
     <main className="max-w-3xl mx-auto p-6 space-y-6">
       <h1 className="font-display text-4xl">Your articles</h1>
+      <Link href="/creator/shop" className="underline">
+        Your curated book shop
+      </Link>
       <Link href="/creator/videos" className="underline">
         Video plans
       </Link>

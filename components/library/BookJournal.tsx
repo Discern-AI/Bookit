@@ -5,6 +5,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import type { JournalEntry } from "@/lib/book-journal";
 type Journal = {
+  shopEntry: {
+    note: string;
+    shop: { title: string; isPublic: boolean };
+  } | null;
   discussionPosts: {
     id: string;
     parentId: string | null;
@@ -117,6 +121,7 @@ export function BookJournal({
                   gifts: [...old.gifts, ...d.gifts],
                   cardProjects: [...old.cardProjects, ...d.cardProjects],
                   videoProjects: [...old.videoProjects, ...d.videoProjects],
+                  shopEntry: old.shopEntry || d.shopEntry,
                   clubReadings: [...old.clubReadings, ...d.clubReadings],
                   clubPosts: [...old.clubPosts, ...d.clubPosts],
                   discussionPosts: [
@@ -488,6 +493,17 @@ export function BookJournal({
               </p>
             ))}
           </section>
+          {data.shopEntry && (
+            <section aria-label="Your shop recommendation">
+              <h2 className="font-display text-2xl">
+                Your shop recommendation
+              </h2>
+              <Link className="underline" href="/creator/shop">
+                {data.shopEntry.shop.title}
+              </Link>
+              <p className="whitespace-pre-wrap">{data.shopEntry.note}</p>
+            </section>
+          )}
           {!!data.videoProjects?.length && (
             <section aria-label="Your video plans" className="space-y-3">
               <h2 className="font-display text-2xl">Your video plans</h2>
