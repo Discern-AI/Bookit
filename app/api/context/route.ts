@@ -28,6 +28,9 @@ export async function GET() {
     const record = await prisma.readingContext.findUnique({
       where: { userId: session.user.id },
     });
+    const diaryCount = await prisma.contextDiaryEntry.count({
+      where: { userId: session.user.id, encryptedData: { not: null } },
+    });
     try {
       const key = contextKey();
       const profile = record?.encryptedData
@@ -39,14 +42,14 @@ export async function GET() {
         : emptyContext;
       return reply({
         version: record?.version || 0,
-        hasData: !!record?.encryptedData,
+        hasData: !!record?.encryptedData || diaryCount > 0,
         available: true,
         profile,
       });
     } catch {
       return reply({
         version: record?.version || 0,
-        hasData: !!record?.encryptedData,
+        hasData: !!record?.encryptedData || diaryCount > 0,
         available: false,
         profile: null,
         error:
@@ -95,7 +98,10 @@ export async function PATCH(request: Request) {
       const old = await tx.readingContext.findUnique({
         where: { userId: session.user.id },
       });
-      if (d.action === "delete" && !old?.encryptedData)
+      const diaryCount = await tx.contextDiaryEntry.count({
+        where: { userId: session.user.id, encryptedData: { not: null } },
+      });
+      if (d.action === "delete" && !old?.encryptedData && !diaryCount)
         return reply({
           version: old?.version || 0,
           profile: emptyContext,
@@ -135,6 +141,11 @@ export async function PATCH(request: Request) {
           profile: existing,
           hasData: true,
         });
+      if (d.action === "delete")
+        await tx.contextDiaryEntry.updateMany({
+          where: { userId: session.user.id, encryptedData: { not: null } },
+          data: { encryptedData: null, version: { increment: 1 } },
+        });
       const encryptedData =
         d.action === "save"
           ? encryptContext(JSON.stringify(d.profile), session.user.id, key!)
@@ -150,7 +161,7 @@ export async function PATCH(request: Request) {
       return reply({
         version: saved.version,
         profile: d.action === "save" ? d.profile : emptyContext,
-        hasData: !!encryptedData,
+        hasData: !!encryptedData || (d.action === "save" && diaryCount > 0),
       });
     });
   } catch {

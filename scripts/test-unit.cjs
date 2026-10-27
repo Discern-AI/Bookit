@@ -410,3 +410,12 @@ process.env.FOLIO_CONTEXT_KEY="invalid";assert.throws(()=>contextKey());
 if(priorContextKey===undefined)delete process.env.FOLIO_CONTEXT_KEY;else process.env.FOLIO_CONTEXT_KEY=priorContextKey;
 if(priorContextFile===undefined)delete process.env.FOLIO_CONTEXT_KEY_FILE;else process.env.FOLIO_CONTEXT_KEY_FILE=priorContextFile;
 console.log("Context encryption randomness, authentication, owner binding, key failure and validation passed");
+
+const {diaryAction,diaryBinding}=require("../lib/context-diary.ts");
+assert.equal(diaryAction.safeParse({action:"save",id:challengeFixture.id,version:0,contextVersion:0,text:" Entry "}).data.text,"Entry");
+for(const text of [" ","x".repeat(10001)])assert.equal(diaryAction.safeParse({action:"save",id:challengeFixture.id,version:0,contextVersion:0,text}).success,false);
+const diaryCipher=encryptContext("Entry",diaryBinding("reader", "one"),contextTestKey);
+assert.equal(decryptContext(diaryCipher,diaryBinding("reader","one"),contextTestKey),"Entry");
+assert.throws(()=>decryptContext(diaryCipher,diaryBinding("reader","two"),contextTestKey));
+assert.throws(()=>decryptContext(diaryCipher,"reader",contextTestKey));
+console.log("Diary text bounds and entry/profile encryption separation passed");

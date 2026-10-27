@@ -1,0 +1,2 @@
+CREATE TABLE "ContextDiaryEntry" ("id" UUID PRIMARY KEY, "userId" TEXT NOT NULL, "encryptedData" BYTEA, "version" INTEGER NOT NULL DEFAULT 1, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "ContextDiaryEntry_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE);
+CREATE INDEX "ContextDiaryEntry_userId_createdAt_id_idx" ON "ContextDiaryEntry"("userId","createdAt","id");

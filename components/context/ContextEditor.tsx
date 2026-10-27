@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { ContextDownload } from "./ContextDownload";
 import { Button } from "@/components/ui/Button";
 import {
   emptyContext,
@@ -118,8 +119,21 @@ export function ContextEditor() {
       </p>
       <p>
         Context stays separate from book notes, public shops and reading
-        history. Personal diary entries and optional AI use are coming later.
+        history. Optional AI use is coming later.
       </p>
+      <Link
+        className="underline"
+        href="/settings/context/diary"
+        onClick={(e) => {
+          if (
+            dirty &&
+            !window.confirm("Leave without saving your context changes?")
+          )
+            e.preventDefault();
+        }}
+      >
+        Open private context diary
+      </Link>
       {loading ? (
         <p role="status">Loading private context...</p>
       ) : (
@@ -191,34 +205,7 @@ export function ContextEditor() {
               Save context now
             </Button>
           </fieldset>
-          {hasData && available && (
-            <section className="space-y-2">
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={busy}
-                onClick={() => {
-                  const url = URL.createObjectURL(
-                    new Blob(
-                      [JSON.stringify({ profile: JSON.parse(saved) }, null, 2)],
-                      { type: "application/json" },
-                    ),
-                  );
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = "folio-private-context.json";
-                  a.click();
-                  setTimeout(() => URL.revokeObjectURL(url), 1000);
-                }}
-              >
-                Download saved context
-              </Button>
-              <p className="text-sm">
-                The download contains readable personal text. It is separate
-                from your library export.
-              </p>
-            </section>
-          )}
+          {hasData && available && <ContextDownload disabled={busy} />}
           {hasData && (
             <Button
               type="button"
@@ -262,8 +249,9 @@ export function ContextEditor() {
           className="border rounded p-4 space-y-3"
         >
           <p>
-            Delete all saved context and discard this draft? Your reading
-            library, book notes and chat history will remain.
+            Delete all saved context, including every diary entry, and discard
+            this draft? Your reading library, book notes and chat history will
+            remain.
           </p>
           <Button
             type="button"
