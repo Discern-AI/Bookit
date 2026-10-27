@@ -102,7 +102,8 @@ export function ContextDiary() {
       <h1 className="font-display text-3xl">Private context diary</h1>
       <p>
         Personal writing, separate from reading sessions and book journals.
-        Entries use server-managed encryption and are not sent to AI. Dates are
+        Entries use server-managed encryption. Chat sends entries to AI only
+        when you explicitly select and review them for a request. Dates are
         shown in your browser&apos;s local time.
       </p>
       <p>

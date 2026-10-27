@@ -115,11 +115,13 @@ export function ContextEditor() {
       <p>
         Personal context is encrypted in storage. Folio&apos;s server decrypts
         it for your signed-in account; this is not end-to-end encryption. It is
-        not public or sent to AI in this version.
+        not public. Chat can send it to Claude only when you explicitly select
+        and review it for a request.
       </p>
       <p>
         Context stays separate from book notes, public shops and reading
-        history. Optional AI use is coming later.
+        history. Use the personal-context controls in Chat to review what you
+        share.
       </p>
       <Link
         className="underline"

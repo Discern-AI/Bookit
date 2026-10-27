@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Input";
 import { BookCard } from "@/components/ui/BookCard";
 import { normalizeIsbn } from "@/lib/isbn";
+import { ContextSharing } from "@/components/context/ContextSharing";
+import type { ContextSelection } from "@/lib/context-sharing";
 import { Bookshelf } from "./Bookshelf";
 import { mentionedWork } from "@/lib/book-journal";
 import type { JournalEntry } from "@/lib/book-journal";
@@ -212,6 +214,9 @@ export function ChatView({
   } | null>(null);
   const [proposalBook, setProposalBook] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [personalContext, setPersonalContext] =
+    useState<ContextSelection | null>(null);
+  useEffect(() => setPersonalContext(null), [conversationId]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -316,12 +321,15 @@ export function ChatView({
         }
         return;
       }
+      const sharing = personalContext;
+      setPersonalContext(null);
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.current.signal,
         body: JSON.stringify({
           workId,
+          ...(sharing ? { personalContext: sharing } : {}),
           messages: next
             .slice(-40)
             .map(({ role, content }) => ({ role, content })),
@@ -811,6 +819,12 @@ export function ChatView({
             {error}
           </p>
         )}
+        <ContextSharing
+          key={conversationId}
+          value={personalContext}
+          onChange={setPersonalContext}
+          disabled={busy}
+        />
         <form onSubmit={send} className="flex gap-2 items-end">
           <Textarea
             ref={textarea}

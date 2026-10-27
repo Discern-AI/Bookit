@@ -1,6 +1,6 @@
 # Consolidated build checklist
 
-Updated 27 October 2026. Current implementation baseline: `4b242e3` on `master`.
+Updated 27 October 2026. The implementation baseline is the latest committed `master`; see BUILD_STATUS.md for per-feature evidence.
 
 This is the current planning checklist. [BUILD_STATUS.md](BUILD_STATUS.md) is the chronological implementation and validation history; its older future-work statements describe the state at the time and are superseded here. Scope follows section 16 of the [implementation brief](specifications/Folio_Implementation_Brief.txt), with the [blueprint](specifications/Folio_Blueprint.txt) as supporting detail and the accepted [bookshelf/journal requirements](BOOKSHELF_AND_JOURNAL.md) applying throughout. Reference documents are requirements, not permission to deploy, connect accounts or publish content.
 
@@ -89,7 +89,7 @@ No overall completion percentage is assigned: an integration, marketplace or rel
 - [x] Private context profile and reading-time preferences, encrypted with a dedicated server-managed key.
 - [x] Individually encrypted private diary entries with editing, confirmed deletion, pagination, conflict/replay protection and account cleanup.
 - [x] Dedicated saved-profile/diary plaintext export, separate from library export; complete-export failure on unreadable records.
-- [ ] **Next ? Not built:** explicit opt-in AI context controls, selected diary inclusion, clear visibility of what is shared and removal/disable behavior. Test privacy and prompt assembly without live Claude first.
+- [x] Per-request opt-in AI context controls: saved profile and up to three selected diary entries, exact preview, explicit confirmation, removal, default-off state and consent clearing on request dispatch. Server checks ownership/revisions and decrypts only selections. Local privacy/prompt and browser tests pass; no live Claude calls.
 - [ ] **Deferred:** end-to-end live verification of opted-in context after API-key setup.
 - [ ] **Not built:** Reading Life marketplace MVP for Reading Objects and Books. Define catalogue/listing behavior and book-journal associations before transactional scope.
 - [ ] **Not built:** sensory reading-kit generation.
@@ -117,10 +117,10 @@ Checkout, payment processing, affiliate payouts and charity payments are not imp
 Recommended sequence:
 
 1. Complete this checklist consolidation before further feature code.
-2. Build explicit AI context-sharing controls and local tests, keeping the live key deferred.
-3. Complete discovery foundations: author releases, acquisition/nearby shops and nice editions.
+2. Completed: explicit AI context-sharing controls and local tests; live verification remains deferred.
+3. Next: complete discovery foundations: author releases, acquisition/nearby shops and nice editions.
 4. Build the Reading Life marketplace foundation, kits and afternoon planner with book-journal integration.
 5. Complete public video/social and delivery integrations as provider access becomes available.
 6. Finish release gates and live-provider acceptance checks before launch. Security/operational preparation can proceed alongside feature work.
 
-Future continuations should update this checklist and append evidence to BUILD_STATUS.md. Do not mark a live integration complete because fixture tests pass. The latest feature baseline passed the production build, unit suite and four targeted context browser scenarios; it was not a fresh full-product regression run.
+Future continuations should update this checklist and append evidence to BUILD_STATUS.md. Do not mark a live integration complete because fixture tests pass. Validation is recorded per continuation in BUILD_STATUS.md; targeted regression runs are not a fresh full-product regression.
