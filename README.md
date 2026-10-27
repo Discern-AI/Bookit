@@ -1,5 +1,7 @@
 # Folio / Bookit
 
+Current roadmap: [consolidated build checklist](docs/BUILD_CHECKLIST.md), including completed features, remaining work and launch gates.
+
 A personal reading library and AI reading companion. The repository folder is `bookit`; the product name in the supplied specifications is Folio.
 
 ## Run locally

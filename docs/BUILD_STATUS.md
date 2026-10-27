@@ -1,4 +1,6 @@
-# Build status - 9 September 2026
+# Build history - started 9 September 2026
+
+For current completion status and next work, use the [consolidated build checklist](BUILD_CHECKLIST.md), updated 27 October 2026. Historical future-work notes below may have been completed in later entries.
 
 ## Recovery checkpoint
 
@@ -366,13 +368,9 @@ User-requested scope addition takes priority before resuming the original phase 
 
 A verified npm audit reported nine high-severity dependency entries in the retained Next.js 14 / Prisma toolchain (including transitive entries, not nine independent app exploits). npm proposes major-version changes. Plan and test that upgrade before public deployment; this continuation keeps the brief's framework version and remains local. Audit details are generated locally rather than committed.
 
-## Remaining work
+## Current roadmap
 
-Live personalised Claude chat still requires `ANTHROPIC_API_KEY` and real-provider verification. Import matching uses the local canonical catalogue without external metadata enrichment. Imported public reviews are not implemented. Chat history is now persisted privately; unconfirmed reading-log proposals remain in the open page only.
-
-Next Phase 2 work: live acquisition/availability integrations, plus a successful live-provider check of the edition metadata flow. Reading paths now support manual creation, publishing and following. Browse and public book pages now have their first functional implementation. The new diary currently loads the user's session history together; pagination and larger-library optimisation can follow as usage grows.
-
-Current video work: private planning, uploads/playback, recording, captions and posting-file downloads are implemented. Public video publication/moderation, provider connections and automated cross-posting remain outstanding. Initial optional curated shops with retailer links and affiliate disclosures are implemented; checkout and affiliate payouts remain outside the build. Saved editable card projects are implemented. Initial AI gift planning expansion is implemented; live Claude verification stays deferred until the user supplies the key. Author-community production/browser verification is complete. Initial author communities now group discussions through catalogue author names; verified contributor identities remain future work. Initial genre/topic communities are implemented as book-linked spaces. Book-linked discussion boards are implemented. Two-person Reading Together is implemented. Initial charity read-a-thons and private sponsorship tracking are implemented. Community challenge sharing and joining are implemented. Initial book clubs are implemented. Live account email delivery still requires configuration and provider verification. Later phases include AI gift expansion, further creator tools, encrypted private context and marketplace. Public profiles and community reviews now have their initial implementation. No deployment has been performed. Commits through `11fd142` were pushed to the authorised origin/master.
+The [consolidated build checklist](BUILD_CHECKLIST.md) replaces the former remaining-work summary. It reconciles the original five phases, accepted bookshelf requirements, later implementations, deferred live integrations and launch gates. The dated entries below remain historical evidence rather than a current backlog.
 
 ## Personal reading challenges - 1 October 2026
 
@@ -549,3 +547,10 @@ Current video work: private planning, uploads/playback, recording, captions and 
 - Diary and profile mutations share account locking and a context revision. Global context deletion clears both profile and diary payloads; entry tombstones and version checks reject stale resurrection, including pending new-entry drafts. Account deletion cascades all records.
 - The dedicated readable JSON download now includes the saved profile and all active diary entries in a consistent snapshot. Decryption failure produces an error instead of a partial download. Diary content remains excluded from book journals, public features, library exports and AI prompts. Explicit opt-in AI inclusion is the next context step; live Claude integration remains deferred.
 - Applied migration `20261016010000_context_diary`. Validation: unit suite and production build including lint/type checks passed. Both diary browser scenarios and both existing context regression scenarios passed, covering failed-draft retention, encrypted storage, anonymous/foreign-account denial, editing, download, global deletion, stale requests, pagination, entry binding, corruption handling and account cleanup. Mobile overflow was checked. An incomplete test left by the interrupted session was repaired; a route-announcer selector ambiguity was corrected before the successful rerun. No deployment or live AI calls.
+
+
+## Roadmap consolidation - 27 October 2026
+
+- Added BUILD_CHECKLIST.md as the current planning source, separating implemented capabilities, partial features, unbuilt work, deferred provider verification and release gates.
+- Reconciled completed reread corrections, communities, gift AI implementation, saved cards, private video tools, curated shops and encrypted profile/diary against older future-work statements. Preserved those dated historical entries; replaced the stale remaining-work summary and linked the checklist from README.
+- The next feature remains explicit opt-in AI context sharing; no feature code, schema or provider setup changed during this documentation step. Validation is documentation/link review and git diff checking, not a new application test run.
