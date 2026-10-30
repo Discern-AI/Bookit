@@ -56,6 +56,10 @@ export async function PATCH(request: Request) {
             notes: "",
             publishedUrl: "",
             additionalLinks: [],
+            isPublic: false,
+            publicDescription: "",
+            publishedAt: null,
+            publicModerationStatus: "active",
             platform: "other",
             status: "idea",
             deletedAt: new Date(),
@@ -101,11 +105,17 @@ export async function PATCH(request: Request) {
             400,
           );
       }
+      if (fields.isPublic) {
+        const clip = await tx.videoClip.findUnique({ where: { projectId: d.id }, select: { id: true } });
+        if (!clip) return reply({ error: "Upload a private clip before publishing it in the Folio video feed." }, 400);
+      }
       if (same) return reply({ id: old.id, version: old.version });
       if (old)
         await tx.videoProjectBook.deleteMany({ where: { projectId: d.id } });
       const data = {
         ...fields,
+        publishedAt: fields.isPublic ? (old?.publishedAt ?? new Date()) : null,
+        publicModerationStatus: "active",
         books: { create: books.map((b, position) => ({ ...b, position })) },
       };
       const saved = old

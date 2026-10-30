@@ -48,10 +48,15 @@ model VerificationToken {
 }
 
 model User {
+  bookshopOutcomes BookshopOutcome[]
+  readingAfternoons ReadingAfternoon[]
+  readingKits ReadingKit[]
   contextDiary ContextDiaryEntry[]
   readingContext ReadingContext?
+  followedAuthors FollowedAuthor[]
   curatorShop CuratorShop?
   videoProjects VideoProject[]
+  videoProjectReports VideoProjectReport[]
   cardProjects CardProject[]
   discussionPosts BookDiscussion[]
   discussionReports DiscussionReport[]
@@ -105,6 +110,9 @@ model User {
 // ---------- Book hierarchy ----------
 
 model Work {
+  bookshopOutcomes BookshopOutcome[]
+  readingAfternoons ReadingAfternoon[]
+  readingKitEntries ReadingKitEntry[]
   shopEntries CuratorShopEntry[]
   videoProjects VideoProjectBook[]
   cardProjects CardProjectBook[]
@@ -372,6 +380,17 @@ model BookReview {
  @@unique([userId, workId, active])
  @@index([userId, workId, version])
  @@index([isPublic, updatedAt])
+}
+
+model FollowedAuthor {
+ userId      String
+ authorKey   String
+ displayName String
+ createdAt   DateTime @default(now())
+ user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+ @@id([userId, authorKey])
+ @@index([userId, createdAt])
 }
 
 model ReaderFollow {
@@ -761,16 +780,45 @@ model VideoProject {
  script String @default("")
  notes String @default("")
  publishedUrl String @default("")
+ isPublic Boolean @default(false)
+ publicDescription String @default("")
+ publishedAt DateTime?
+ publicModerationStatus String @default("active")
  version Int @default(1)
  deletedAt DateTime?
  createdAt DateTime @default(now())
  updatedAt DateTime @updatedAt
  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
  books VideoProjectBook[]
+ reports VideoProjectReport[]
  @@index([userId, deletedAt, updatedAt])
-  clip VideoClip?
-  additionalLinks Json @default("[]")
+ @@index([isPublic, publicModerationStatus, publishedAt])
+ clip VideoClip?
+ additionalLinks Json @default("[]")
 }
+
+model VideoProjectReport {
+ id String @id @default(cuid())
+ projectId String @db.Uuid
+ reporterId String
+ version Int
+ title String
+ publicDescription String
+ linkedWorkIds Json
+ reason String
+ details String
+ status String @default("pending")
+ decisionVersion Int?
+ note String @default("")
+ resolvedById String?
+ resolvedAt DateTime?
+ createdAt DateTime @default(now())
+ project VideoProject @relation(fields:[projectId],references:[id],onDelete:Cascade)
+ reporter User @relation(fields:[reporterId],references:[id],onDelete:Cascade)
+ @@unique([projectId, reporterId, version])
+ @@index([status,createdAt])
+}
+
 model VideoProjectBook {
  projectId String @db.Uuid
  workId String
@@ -814,6 +862,77 @@ model CuratorShopEntry {
   @@id([userId,workId])
   @@unique([userId,position])
   @@index([workId])
+}
+
+model ReadingKit {
+  id String @id @db.Uuid
+  userId String
+  title String
+  notes String @default("")
+  makeDo String @default("")
+  sensoryProfile String @default("")
+  budgetTier String @default("comfortable")
+  isPublic Boolean @default(false)
+  version Int @default(1)
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries ReadingKitEntry[]
+  afternoons ReadingAfternoon[]
+  @@index([userId, deletedAt, updatedAt])
+  @@index([isPublic, deletedAt, updatedAt])
+}
+
+model ReadingKitEntry {
+  kitId String @db.Uuid
+  workId String
+  position Int
+  note String @default("")
+  kit ReadingKit @relation(fields: [kitId], references: [id], onDelete: Cascade)
+  work Work @relation(fields: [workId], references: [id], onDelete: Cascade)
+  @@id([kitId, workId])
+  @@unique([kitId, position])
+  @@index([workId])
+}
+
+model BookshopOutcome {
+  id String @id @db.Uuid
+  userId String
+  workId String?
+  shopName String @default("")
+  outcome String
+  notes String @default("")
+  externalUrl String @default("")
+  visitedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  work Work? @relation(fields: [workId], references: [id], onDelete: SetNull)
+  @@index([userId, deletedAt, createdAt])
+  @@index([workId])
+}
+
+model ReadingAfternoon {
+  id String @id @db.Uuid
+  userId String
+  workId String?
+  kitId String? @db.Uuid
+  date DateTime
+  durationMinutes Int
+  place String
+  weather String
+  pace String
+  notes String @default("")
+  status String @default("planned")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  work Work? @relation(fields: [workId], references: [id], onDelete: SetNull)
+  kit ReadingKit? @relation(fields: [kitId], references: [id], onDelete: SetNull)
+  @@index([userId, deletedAt, date])
 }
 
 model ReadingContext {

@@ -1,0 +1,1 @@
+ALTER TABLE "ReadingKit" ADD COLUMN "sensoryProfile" TEXT NOT NULL DEFAULT '';

@@ -122,7 +122,7 @@ export default async function BookPage({
               </span>
             ))}
           </div>
-          <GetBook title={work.title} author={work.authorName} />
+          <GetBook title={work.title} author={work.authorName} workId={work.id} />
         </div>
       </header>
       <section className="space-y-3">
@@ -197,6 +197,7 @@ export default async function BookPage({
               title={work.title}
               author={work.authorName}
               isbn13={e.isbn13}
+              workId={work.id}
             />
           </article>
         ))}

@@ -146,7 +146,7 @@ export default async function GiftPage({
               >
                 Compare editions
               </Link>
-              <GetBook title={item.work.title} author={item.work.authorName} />
+              <GetBook title={item.work.title} author={item.work.authorName} workId={item.workId} />
             </article>
           ))}
         </section>

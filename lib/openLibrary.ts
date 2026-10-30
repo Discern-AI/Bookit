@@ -57,6 +57,37 @@ export async function searchBooks(
     }),
   );
 }
+export async function searchAuthorWorks(
+  author: string,
+  limit = 8,
+): Promise<OpenLibrarySearchResult[]> {
+  if (!author.trim()) return [];
+  const data = await get(
+    `/search.json?q=${encodeURIComponent(`author:"${author}"`)}&sort=new&limit=${limit}&fields=title,author_name,first_publish_year,isbn,cover_i,key,number_of_pages_median`,
+  );
+  return (data.docs ?? []).map(
+    (doc: {
+      title: string;
+      author_name?: string[];
+      first_publish_year?: number;
+      isbn?: string[];
+      cover_i?: number;
+      key: string;
+      number_of_pages_median?: number;
+    }) => ({
+      title: doc.title,
+      author: doc.author_name?.[0] ?? author,
+      isbn13: doc.isbn?.map(normalizeIsbn).find(Boolean),
+      year: doc.first_publish_year,
+      coverUrl: doc.cover_i
+        ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
+        : undefined,
+      openLibraryWorkId: doc.key.replace("/works/", ""),
+      pageCount: doc.number_of_pages_median,
+    }),
+  );
+}
+
 export async function lookupByIsbn(
   value: string,
 ): Promise<OpenLibrarySearchResult | null> {

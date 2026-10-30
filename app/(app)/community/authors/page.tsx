@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { BookDiscussions } from "@/components/community/BookDiscussions";
+import { FollowAuthor } from "@/components/community/FollowAuthor";
+import { normalizeAuthorName } from "@/lib/author";
 export default async function Page({
   searchParams,
 }: {
@@ -10,6 +13,7 @@ export default async function Page({
   const author = searchParams.author;
   const query = (searchParams.q || "").trim();
   const page = Number(searchParams.page || 0);
+  const session = await auth();
   if (
     !Number.isSafeInteger(page) ||
     page < 0 ||
@@ -49,6 +53,18 @@ export default async function Page({
         skip: page * 20,
         take: 21,
       });
+  const initialFollowed = !!(
+    author && session?.user?.id &&
+    await prisma.followedAuthor.findUnique({
+      where: {
+        userId_authorKey: {
+          userId: session.user.id,
+          authorKey: normalizeAuthorName(author).authorKey,
+        },
+      },
+      select: { userId: true },
+    })
+  );
   const base = author
     ? `/community/authors?author=${encodeURIComponent(author)}`
     : `/community/authors?q=${encodeURIComponent(query)}`;
@@ -72,6 +88,7 @@ export default async function Page({
           catalogue. Names are not verified identities: writers with the same
           name may appear together, and spelling variants may appear separately.
         </p>
+        {author && <FollowAuthor author={author} initialFollowed={initialFollowed} />}
         {author ? (
           <>
             <p>

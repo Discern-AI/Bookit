@@ -230,6 +230,18 @@ export function LibraryView({
             Reading diary
           </Link>
           <Link
+            href="/library/bookshops"
+            className="block text-sm text-shelf-700 mt-4 px-3"
+          >
+            Bookshops
+          </Link>
+          <Link
+            href="/library/reading-life"
+            className="block text-sm text-shelf-700 mt-4 px-3"
+          >
+            Reading Life
+          </Link>
+          <Link
             href="/settings"
             className="block text-sm text-shelf-700 mt-4 px-3"
           >
@@ -609,6 +621,7 @@ export function LibraryView({
                 title={book.title}
                 author={book.author}
                 isbn13={book.isbn13}
+                workId={book.workId}
               />
               {book.description && (
                 <p className="text-sm whitespace-pre-wrap">

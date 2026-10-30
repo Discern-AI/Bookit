@@ -109,6 +109,31 @@ console.log(
   "Passed reading dates, yearly totals, streaks, pace and logging-intent tests.",
 );
 
+const { acquisitionQuery, acquisitionLinks, nearbyBookshopUrl } = require("../lib/acquisition.ts");
+assert.equal(acquisitionQuery("The Left Hand of Darkness", "Ursula K. Le Guin", "9780441478125"), "9780441478125");
+assert.equal(acquisitionQuery(" The Left Hand of Darkness ", " Ursula K. Le Guin "), "The Left Hand of Darkness Ursula K. Le Guin");
+const links = acquisitionLinks("The Left Hand of Darkness", "Ursula K. Le Guin", "9780441478125");
+assert.match(links.libraries, /worldcat\.org/);
+assert.match(links.bookshop, /bookshop\.org/);
+assert.match(links.niceEdits, /9780441478125/);
+assert.equal(nearbyBookshopUrl(51.5074, -0.1278)?.includes("51.5074,-0.1278"), true);
+assert.equal(nearbyBookshopUrl(91, 0), null);
+console.log("Passed acquisition search and coordinate validation tests.");
+
+const { physicalEdition, compareEditionDetails } = require("../lib/edition-metadata.ts");
+const edition = (id, format, year, pages, publisher) => ({ openLibraryId: id, workIds: [], title: id, isbn13: null, isbns: [], publisher, year, pageCount: pages, format, languages: [], translators: [], coverUrl: null });
+assert.equal(physicalEdition(edition("hard", "hardback", 2020, 300, null)), true);
+assert.equal(physicalEdition(edition("ebook", "ebook", 2020, 300, null)), false);
+assert.deepEqual(compareEditionDetails([edition("old", "paperback", 1990, 200, "A"), edition("new", "hardback", 2020, 400, "B")], "newest").map((e) => e.openLibraryId), ["new", "old"]);
+assert.deepEqual(compareEditionDetails([edition("short", "paperback", 1990, 200, "A"), edition("long", "hardback", 2020, 400, "B")], "pages").map((e) => e.openLibraryId), ["long", "short"]);
+console.log("Passed physical-edition and edition comparison tests.");
+
+const { normalizeAuthorName, validAuthorName } = require("../lib/author.ts");
+assert.deepEqual(normalizeAuthorName("  Ursula   K. Le Guin  "), { displayName: "Ursula K. Le Guin", authorKey: "ursula k. le guin" });
+assert.equal(validAuthorName("A"), false);
+assert.equal(validAuthorName("Ursula K. Le Guin"), true);
+console.log("Passed author follow name normalisation tests.");
+
 const { pathSchema } = require("../lib/path-schema.ts");
 const draftPath = { title: "  Into a subject  ", description: "", isPublic: false, entries: [] };
 assert.equal(pathSchema.parse(draftPath).title, "Into a subject");
@@ -455,9 +480,43 @@ console.log("Per-request context consent validation and prompt boundaries passed
   delete process.env.FOLIO_CONTEXT_KEY;delete process.env.FOLIO_CONTEXT_KEY_FILE;
   assert.equal(await sharedContext(owner),null);await assert.rejects(()=>sharedContext(owner,choice));
   console.log("Server context loading: default-off, scoped selections, stale/corrupt/key failure passed");
+  const { videoProjectSchema } = require("../lib/video-projects.ts");
+  const publicVideo = { title: "Reading shelf", platform: "other", status: "editing", script: "private", notes: "private", publishedUrl: "", isPublic: true, publicDescription: "A public shelf tour", additionalLinks: [], books: [{ workId: "work-1" }] };
+  assert.equal(videoProjectSchema.safeParse(publicVideo).success, true);
+  assert.equal(videoProjectSchema.safeParse({ ...publicVideo, publicDescription: "" }).success, false);
+  console.log("Public in-app video publication validation passed");
  } finally {
   if(oldModule)require.cache[prismaPath]=oldModule;else delete require.cache[prismaPath];
   if(oldKey===undefined)delete process.env.FOLIO_CONTEXT_KEY;else process.env.FOLIO_CONTEXT_KEY=oldKey;
   if(priorContextFile!==undefined)process.env.FOLIO_CONTEXT_KEY_FILE=priorContextFile;
  }
 })().catch(error=>{console.error(error);process.exitCode=1;});
+
+const { readingKitSchema, budgetTiers } = require("../lib/reading-kit.ts");
+assert.deepEqual(budgetTiers, ["make_do", "comfortable", "collector", "dream"]);
+assert.equal(readingKitSchema.safeParse({ title: " Quiet Sunday ", isPublic: false, entries: [] }).success, true);
+assert.equal(readingKitSchema.safeParse({ title: "No", entries: [] }).success, false);
+assert.equal(readingKitSchema.safeParse({ title: "Valid kit", budgetTier: "unknown", entries: [] }).success, false);
+assert.equal(readingKitSchema.safeParse({ title: "Valid kit", entries: [{ workId: "work-1", note: "" }, { workId: "work-1", note: "again" }] }).success, false);
+assert.equal(readingKitSchema.safeParse({ title: "Sensory kit", sensoryProfile: "Warm lamp. Quiet music." , entries: [] }).success, true);
+const { buildSensoryProfile } = require("../lib/reading-kit.ts");
+assert.match(buildSensoryProfile("make_do", true, true), /familiar soundtrack/);
+assert.match(buildSensoryProfile("dream", false, true), /Warm dimmable lighting/);
+console.log("Reading Kit validation and private planning checks passed");
+const { readingAfternoonSchema, estimateReadingPages, weatherPlaceSuggestion } = require("../lib/reading-afternoon.ts");
+assert.equal(readingAfternoonSchema.safeParse({ date: "2026-10-30T13:00:00.000Z", durationMinutes: 90, place: "home", weather: "rainy", pace: "steady", workId: null, kitId: null }).success, true);
+assert.equal(readingAfternoonSchema.safeParse({ date: "not-a-date", durationMinutes: 90, place: "home", weather: "rainy", pace: "steady" }).success, false);
+assert.equal(readingAfternoonSchema.safeParse({ date: "2026-10-30T13:00:00.000Z", durationMinutes: 5, place: "home", weather: "rainy", pace: "steady" }).success, false);
+assert.equal(estimateReadingPages(60, "steady"), 25);
+assert.equal(estimateReadingPages(60, "immersive"), 38);
+assert.match(weatherPlaceSuggestion("rainy", "home"), /indoor window/);
+assert.match(weatherPlaceSuggestion("sunny", "park"), /sun protection/);
+console.log("Reading afternoon validation, pace estimate and place guidance checks passed");
+const { bookshopOutcomeSchema, bookshopOutcomes, safeExternalMapUrl } = require("../lib/bookshop-outcome.ts");
+assert.equal(bookshopOutcomes.includes("visited"), true);
+assert.equal(bookshopOutcomes.includes("found_copy"), true);
+assert.equal(bookshopOutcomeSchema.safeParse({ outcome: "visited", shopName: "Independent Books", notes: "Called yesterday", externalUrl: "" }).success, true);
+assert.equal(bookshopOutcomeSchema.safeParse({ outcome: "claimed_purchase", shopName: "Shop" }).success, false);
+assert.match(safeExternalMapUrl("https://www.google.com/maps/search/bookshops/@51,0,12z") ?? "", /google\.com\/maps/);
+assert.equal(safeExternalMapUrl("https://example.com/bookshop"), null);
+console.log("Bookshop outcome privacy, identity and external-map URL checks passed");

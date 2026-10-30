@@ -4,7 +4,12 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { AddBook } from "@/components/library/AddBook";
-import { languageName, type RemoteEdition } from "@/lib/edition-metadata";
+import {
+  compareEditionDetails,
+  languageName,
+  physicalEdition,
+  type RemoteEdition,
+} from "@/lib/edition-metadata";
 import type { OpenLibrarySearchResult } from "@/lib/openLibrary";
 import type { LibraryBook } from "@/lib/book-data";
 export function RemoteEditions({
@@ -22,6 +27,9 @@ export function RemoteEditions({
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [language, setLanguage] = useState("");
+  const [format, setFormat] = useState("");
+  const [sort, setSort] = useState<"catalogue" | "newest" | "pages" | "publisher">("catalogue");
+  const [physicalOnly, setPhysicalOnly] = useState(false);
   const [selected, setSelected] = useState<OpenLibrarySearchResult | null>(
     null,
   );
@@ -80,16 +88,23 @@ export function RemoteEditions({
       setSaving(false);
     }
   }
-  const visible = editions?.filter(
-    (e) =>
-      (!language || e.languages.includes(language)) &&
-      `${e.title} ${e.publisher ?? ""} ${e.translators.join(" ")} ${e.isbn13 ?? ""} ${e.format}`
-        .toLowerCase()
-        .includes(query.trim().toLowerCase()),
-  );
+  const visible = editions
+    ? compareEditionDetails(
+        editions.filter(
+          (e) =>
+            (!language || e.languages.includes(language)) &&
+            (!format || e.format === format) &&
+            (!physicalOnly || physicalEdition(e)) &&
+            `${e.title} ${e.publisher ?? ""} ${e.translators.join(" ")} ${e.isbn13 ?? ""} ${e.format}`
+              .toLowerCase()
+              .includes(query.trim().toLowerCase()),
+        ),
+        sort,
+      )
+    : undefined;
   return (
-    <section className="space-y-4 border-t border-ink-200 pt-4">
-      <h3 className="font-display text-xl">More editions &amp; translations</h3>
+    <section id="edition-comparison" className="space-y-4 border-t border-ink-200 pt-4">
+      <h3 className="font-display text-xl">Compare editions &amp; translations</h3>
       <p className="text-sm text-ink-500">
         Explore Open Library records. Choosing an edition checks its identity
         and saves catalogue metadata, then lets you choose a library shelf.
@@ -129,9 +144,50 @@ export function RemoteEditions({
                 ))}
             </select>
           </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="block text-sm">
+              Format
+              <select
+                aria-label="Edition format"
+                className="block w-full rounded border border-ink-200 bg-paper-50 p-2"
+                value={format}
+                onChange={(e) => setFormat(e.target.value)}
+              >
+                <option value="">All formats</option>
+                <option value="hardback">Hardback</option>
+                <option value="paperback">Paperback</option>
+                <option value="large_print">Large print</option>
+                <option value="ebook">E-book</option>
+                <option value="audiobook">Audiobook</option>
+                <option value="unknown">Format not recorded</option>
+              </select>
+            </label>
+            <label className="block text-sm">
+              Compare by
+              <select
+                aria-label="Edition sort"
+                className="block w-full rounded border border-ink-200 bg-paper-50 p-2"
+                value={sort}
+                onChange={(e) => setSort(e.target.value as typeof sort)}
+              >
+                <option value="catalogue">Loaded order</option>
+                <option value="newest">Newest year</option>
+                <option value="pages">Most pages</option>
+                <option value="publisher">Publisher name</option>
+              </select>
+            </label>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={physicalOnly}
+              onChange={(e) => setPhysicalOnly(e.target.checked)}
+            />
+            Physical editions only (hardback, paperback or large print)
+          </label>
           <p className="text-xs text-ink-500">
             Filters apply to the {editions.length} loaded records. Load more to
-            explore further.
+            compare further. “Nice edition” is subjective; this view compares source-recorded details and never infers value or collectability.
           </p>
         </div>
       )}

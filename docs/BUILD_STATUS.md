@@ -19,6 +19,10 @@ Source specifications are preserved in `specifications/Folio_Implementation_Brie
 - Settings account summary, import progress/retry and JSON library export.
 - Chat UI with Markdown, cancel/retry, suggestion chips, ISBN book cards, and streaming Claude API integration. Context is assembled from the authenticated user's current books, recent reads, TBR, shelf totals and up to 1,000 existing titles. Common reading-log commands now open a confirmation form; other actions are not available.
 - Loading/error states and mobile navigation to Settings.
+- Added a bounded public in-app video-feed foundation: explicit opt-in, public title/description/linked books, public clip and caption playback, private scripts/notes, and active-moderation visibility. External provider connections and automated cross-posting remain unbuilt.
+- Added a private nearby-bookshops screen under the Library: explicit browser geolocation opens Google Maps, while coordinates are not persisted. Users can privately save shop/outcome notes linked to library books; availability, stock and visits are never inferred.
+- Private reading-afternoon foundation under Reading Life: owner-scoped plans for date, duration, place and selected conditions, with library-book and Reading Kit associations, local pace estimates and cancellation. Weather remains user-entered and no live forecast provider is claimed.
+- Private Reading Kit foundation under `/library/reading-life`: owner-scoped kits and library-work entries, make-do notes, budget tiers, creation/deletion UI and local deterministic sensory suggestions (lighting, sound, comfort and books nearby). Public publication and marketplace transactions remain out of scope.
 
 ## Reading and library continuation
 
@@ -563,3 +567,24 @@ The [consolidated build checklist](BUILD_CHECKLIST.md) replaces the former remai
 - Source profile/diary content is not inserted into journal records or public artifacts. The UI explicitly explains that generated replies may reflect personal context, remain in saved chat or a chosen book journal, and be resent as conversation history. Removal/deletion cannot recall already-dispatched requests or erase previous replies; a new conversation excludes earlier replies. Existing explicit-publication boundaries remain in force.
 - No migration, credentials or live provider calls. The production server used for validation had Claude disabled. Live provider behavior and recommendation quality remain deferred. Updated the consolidated checklist: the next planned feature area is discovery (author releases/acquisition/nearby shops/nice editions).
 - Validation: production build with lint/type checks, unit suite and all 12 unique targeted browser scenarios passed across context sharing, diary, profile, bookshelf and reading suites. Unit fixtures exercise the exact server loader for default-off/no reads, profile-only and diary-only selection, owner isolation, stale revisions, corrupt binding and unavailable keys; prompt boundary tests pass. Browser checks cover preview, removal, one-request clearing after failure, no automatic retry sharing, foreign/anonymous denial, stale/deleted selection rejection, unchanged source journal storage and mobile overflow, plus existing book-journal/chat logging regressions. No full-product or live-provider regression is claimed.
+
+
+## Nice-edition comparison foundation - 28 October 2026
+
+- Extended the existing Open Library edition comparison with format and physical-edition filters, year/page-count/publisher sorting, and explicit source-missing-language treatment. This supports comparing recorded attributes without claiming that any edition is aesthetically nice, rare or valuable.
+- Cover display, special-edition classification, live rarity/condition data and pricing remain unbuilt. The UI uses source-recorded format metadata and never infers collectability from title or catalogue presence.
+- Unit and type coverage was added for physical format recognition and edition sorting. Validation passed the unit suite, standalone TypeScript check and production build; no browser regression, live provider, condition market or pricing call was made.
+
+
+## Acquisition and nearby-shop foundation - 28 October 2026
+
+- Enhanced the existing Get this book panel into a unified Find or get this book panel used on public book pages, library details and gift lists. It preserves ISBN-aware external searches for WorldCat libraries and Bookshop.org UK, adds rare/collectable edition searching and links edition comparison back to the canonical work page.
+- Nearby-bookshop search is permission-aware: it requests browser location only after the reader presses the button, opens a coordinate-based Google Maps search when valid, and falls back to a general nearby-bookshop search on denial or unsupported location. No location is stored by Bookit, and external pages still require edition, stock, borrowing and price checks.
+- Validation added for acquisition query selection, external-link construction and geographic coordinate bounds. Unit suite, standalone TypeScript checking and the production build with lint/type checks pass. The implementation is a provider-link foundation, not live inventory, availability, price, geocoding or purchase integration.
+
+
+## Followed-author discovery foundation - 28 October 2026
+
+- Added owner-scoped followed-author records keyed by a normalised author-name identity. Existing catalogue author communities now provide follow/unfollow controls, and Browse displays bounded Open Library catalogue matches for up to four recently followed names. Names remain explicitly unverified: spelling variants and shared names are not merged into canonical author identities.
+- The provider search labels matches as catalogue discoveries rather than confirmed releases, stock or publication availability. Provider failures retain an honest per-author unavailable state while the rest of Browse continues to load.
+- Applied the additive local `20261028010000_followed_authors` migration. Validation passed: Prisma generation, migration deployment, unit suite, standalone TypeScript checking and production build with lint/type checks. No live Open Library call, browser regression suite, notifications, canonical author model or deployment was performed in this continuation.

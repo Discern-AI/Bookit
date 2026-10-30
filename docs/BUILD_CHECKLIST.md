@@ -46,11 +46,11 @@ No overall completion percentage is assigned: an integration, marketplace or rel
 - [ ] **Deferred:** successful real-provider verification of the edition metadata flow (earlier live calls timed out).
 - [ ] **Partial:** edition credits exist; canonical translation/translator identities and fuller translation hierarchy remain outstanding.
 - [x] Browse catalogue search, Continue reading and author catalogue searches.
-- [ ] **Not built:** followed-author new-release feed.
+- [ ] **Partial:** followed-author discovery foundation exists; readers can follow/unfollow unverified catalogue author names and Browse shows bounded Open Library catalogue matches. Release timing, canonical author identities, notifications and live-provider verification remain unfinished.
 - [x] Manual reading-path creation, ordering, publishing and following.
 - [ ] **Partial:** AI path generation, expert verification and automatic path progress.
 - [x] External bookshop/library search links.
-- [ ] **Partial:** live borrowing availability, retail stock/prices and location-aware acquisition. Search links are not availability claims.
+- [ ] **Partial:** a unified external acquisition panel now provides ISBN/title searches for libraries, UK retail, rare/collectable editions and explicit location-aware nearby-bookshop opening. Live borrowing availability, retail stock/prices and location-aware provider results remain unbuilt.
 - [ ] **Partial:** paginate/optimise larger reading-session histories; the new personal-context diary pagination does not resolve this separate reading-diary backlog.
 
 ## 4. Gifts and community
@@ -78,8 +78,9 @@ No overall completion percentage is assigned: an integration, marketplace or rel
 - [x] Private work-linked video plans, scripts/status, one bounded private upload, playback/download and camera/microphone recording.
 - [x] Manual WebVTT captions, posting-file ZIP downloads and manually recorded external platform links.
 - [ ] **Partial:** scalable media storage/quotas, media processing/transcoding and scanning; current bounded clips are stored in PostgreSQL.
-- [ ] **Not built:** public video publication/feed and associated moderation.
-- [ ] **Not built:** TikTok/Instagram/YouTube account connections, automated cross-posting and verified publication states. Recording a URL or downloading files does not publish a video.
+- [x] Bounded public in-app video publication/feed foundation: explicit description and feed opt-in, public clip playback/captions, book links and moderated active/unpublished visibility; scripts/notes remain private.
+- [x] Public-video reporting and moderator hide/dismiss/restore foundation. Reports snapshot public title, description and linked work IDs only; private scripts/notes are excluded.
+- [ ] **Not built:** TikTok/Instagram/YouTube account connections, automated cross-posting and verified external publication states. In-app publication and recorded external URLs do not publish to provider platforms.
 - [ ] **Not built:** automatic transcription and multiple caption-language tracks.
 - [x] Optional curated shops, ordered book recommendations, retailer links, affiliate disclosure and explicit publication.
 - [ ] **Partial:** live retailer/affiliate integration. Existing shops do not verify stock/prices or enrol users in affiliate programmes.
@@ -91,11 +92,12 @@ No overall completion percentage is assigned: an integration, marketplace or rel
 - [x] Dedicated saved-profile/diary plaintext export, separate from library export; complete-export failure on unreadable records.
 - [x] Per-request opt-in AI context controls: saved profile and up to three selected diary entries, exact preview, explicit confirmation, removal, default-off state and consent clearing on request dispatch. Server checks ownership/revisions and decrypts only selections. Local privacy/prompt and browser tests pass; no live Claude calls.
 - [ ] **Deferred:** end-to-end live verification of opted-in context after API-key setup.
+- [x] Private Reading Kit foundation: owner-scoped private plans, library-work entries, make-do notes and budget tiers; public publication remains out of scope.
 - [ ] **Not built:** Reading Life marketplace MVP for Reading Objects and Books. Define catalogue/listing behavior and book-journal associations before transactional scope.
-- [ ] **Not built:** sensory reading-kit generation.
-- [ ] **Not built:** reading-afternoon planning combining weather, places and reading pace.
-- [ ] **Not built:** nearby bookshops screen and saved book-related outcomes.
-- [ ] **Not built:** nice-editions finder beyond the existing edition comparison/search foundation.
+- [x] Local sensory Reading Kit foundation: deterministic private atmosphere, lighting, sound and comfort suggestions saved with each kit; no live provider inference.
+- [x] Private reading-afternoon foundation: user-entered conditions, places, duration, pace and library/kit associations; local page estimates and place guidance, with no live weather or provider claims.
+- [x] Nearby bookshops screen: explicit-location Google Maps search and owner-scoped private outcomes. Coordinates are not stored and external results do not verify stock or opening hours.
+- [ ] **Partial:** edition comparison now supports physical-only filtering and sorting by loaded order, year, pages or publisher. Nice/collectable value judgments, cover-quality comparison, special-edition classification and live pricing remain not built.
 
 ## 7. Public-launch gates
 

@@ -51,6 +51,29 @@ export function languageName(code: string): string {
     )[code] ?? code
   );
 }
+export function physicalEdition(e: RemoteEdition) {
+  return e.format === "hardback" || e.format === "paperback" || e.format === "large_print";
+}
+
+export function compareEditionDetails(
+  editions: RemoteEdition[],
+  sort: "catalogue" | "newest" | "pages" | "publisher" = "catalogue",
+) {
+  const copy = [...editions];
+  if (sort === "newest") {
+    return copy.sort((a, b) => (b.year ?? -1) - (a.year ?? -1));
+  }
+  if (sort === "pages") {
+    return copy.sort((a, b) => (b.pageCount ?? -1) - (a.pageCount ?? -1));
+  }
+  if (sort === "publisher") {
+    return copy.sort((a, b) =>
+      (a.publisher ?? "zzz").localeCompare(b.publisher ?? "zzz"),
+    );
+  }
+  return copy;
+}
+
 export function parseEdition(value: unknown): RemoteEdition | null {
   const data = record(value);
   const key =

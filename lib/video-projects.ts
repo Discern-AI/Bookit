@@ -29,6 +29,8 @@ export const videoProjectSchema = z
     script: z.string().max(20000),
     notes: z.string().max(5000),
     publishedUrl: z.string().trim().max(2000),
+    isPublic: z.boolean().default(false),
+    publicDescription: z.string().trim().max(1000).default(""),
     additionalLinks: additionalVideoLinksSchema.default([]),
     books: z
       .array(z.object({ workId: z.string().min(1).max(100) }))
@@ -36,6 +38,8 @@ export const videoProjectSchema = z
       .max(12),
   })
   .superRefine((d, ctx) => {
+    if (d.isPublic && d.publicDescription.length < 10)
+      ctx.addIssue({ code: "custom", message: "Add at least 10 characters of public video description." });
     if (new Set(d.books.map((b) => b.workId)).size !== d.books.length)
       ctx.addIssue({ code: "custom", message: "Select each book once." });
     const seen = new Set<string>();
@@ -125,6 +129,8 @@ export function serializeVideoProject(
     script: p.script,
     notes: p.notes,
     publishedUrl: p.publishedUrl,
+    isPublic: p.isPublic,
+    publicDescription: p.publicDescription,
     additionalLinks: additionalVideoLinksSchema.parse(p.additionalLinks),
     books: p.books.map((b) => ({
       workId: b.workId,

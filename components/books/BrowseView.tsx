@@ -18,11 +18,13 @@ export function BrowseView({
   authors,
   catalogue,
   paths,
+  followedReleases,
 }: {
   paths: PathCardData[];
   currentBooks: LibraryBook[];
   authors: string[];
   catalogue: OpenLibrarySearchResult[];
+  followedReleases: { author: string; books: OpenLibrarySearchResult[] }[];
 }) {
   const [current, setCurrent] = useState(currentBooks);
   useEffect(() => setCurrent(currentBooks), [currentBooks]);
@@ -97,6 +99,38 @@ export function BrowseView({
                 </Button>
               </div>
             ))}
+        </section>
+      )}
+      {!!followedReleases.length && (
+        <section className="space-y-5" aria-label="Followed author catalogue matches">
+          <header>
+            <h2 className="font-display text-2xl">Recent work by followed authors</h2>
+            <p className="text-sm text-ink-500 mt-1">
+              Catalogue matches from Open Library. Availability and release timing are not verified.
+            </p>
+          </header>
+          {followedReleases.map(({ author, books }) => (
+            <section key={author} className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="font-display text-xl">{author}</h3>
+                <Link className="text-sm text-shelf-700" href={`/community/authors?author=${encodeURIComponent(author)}`}>
+                  Author community
+                </Link>
+              </div>
+              {books.length ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {books.map((book, i) => (
+                    <article key={`${book.openLibraryWorkId ?? book.title}-${i}`} className="space-y-2">
+                      <BookCardVertical book={book} />
+                      <Button size="sm" variant="secondary" onClick={() => setSelected(book)}>Add to library</Button>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-ink-500">Recent catalogue matches could not be loaded.</p>
+              )}
+            </section>
+          ))}
         </section>
       )}
       <section className="space-y-4">

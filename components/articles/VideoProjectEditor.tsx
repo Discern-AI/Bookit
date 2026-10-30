@@ -23,6 +23,8 @@ export function VideoProjectEditor({
     script: initial?.script || "",
     notes: initial?.notes || "",
     publishedUrl: initial?.publishedUrl || "",
+    isPublic: initial?.isPublic || false,
+    publicDescription: initial?.publicDescription || "",
     additionalLinks: initial?.additionalLinks || [],
   });
   const [selected, setSelected] = useState<VideoBook[]>(initial?.books || []);
@@ -342,8 +344,16 @@ export function VideoProjectEditor({
           <p className="text-sm">
             Posted elsewhere records a link you provide; Folio does not verify
             or publish it. Returning to an earlier status clears all recorded
-            links when you save. Your plan remains private in every status.
+            links when you save. Publication below is separate from any external
+            post.
           </p>
+          <section className="space-y-3 border-t pt-4" aria-label="In-app public video">
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" checked={draft.isPublic} onChange={(e) => setDraft({ ...draft, isPublic: e.target.checked })} />
+              <span><strong>Publish in the Folio video feed</strong><br />Your title, description, linked book titles and uploaded clip can become public. Scripts and private notes stay private.</span>
+            </label>
+            {draft.isPublic && <label className="block">Public description<textarea aria-label="Public video description" className={field} rows={4} maxLength={1000} value={draft.publicDescription} onChange={(e) => setDraft({ ...draft, publicDescription: e.target.value })} placeholder="Describe the video for public readers..." /></label>}
+          </section>
           <label className="block">
             Video script
             <textarea
