@@ -62,6 +62,20 @@ type Journal = {
     publishedUrl: string;
     additionalLinks: { platform: keyof typeof VIDEO_PLATFORMS; url: string }[];
   }[];
+  readingKits: { id: string; title: string; budgetTier: string }[];
+  readingAfternoons: {
+    id: string;
+    date: string;
+    durationMinutes: number;
+    place: string;
+    status: string;
+  }[];
+  bookshopOutcomes: {
+    id: string;
+    shopName: string;
+    outcome: string;
+    visitedAt: string | null;
+  }[];
   clubReadings: {
     id: string;
     startsOn: string | null;
@@ -121,6 +135,15 @@ export function BookJournal({
                   gifts: [...old.gifts, ...d.gifts],
                   cardProjects: [...old.cardProjects, ...d.cardProjects],
                   videoProjects: [...old.videoProjects, ...d.videoProjects],
+                  readingKits: [...old.readingKits, ...d.readingKits],
+                  readingAfternoons: [
+                    ...old.readingAfternoons,
+                    ...d.readingAfternoons,
+                  ],
+                  bookshopOutcomes: [
+                    ...old.bookshopOutcomes,
+                    ...d.bookshopOutcomes,
+                  ],
                   shopEntry: old.shopEntry || d.shopEntry,
                   clubReadings: [...old.clubReadings, ...d.clubReadings],
                   clubPosts: [...old.clubPosts, ...d.clubPosts],
@@ -555,6 +578,37 @@ export function BookJournal({
                   >
                     {project.title}
                   </Link>
+                </p>
+              ))}
+            </section>
+          )}
+          {(data.readingKits.length > 0 ||
+            data.readingAfternoons.length > 0 ||
+            data.bookshopOutcomes.length > 0) && (
+            <section aria-label="Your Reading Life plans" className="space-y-3">
+              <h2 className="font-display text-2xl">Your Reading Life plans</h2>
+              {data.readingKits.map((kit) => (
+                <p key={kit.id}>
+                  <Link className="underline" href="/library/reading-life">
+                    Reading kit: {kit.title}
+                  </Link>{" "}
+                  / {kit.budgetTier.replace("_", " ")}
+                </p>
+              ))}
+              {data.readingAfternoons.map((afternoon) => (
+                <p key={afternoon.id}>
+                  <Link className="underline" href="/library/reading-life">
+                    Reading afternoon: {afternoon.date.slice(0, 10)}
+                  </Link>{" "}
+                  / {afternoon.durationMinutes} minutes / {afternoon.place}
+                </p>
+              ))}
+              {data.bookshopOutcomes.map((outcome) => (
+                <p key={outcome.id}>
+                  <Link className="underline" href="/library/bookshops">
+                    Bookshop outcome: {outcome.outcome.replaceAll("_", " ")}
+                  </Link>
+                  {outcome.shopName ? ` / ${outcome.shopName}` : ""}
                 </p>
               ))}
             </section>

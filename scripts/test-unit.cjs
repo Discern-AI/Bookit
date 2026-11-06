@@ -519,4 +519,7 @@ assert.equal(bookshopOutcomeSchema.safeParse({ outcome: "visited", shopName: "In
 assert.equal(bookshopOutcomeSchema.safeParse({ outcome: "claimed_purchase", shopName: "Shop" }).success, false);
 assert.match(safeExternalMapUrl("https://www.google.com/maps/search/bookshops/@51,0,12z") ?? "", /google\.com\/maps/);
 assert.equal(safeExternalMapUrl("https://example.com/bookshop"), null);
+assert.equal(safeExternalMapUrl("https://evilgoogle.com/maps/search/bookshops"), null);
+assert.equal(safeExternalMapUrl("https://user:secret@www.google.com/maps/search/bookshops"), null);
+assert.equal(safeExternalMapUrl("https://www.google.com/search?q=bookshops"), null);
 console.log("Bookshop outcome privacy, identity and external-map URL checks passed");

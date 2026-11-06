@@ -1,48 +1,193 @@
-import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/auth";
+import { sameOriginJson } from "@/lib/book-journal";
 import { prisma } from "@/lib/prisma";
 import { readingAfternoonSchema } from "@/lib/reading-afternoon";
 
+const saveSchema = z.object({
+  afternoonId: z.string().uuid(),
+  version: z.number().int().min(0),
+  afternoon: readingAfternoonSchema,
+});
+const deleteSchema = z.object({
+  afternoonId: z.string().uuid(),
+  version: z.number().int().positive(),
+});
+
 export async function GET() {
   const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const afternoons = await prisma.readingAfternoon.findMany({ where: { userId: session.user.id, deletedAt: null }, include: { work: { select: { id: true, title: true, authorName: true } } }, orderBy: [{ date: "asc" }, { id: "asc" }], take: 50 });
+  if (!session?.user?.id)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const afternoons = await prisma.readingAfternoon.findMany({
+    where: { userId: session.user.id, deletedAt: null },
+    include: {
+      work: { select: { id: true, title: true, authorName: true } },
+    },
+    orderBy: [{ date: "asc" }, { id: "asc" }],
+    take: 50,
+  });
   return NextResponse.json({ afternoons });
 }
 
 export async function POST(request: Request) {
   const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const body = await request.json().catch(() => null);
-  const parsed = readingAfternoonSchema.safeParse(body?.afternoon);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message || "Invalid reading afternoon." }, { status: 400 });
-  if (parsed.data.workId) {
-    const work = await prisma.work.findFirst({ where: { id: parsed.data.workId, editions: { some: { userBooks: { some: { userId: session.user.id } } } } }, select: { id: true } });
-    if (!work) return NextResponse.json({ error: "That book is not in your library." }, { status: 409 });
-  }
-  if (parsed.data.kitId) {
-    const kit = await prisma.readingKit.findFirst({ where: { id: parsed.data.kitId, userId: session.user.id, deletedAt: null }, select: { id: true } });
-    if (!kit) return NextResponse.json({ error: "That reading kit is not available." }, { status: 409 });
-  }
-  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  if (typeof body.afternoonId === "string" && !uuid.test(body.afternoonId)) return NextResponse.json({ error: "Invalid afternoon identity." }, { status: 400 });
-  const id = typeof body.afternoonId === "string" ? body.afternoonId : randomUUID();
-  if (typeof body.afternoonId === "string") {
-    const owner = await prisma.readingAfternoon.findFirst({ where: { id, userId: session.user.id, deletedAt: null }, select: { id: true } });
-    if (!owner) return NextResponse.json({ error: "Reading afternoon not found." }, { status: 404 });
-  }
-  const data = { userId: session.user.id, workId: parsed.data.workId, kitId: parsed.data.kitId, date: new Date(parsed.data.date), durationMinutes: parsed.data.durationMinutes, place: parsed.data.place, weather: parsed.data.weather, pace: parsed.data.pace, notes: parsed.data.notes, status: parsed.data.status };
-  await prisma.readingAfternoon.upsert({ where: { id }, create: { id, ...data }, update: data });
-  return NextResponse.json({ afternoonId: id });
+  if (!session?.user?.id)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!sameOriginJson(request))
+    return NextResponse.json({ error: "Invalid request." }, { status: 403 });
+  const parsed = saveSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success)
+    return NextResponse.json(
+      {
+        error: parsed.error.issues[0]?.message || "Invalid reading afternoon.",
+      },
+      { status: 400 },
+    );
+  const { afternoonId, version, afternoon } = parsed.data;
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"reading-afternoon:" + afternoonId}))`;
+    const old = await tx.readingAfternoon.findUnique({
+      where: { id: afternoonId },
+    });
+    if (old && old.userId !== session.user.id)
+      return NextResponse.json(
+        { error: "Reading afternoon not found." },
+        { status: 404 },
+      );
+    if (old?.deletedAt)
+      return NextResponse.json(
+        { error: "This reading afternoon was deleted. Reload before saving." },
+        { status: 409 },
+      );
+    const date = new Date(afternoon.date);
+    const same =
+      !!old &&
+      old.date.getTime() === date.getTime() &&
+      old.durationMinutes === afternoon.durationMinutes &&
+      old.place === afternoon.place &&
+      old.weather === afternoon.weather &&
+      old.pace === afternoon.pace &&
+      old.workId === afternoon.workId &&
+      old.kitId === afternoon.kitId &&
+      old.notes === afternoon.notes &&
+      old.status === afternoon.status;
+    if (old && old.version !== version) {
+      if (same && old.version === version + 1)
+        return NextResponse.json({ afternoonId, version: old.version });
+      return NextResponse.json(
+        {
+          error:
+            "This reading afternoon changed elsewhere. Reload before saving.",
+        },
+        { status: 409 },
+      );
+    }
+    if (!old && version !== 0)
+      return NextResponse.json(
+        { error: "Reload before saving." },
+        { status: 409 },
+      );
+    if (same) return NextResponse.json({ afternoonId, version: old!.version });
+    if (afternoon.workId) {
+      const work = await tx.work.findFirst({
+        where: {
+          id: afternoon.workId,
+          editions: {
+            some: { userBooks: { some: { userId: session.user.id } } },
+          },
+        },
+        select: { id: true },
+      });
+      if (!work)
+        return NextResponse.json(
+          { error: "That book is not in your library." },
+          { status: 409 },
+        );
+    }
+    if (afternoon.kitId) {
+      const kit = await tx.readingKit.findFirst({
+        where: {
+          id: afternoon.kitId,
+          userId: session.user.id,
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+      if (!kit)
+        return NextResponse.json(
+          { error: "That reading kit is not available." },
+          { status: 409 },
+        );
+    }
+    const data = {
+      workId: afternoon.workId,
+      kitId: afternoon.kitId,
+      date,
+      durationMinutes: afternoon.durationMinutes,
+      place: afternoon.place,
+      weather: afternoon.weather,
+      pace: afternoon.pace,
+      notes: afternoon.notes,
+      status: afternoon.status,
+    };
+    const saved = old
+      ? await tx.readingAfternoon.update({
+          where: { id: afternoonId },
+          data: { ...data, version: { increment: 1 } },
+        })
+      : await tx.readingAfternoon.create({
+          data: { id: afternoonId, userId: session.user.id, ...data },
+        });
+    return NextResponse.json({ afternoonId, version: saved.version });
+  });
 }
 
 export async function DELETE(request: Request) {
   const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const id = new URL(request.url).searchParams.get("afternoonId") ?? "";
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) return NextResponse.json({ error: "Invalid afternoon identity." }, { status: 400 });
-  const result = await prisma.readingAfternoon.updateMany({ where: { id, userId: session.user.id, deletedAt: null }, data: { deletedAt: new Date(), status: "cancelled" } });
-  if (!result.count) return NextResponse.json({ error: "Reading afternoon not found." }, { status: 404 });
-  return NextResponse.json({ deleted: true });
+  if (!session?.user?.id)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!sameOriginJson(request))
+    return NextResponse.json({ error: "Invalid request." }, { status: 403 });
+  const parsed = deleteSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success)
+    return NextResponse.json(
+      { error: "Invalid cancellation request." },
+      { status: 400 },
+    );
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"reading-afternoon:" + parsed.data.afternoonId}))`;
+    const old = await tx.readingAfternoon.findUnique({
+      where: { id: parsed.data.afternoonId },
+    });
+    if (!old || old.userId !== session.user.id)
+      return NextResponse.json(
+        { error: "Reading afternoon not found." },
+        { status: 404 },
+      );
+    if (old.deletedAt) return NextResponse.json({ deleted: true });
+    if (old.version !== parsed.data.version)
+      return NextResponse.json(
+        {
+          error:
+            "This reading afternoon changed elsewhere. Reload before cancelling.",
+        },
+        { status: 409 },
+      );
+    await tx.readingAfternoon.update({
+      where: { id: old.id },
+      data: {
+        workId: null,
+        kitId: null,
+        place: "home",
+        weather: "indoors",
+        pace: "steady",
+        notes: "",
+        status: "cancelled",
+        deletedAt: new Date(),
+        version: { increment: 1 },
+      },
+    });
+    return NextResponse.json({ deleted: true });
+  });
 }

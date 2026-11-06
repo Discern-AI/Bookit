@@ -45,6 +45,9 @@ export async function GET(
     discussionPosts,
     cardProjects,
     videoProjects,
+    readingKits,
+    readingAfternoons,
+    bookshopOutcomes,
   ] = await Promise.all([
     prisma.userBook.findMany({
       where: { userId, edition: { workId } },
@@ -166,6 +169,38 @@ export async function GET(
       skip,
       take: 51,
     }),
+    prisma.readingKit.findMany({
+      where: { userId, deletedAt: null, entries: { some: { workId } } },
+      select: { id: true, title: true, budgetTier: true },
+      orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
+      skip,
+      take: 51,
+    }),
+    prisma.readingAfternoon.findMany({
+      where: { userId, workId, deletedAt: null },
+      select: {
+        id: true,
+        date: true,
+        durationMinutes: true,
+        place: true,
+        status: true,
+      },
+      orderBy: [{ date: "desc" }, { id: "asc" }],
+      skip,
+      take: 51,
+    }),
+    prisma.bookshopOutcome.findMany({
+      where: { userId, workId, deletedAt: null },
+      select: {
+        id: true,
+        shopName: true,
+        outcome: true,
+        visitedAt: true,
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+      skip,
+      take: 51,
+    }),
   ]);
   const challenges = (await readingChallenges(userId))
     .filter(
@@ -201,6 +236,9 @@ export async function GET(
       discussionPosts: discussionPosts.slice(0, 50),
       cardProjects: cardProjects.slice(0, 50),
       videoProjects: videoProjects.slice(0, 50),
+      readingKits: readingKits.slice(0, 50),
+      readingAfternoons: readingAfternoons.slice(0, 50),
+      bookshopOutcomes: bookshopOutcomes.slice(0, 50),
       shopEntry,
       hasMore: [
         entries,
@@ -213,6 +251,9 @@ export async function GET(
         discussionPosts,
         cardProjects,
         videoProjects,
+        readingKits,
+        readingAfternoons,
+        bookshopOutcomes,
       ].some((a) => a.length > 50),
     },
     { headers: { "Cache-Control": "no-store" } },

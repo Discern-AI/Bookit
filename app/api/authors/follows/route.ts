@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { normalizeAuthorName, validAuthorName } from "@/lib/author";
+import { sameOriginJson } from "@/lib/book-journal";
 
 function authorInput(value: unknown) {
   if (typeof value !== "string" || !validAuthorName(value)) return null;
@@ -25,12 +26,21 @@ export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const parsed = z.object({ author: z.string() }).safeParse(await request.json().catch(() => null));
+  if (!sameOriginJson(request))
+    return NextResponse.json({ error: "Invalid request." }, { status: 403 });
+  const parsed = z
+    .object({ author: z.string() })
+    .safeParse(await request.json().catch(() => null));
   const input = parsed.success ? authorInput(parsed.data.author) : null;
   if (!input)
-    return NextResponse.json({ error: "Enter a valid author name." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Enter a valid author name." },
+      { status: 400 },
+    );
   await prisma.followedAuthor.upsert({
-    where: { userId_authorKey: { userId: session.user.id, authorKey: input.authorKey } },
+    where: {
+      userId_authorKey: { userId: session.user.id, authorKey: input.authorKey },
+    },
     create: { userId: session.user.id, ...input },
     update: { displayName: input.displayName },
   });
@@ -41,9 +51,17 @@ export async function DELETE(request: Request) {
   const session = await auth();
   if (!session?.user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const input = authorInput(new URL(request.url).searchParams.get("author") ?? "");
+  const origin = request.headers.get("origin");
+  if (origin && origin !== new URL(request.url).origin)
+    return NextResponse.json({ error: "Invalid request." }, { status: 403 });
+  const input = authorInput(
+    new URL(request.url).searchParams.get("author") ?? "",
+  );
   if (!input)
-    return NextResponse.json({ error: "Enter a valid author name." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Enter a valid author name." },
+      { status: 400 },
+    );
   await prisma.followedAuthor.deleteMany({
     where: { userId: session.user.id, authorKey: input.authorKey },
   });

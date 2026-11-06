@@ -1,6 +1,14 @@
 import { z } from "zod";
 
-export const bookshopOutcomes = ["saved_search", "planned_visit", "visited", "asked_about", "found_copy", "unavailable", "ordered_elsewhere"] as const;
+export const bookshopOutcomes = [
+  "saved_search",
+  "planned_visit",
+  "visited",
+  "asked_about",
+  "found_copy",
+  "unavailable",
+  "ordered_elsewhere",
+] as const;
 export const bookshopOutcomeSchema = z.object({
   workId: z.string().min(1).max(100).nullable().default(null),
   shopName: z.string().trim().max(160).default(""),
@@ -13,6 +21,15 @@ export const bookshopOutcomeSchema = z.object({
 export function safeExternalMapUrl(value: string) {
   try {
     const url = new URL(value);
-    return url.protocol === "https:" && url.hostname.endsWith("google.com") ? url.toString() : null;
-  } catch { return null; }
+    const host = url.hostname.toLowerCase();
+    return url.protocol === "https:" &&
+      !url.username &&
+      !url.password &&
+      (host === "google.com" || host.endsWith(".google.com")) &&
+      url.pathname.startsWith("/maps/")
+      ? url.toString()
+      : null;
+  } catch {
+    return null;
+  }
 }

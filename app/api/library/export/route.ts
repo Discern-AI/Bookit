@@ -38,6 +38,21 @@ export async function GET() {
     include: shopInclude,
   });
   const challenges = await readingChallenges(session.user.id);
+  const readingKits = await prisma.readingKit.findMany({
+    where: { userId: session.user.id, deletedAt: null },
+    include: {
+      entries: { orderBy: { position: "asc" } },
+    },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+  });
+  const readingAfternoons = await prisma.readingAfternoon.findMany({
+    where: { userId: session.user.id, deletedAt: null },
+    orderBy: [{ date: "asc" }, { id: "asc" }],
+  });
+  const bookshopOutcomes = await prisma.bookshopOutcome.findMany({
+    where: { userId: session.user.id, deletedAt: null },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+  });
   const books = await prisma.userBook.findMany({
     where: { userId: session.user.id },
     include: {
@@ -82,6 +97,9 @@ export async function GET() {
         cardProjects,
         videoProjects,
         curatorShop: shop ? shopData(shop) : null,
+        readingKits,
+        readingAfternoons,
+        bookshopOutcomes,
       },
       null,
       2,

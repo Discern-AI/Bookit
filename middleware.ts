@@ -16,11 +16,15 @@ export default auth((req) => {
       req.nextUrl.pathname,
     );
   const isBlogFeed = /^\/blog\/[^/]+\/rss\/?$/.test(req.nextUrl.pathname);
+  const isPublicVideo =
+    req.nextUrl.pathname === "/community/videos" ||
+    /^\/video\/[^/]+\/?$/.test(req.nextUrl.pathname);
   const isSharedGift = /^\/gift\/[a-f0-9]{64}\/?$/.test(req.nextUrl.pathname);
   if (
     !isLoggedIn &&
     !isAuthRoute &&
     !isPublicBook &&
+    !isPublicVideo &&
     !isBlogFeed &&
     !isSharedGift
   ) {

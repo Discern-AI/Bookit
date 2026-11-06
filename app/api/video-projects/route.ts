@@ -106,8 +106,18 @@ export async function PATCH(request: Request) {
           );
       }
       if (fields.isPublic) {
-        const clip = await tx.videoClip.findUnique({ where: { projectId: d.id }, select: { id: true } });
-        if (!clip) return reply({ error: "Upload a private clip before publishing it in the Folio video feed." }, 400);
+        const clip = await tx.videoClip.findUnique({
+          where: { projectId: d.id },
+          select: { id: true },
+        });
+        if (!clip)
+          return reply(
+            {
+              error:
+                "Upload a private clip before publishing it in the Folio video feed.",
+            },
+            400,
+          );
       }
       if (same) return reply({ id: old.id, version: old.version });
       if (old)
@@ -115,7 +125,8 @@ export async function PATCH(request: Request) {
       const data = {
         ...fields,
         publishedAt: fields.isPublic ? (old?.publishedAt ?? new Date()) : null,
-        publicModerationStatus: "active",
+        // Owner edits must never undo a moderator restriction.
+        publicModerationStatus: old?.publicModerationStatus ?? "active",
         books: { create: books.map((b, position) => ({ ...b, position })) },
       };
       const saved = old
