@@ -270,18 +270,54 @@ test("Reading Life writes are retry-safe, journalled, exported and erased", asyn
   await reporterContext.close();
   await moderatorContext.close();
 
+  const pagedKits = Array.from({ length: 25 }, (_, index) => ({
+    id: crypto.randomUUID(),
+    userId: user.id,
+    title: `Paged kit ${String(index).padStart(2, "0")}`,
+    notes: index % 2 ? "Window reading" : "Evening reading",
+    makeDo: "Use the chair already at home.",
+    sensoryProfile: "A familiar lamp.",
+    publicDescription: `A public pagination fixture ${String(index).padStart(2, "0")}.`,
+    budgetTier: "make_do",
+    isPublic: true,
+    publishedAt: new Date(Date.now() + index * 1000),
+    updatedAt: new Date(Date.now() + index * 1000),
+  }));
   await db.readingKit.createMany({
-    data: Array.from({ length: 25 }, (_, index) => ({
-      id: crypto.randomUUID(),
-      userId: user.id,
-      title: `Paged kit ${String(index).padStart(2, "0")}`,
-      notes: index % 2 ? "Window reading" : "Evening reading",
-      makeDo: "Use the chair already at home.",
-      sensoryProfile: "A familiar lamp.",
-      budgetTier: "make_do",
-      updatedAt: new Date(Date.now() + index * 1000),
+    data: pagedKits,
+  });
+  await db.readingKitItem.createMany({
+    data: pagedKits.map((kit, index) => ({
+      kitId: kit.id,
+      position: 0,
+      kind: "reading_object",
+      title: `Paged object ${String(index).padStart(2, "0")}`,
+      details: "Already at home.",
+      externalUrl: "",
     })),
   });
+  const discoveryContext = await browser.newContext();
+  const discoveryPage = await discoveryContext.newPage();
+  await discoveryPage.goto(
+    "/community/kits?q=Paged&budget=make_do&content=items",
+  );
+  await expect(
+    discoveryPage.getByRole("link", { name: "Paged kit 24" }),
+  ).toBeVisible();
+  await expect(
+    discoveryPage.getByRole("link", { name: "Paged kit 00" }),
+  ).toHaveCount(0);
+  await discoveryPage.getByRole("link", { name: "Next page" }).click();
+  await expect(
+    discoveryPage.getByRole("link", { name: "Paged kit 00" }),
+  ).toBeVisible();
+  await discoveryPage.getByLabel("Search public kits").fill("Updated rainy");
+  await discoveryPage.getByLabel("Includes").selectOption("books");
+  await discoveryPage.getByRole("button", { name: "Search kits" }).click();
+  await expect(
+    discoveryPage.getByRole("link", { name: "Updated rainy kit" }),
+  ).toBeVisible();
+  await discoveryContext.close();
   await db.readingAfternoon.createMany({
     data: Array.from({ length: 25 }, (_, index) => ({
       id: crypto.randomUUID(),

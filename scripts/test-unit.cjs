@@ -505,6 +505,16 @@ assert.equal(readingKitSchema.safeParse({ title: "Empty public kit", isPublic: t
 assert.equal(readingKitSchema.safeParse({ title: "Public creator kit", isPublic: true, publicDescription: "A public description for readers.", entries: [], items: [{ kind: "resource", title: "Reading guide", externalUrl: "https://example.com/guide" }] }).success, true);
 assert.equal(readingKitSchema.safeParse({ title: "Unsafe playlist", playlistUrl: "javascript:alert(1)", entries: [] }).success, false);
 assert.equal(readingKitSchema.safeParse({ title: "Unsafe item", entries: [], items: [{ kind: "resource", title: "Essay", externalUrl: "https://user:secret@example.com" }] }).success, false);
+const { encodePublicKitCursor, decodePublicKitCursor, parsePublicKitFilters, publicKitQuery } = require("../lib/public-reading-kits.ts");
+const publicKitDate = new Date("2026-11-07T12:00:00.000Z");
+const publicKitId = "11111111-1111-4111-8111-111111111111";
+const publicKitCursor = encodePublicKitCursor(publicKitDate, publicKitId);
+assert.deepEqual(decodePublicKitCursor(publicKitCursor), { publishedAt: publicKitDate, id: publicKitId });
+assert.equal(decodePublicKitCursor("not-a-cursor"), null);
+const publicKitFilters = parsePublicKitFilters({ q: "  rain  ", budget: "make_do", content: "books", cursor: publicKitCursor });
+assert.deepEqual(publicKitFilters, { q: "rain", budget: "make_do", content: "books", cursor: { publishedAt: publicKitDate, id: publicKitId } });
+assert.equal(publicKitQuery(publicKitFilters, publicKitCursor), `/community/kits?q=rain&budget=make_do&content=books&cursor=${publicKitCursor}`);
+assert.deepEqual(parsePublicKitFilters({ budget: "invalid", content: "invalid", cursor: "invalid" }), { q: "", budget: "all", content: "all", cursor: null });
 const { buildSensoryProfile } = require("../lib/reading-kit.ts");
 assert.match(buildSensoryProfile("make_do", true, true), /familiar soundtrack/);
 assert.match(buildSensoryProfile("dream", false, true), /Warm dimmable lighting/);
