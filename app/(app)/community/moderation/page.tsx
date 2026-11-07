@@ -46,6 +46,9 @@ export default async function Page({
       <Link className="underline" href="/community/moderation/videos">
         Video reports
       </Link>
+      <Link className="underline" href="/community/moderation/marketplace">
+        Marketplace reports
+      </Link>
       <Link className="underline" href="/community/moderation/appeals">
         Review appeals
       </Link>

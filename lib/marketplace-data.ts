@@ -31,8 +31,14 @@ export async function marketplacePage(
     filters.scope === "mine"
       ? { userId }
       : filters.scope === "saved"
-        ? { isPublished: true, saves: { some: { userId } } }
-        : { OR: [{ isPublished: true }, { userId }] };
+        ? {
+            isPublished: true,
+            moderationStatus: "active",
+            saves: { some: { userId } },
+          }
+        : {
+            OR: [{ isPublished: true, moderationStatus: "active" }, { userId }],
+          };
   const where: Prisma.MarketplaceListingWhereInput = {
     deletedAt: null,
     AND: [

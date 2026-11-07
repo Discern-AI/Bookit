@@ -153,6 +153,8 @@ Library > Reading Life contains editable private reading kits and afternoon plan
 
 Marketplace ideas, private reading kits, reading afternoons and bookshop outcomes load in 20-item pages with server-side search. Marketplace search also filters category, budget tier, saved ideas and owned listings. Book selectors search only the signed-in reader's library, retaining canonical Work IDs without loading the whole collection into the page.
 
+Signed-in readers can report published marketplace listings. Reports snapshot public listing text and canonical work identity only; private saves, journals, library history and drafts are excluded. Trusted moderators can dismiss reports, hide listings and restore current restrictions. Owner edits preserve a hidden status, and hiding revokes other readers' saves so restricted content does not remain in their book journals.
+
 Creator > Your curated book shop supports up to twenty ordered recommendations with optional HTTPS retailer links and affiliate disclosures. Shops start private; publishing requires a public profile and exposes only deliberately entered shop content. Public profiles link to published shops. Book journals and JSON export retain the original canonical book associations. Folio does not enrol curators in affiliate programmes, process checkout or pay commissions.
 
 

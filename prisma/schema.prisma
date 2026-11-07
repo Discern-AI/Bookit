@@ -50,6 +50,7 @@ model VerificationToken {
 model User {
   marketplaceListings MarketplaceListing[]
   marketplaceSaves MarketplaceSave[]
+  marketplaceReports MarketplaceReport[]
   bookshopOutcomes BookshopOutcome[]
   readingAfternoons ReadingAfternoon[]
   readingKits ReadingKit[]
@@ -901,6 +902,7 @@ model MarketplaceListing {
   pricePence Int?
   externalUrl String @default("")
   isPublished Boolean @default(false)
+  moderationStatus String @default("active")
   version Int @default(1)
   deletedAt DateTime?
   createdAt DateTime @default(now())
@@ -908,9 +910,35 @@ model MarketplaceListing {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   work Work? @relation(fields: [workId], references: [id], onDelete: SetNull)
   saves MarketplaceSave[]
+  reports MarketplaceReport[]
   @@index([isPublished, deletedAt, updatedAt])
   @@index([userId, deletedAt, updatedAt])
   @@index([workId])
+}
+
+model MarketplaceReport {
+  id String @id @default(cuid())
+  listingId String @db.Uuid
+  reporterId String
+  listingVersion Int
+  title String
+  description String
+  makeDoAlternative String
+  category String
+  budgetTier String
+  workId String?
+  reason String
+  details String
+  status String @default("pending")
+  decisionVersion Int?
+  note String @default("")
+  resolvedById String?
+  resolvedAt DateTime?
+  createdAt DateTime @default(now())
+  listing MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  reporter User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  @@unique([listingId, reporterId, listingVersion])
+  @@index([status, createdAt])
 }
 
 model MarketplaceSave {

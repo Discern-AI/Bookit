@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { ReportMarketplaceListing } from "@/components/context/MarketplaceModeration";
 
 type Work = { id: string; title: string; authorName: string };
 export type MarketplaceItem = {
@@ -19,6 +20,7 @@ export type MarketplaceItem = {
   workId: string | null;
   work: Work | null;
   isPublished: boolean;
+  moderationStatus: string;
   isSaved: boolean;
   isOwner: boolean;
 };
@@ -88,7 +90,7 @@ export function MarketplaceFoundation({
         : null;
       const listing: Omit<
         MarketplaceItem,
-        "id" | "version" | "work" | "isSaved" | "isOwner"
+        "id" | "version" | "work" | "isSaved" | "isOwner" | "moderationStatus"
       > = {
         kind: form.kind,
         category: form.kind === "book" ? "books_collecting" : "reading_objects",
@@ -116,6 +118,9 @@ export function MarketplaceFoundation({
         work,
         isSaved: items.find((old) => old.id === listingId)?.isSaved ?? false,
         isOwner: true,
+        moderationStatus:
+          items.find((old) => old.id === listingId)?.moderationStatus ??
+          "active",
       };
       setItems((old) =>
         editing
@@ -509,6 +514,11 @@ export function MarketplaceFoundation({
                 {!item.isPublished && (
                   <span className="text-xs">Private draft</span>
                 )}
+                {item.isOwner && item.moderationStatus === "hidden" && (
+                  <span className="text-xs text-rose-700">
+                    Hidden by moderation
+                  </span>
+                )}
               </div>
               {item.work && (
                 <Link
@@ -539,15 +549,18 @@ export function MarketplaceFoundation({
                   </a>
                 )}
                 {!item.isOwner && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() =>
-                      action(item, item.isSaved ? "unsave" : "save")
-                    }
-                  >
-                    {item.isSaved ? "Remove saved idea" : "Save idea"}
-                  </Button>
+                  <>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        action(item, item.isSaved ? "unsave" : "save")
+                      }
+                    >
+                      {item.isSaved ? "Remove saved idea" : "Save idea"}
+                    </Button>
+                    <ReportMarketplaceListing listingId={item.id} />
+                  </>
                 )}
                 {item.isOwner && (
                   <>

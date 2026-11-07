@@ -165,11 +165,104 @@ test("published listings are retry-safe, saveable, journalled and revoked on unp
   ).json();
   expect(exported.marketplaceSaves[0].listing.id).toBe(listingId);
 
+  await readerPage.getByRole("button", { name: "Report" }).click();
+  await readerPage
+    .getByLabel("Report details")
+    .fill("This listing needs a moderator review.");
+  await readerPage.getByRole("button", { name: "Send report" }).click();
+  await expect(readerPage.getByRole("status")).toHaveText(
+    "Report sent for review.",
+  );
+  const report = await db.marketplaceReport.findFirstOrThrow({
+    where: { listingId, reporterId: reader.id },
+  });
+  expect(report.title).toBe(listing.title);
+  expect(report.description).toBe(listing.description);
+  expect(
+    (
+      await readerPage.request.post(`/api/marketplace/${listingId}/report`, {
+        headers: { Origin: "https://attacker.example" },
+        data: { reason: "spam", details: "Foreign origin report." },
+      })
+    ).status(),
+  ).toBe(403);
+  expect(
+    (
+      await ownerPage.request.post(`/api/marketplace/${listingId}/report`, {
+        data: { reason: "other", details: "Owner self report." },
+      })
+    ).status(),
+  ).toBe(404);
+  expect(
+    (
+      await readerPage.request.patch(
+        `/api/moderation/marketplace/${report.id}`,
+        {
+          data: { action: "hide", version: 1, note: "Reader cannot moderate." },
+        },
+      )
+    ).status(),
+  ).toBe(403);
+
+  const moderatorContext = await browser.newContext();
+  const moderatorPage = await moderatorContext.newPage();
+  const moderator = await login(moderatorPage, "moderator");
+  await db.user.update({
+    where: { id: moderator.id },
+    data: { isModerator: true },
+  });
+  const hidden = await moderatorPage.request.patch(
+    `/api/moderation/marketplace/${report.id}`,
+    {
+      data: {
+        action: "hide",
+        version: 1,
+        note: "Hidden after public listing review.",
+      },
+    },
+  );
+  expect(hidden.status()).toBe(200);
+  expect(
+    await db.marketplaceSave.count({ where: { listingId, userId: reader.id } }),
+  ).toBe(0);
+  const editedListing = {
+    ...listing,
+    description: "Owner edit after moderation.",
+  };
+  const ownerEdit = await ownerPage.request.post("/api/marketplace", {
+    data: { listingId, version: 2, listing: editedListing },
+  });
+  expect(ownerEdit.status()).toBe(200);
+  expect(
+    (
+      await db.marketplaceListing.findUniqueOrThrow({
+        where: { id: listingId },
+      })
+    ).moderationStatus,
+  ).toBe("hidden");
+  const hiddenSearch = await (
+    await readerPage.request.get(
+      `/api/marketplace?q=${encodeURIComponent(listing.title)}`,
+    )
+  ).json();
+  expect(hiddenSearch.listings).toHaveLength(0);
+  const restored = await moderatorPage.request.patch(
+    `/api/moderation/marketplace/${report.id}`,
+    {
+      data: {
+        action: "restore",
+        version: 3,
+        note: "Restored after a second review.",
+      },
+    },
+  );
+  expect(restored.status()).toBe(200);
+
   const unpublished = await ownerPage.request.post("/api/marketplace", {
     data: {
       listingId,
-      version: 1,
-      listing: { ...listing, isPublished: false },
+      version: 4,
+      listing: { ...editedListing, isPublished: false },
     },
   });
   expect(unpublished.status()).toBe(200);
@@ -202,7 +295,7 @@ test("published listings are retry-safe, saveable, journalled and revoked on unp
 
   for (const attempt of [1, 2]) {
     const deleted = await ownerPage.request.patch("/api/marketplace", {
-      data: { action: "delete", listingId, version: 2 },
+      data: { action: "delete", listingId, version: 5 },
     });
     expect(deleted.status(), `delete attempt ${attempt}`).toBe(200);
   }
@@ -215,5 +308,6 @@ test("published listings are retry-safe, saveable, journalled and revoked on unp
   expect(erased.workId).toBeNull();
 
   await readerContext.close();
+  await moderatorContext.close();
   await ownerContext.close();
 });
