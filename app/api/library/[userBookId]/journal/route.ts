@@ -48,6 +48,8 @@ export async function GET(
     readingKits,
     readingAfternoons,
     bookshopOutcomes,
+    marketplaceSaves,
+    marketplaceListings,
   ] = await Promise.all([
     prisma.userBook.findMany({
       where: { userId, edition: { workId } },
@@ -201,6 +203,45 @@ export async function GET(
       skip,
       take: 51,
     }),
+    prisma.marketplaceSave.findMany({
+      where: {
+        userId,
+        workId,
+        listing: {
+          deletedAt: null,
+          OR: [{ isPublished: true }, { userId }],
+        },
+      },
+      select: {
+        listing: {
+          select: {
+            id: true,
+            title: true,
+            kind: true,
+            budgetTier: true,
+            makeDoAlternative: true,
+            isPublished: true,
+          },
+        },
+      },
+      orderBy: [{ createdAt: "desc" }, { listingId: "asc" }],
+      skip,
+      take: 51,
+    }),
+    prisma.marketplaceListing.findMany({
+      where: { userId, workId, deletedAt: null },
+      select: {
+        id: true,
+        title: true,
+        kind: true,
+        budgetTier: true,
+        makeDoAlternative: true,
+        isPublished: true,
+      },
+      orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
+      skip,
+      take: 51,
+    }),
   ]);
   const challenges = (await readingChallenges(userId))
     .filter(
@@ -239,6 +280,10 @@ export async function GET(
       readingKits: readingKits.slice(0, 50),
       readingAfternoons: readingAfternoons.slice(0, 50),
       bookshopOutcomes: bookshopOutcomes.slice(0, 50),
+      marketplaceSaves: marketplaceSaves
+        .slice(0, 50)
+        .map((item) => item.listing),
+      marketplaceListings: marketplaceListings.slice(0, 50),
       shopEntry,
       hasMore: [
         entries,
@@ -254,6 +299,8 @@ export async function GET(
         readingKits,
         readingAfternoons,
         bookshopOutcomes,
+        marketplaceSaves,
+        marketplaceListings,
       ].some((a) => a.length > 50),
     },
     { headers: { "Cache-Control": "no-store" } },

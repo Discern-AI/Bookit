@@ -242,6 +242,12 @@ export function LibraryView({
             Reading Life
           </Link>
           <Link
+            href="/library/marketplace"
+            className="block text-sm text-shelf-700 mt-4 px-3"
+          >
+            Marketplace
+          </Link>
+          <Link
             href="/settings"
             className="block text-sm text-shelf-700 mt-4 px-3"
           >

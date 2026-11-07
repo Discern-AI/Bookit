@@ -48,6 +48,8 @@ model VerificationToken {
 }
 
 model User {
+  marketplaceListings MarketplaceListing[]
+  marketplaceSaves MarketplaceSave[]
   bookshopOutcomes BookshopOutcome[]
   readingAfternoons ReadingAfternoon[]
   readingKits ReadingKit[]
@@ -110,6 +112,8 @@ model User {
 // ---------- Book hierarchy ----------
 
 model Work {
+  marketplaceListings MarketplaceListing[]
+  marketplaceSaves MarketplaceSave[]
   bookshopOutcomes BookshopOutcome[]
   readingAfternoons ReadingAfternoon[]
   readingKitEntries ReadingKitEntry[]
@@ -882,6 +886,43 @@ model ReadingKit {
   afternoons ReadingAfternoon[]
   @@index([userId, deletedAt, updatedAt])
   @@index([isPublic, deletedAt, updatedAt])
+}
+
+model MarketplaceListing {
+  id String @id @db.Uuid
+  userId String
+  workId String?
+  kind String
+  category String
+  title String
+  description String @default("")
+  makeDoAlternative String
+  budgetTier String @default("comfortable")
+  pricePence Int?
+  externalUrl String @default("")
+  isPublished Boolean @default(false)
+  version Int @default(1)
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  work Work? @relation(fields: [workId], references: [id], onDelete: SetNull)
+  saves MarketplaceSave[]
+  @@index([isPublished, deletedAt, updatedAt])
+  @@index([userId, deletedAt, updatedAt])
+  @@index([workId])
+}
+
+model MarketplaceSave {
+  userId String
+  listingId String @db.Uuid
+  workId String?
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  work Work? @relation(fields: [workId], references: [id], onDelete: SetNull)
+  @@id([userId, listingId])
+  @@index([workId])
 }
 
 model ReadingKitEntry {

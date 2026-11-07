@@ -53,6 +53,15 @@ export async function GET() {
     where: { userId: session.user.id, deletedAt: null },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
   });
+  const marketplaceListings = await prisma.marketplaceListing.findMany({
+    where: { userId: session.user.id, deletedAt: null },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+  });
+  const marketplaceSaves = await prisma.marketplaceSave.findMany({
+    where: { userId: session.user.id, listing: { deletedAt: null } },
+    include: { listing: true },
+    orderBy: [{ createdAt: "asc" }, { listingId: "asc" }],
+  });
   const books = await prisma.userBook.findMany({
     where: { userId: session.user.id },
     include: {
@@ -100,6 +109,8 @@ export async function GET() {
         readingKits,
         readingAfternoons,
         bookshopOutcomes,
+        marketplaceListings,
+        marketplaceSaves,
       },
       null,
       2,

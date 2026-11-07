@@ -523,3 +523,22 @@ assert.equal(safeExternalMapUrl("https://evilgoogle.com/maps/search/bookshops"),
 assert.equal(safeExternalMapUrl("https://user:secret@www.google.com/maps/search/bookshops"), null);
 assert.equal(safeExternalMapUrl("https://www.google.com/search?q=bookshops"), null);
 console.log("Bookshop outcome privacy, identity and external-map URL checks passed");
+const { marketplaceListingSchema, marketplaceUrl } = require("../lib/marketplace.ts");
+const marketplaceListing = {
+  kind: "book",
+  category: "books_collecting",
+  title: "A clothbound edition",
+  description: "",
+  makeDoAlternative: "Wrap the copy already on the shelf.",
+  budgetTier: "collector",
+  pricePence: 2499,
+  externalUrl: "https://example.com/edition",
+  workId: "work-1",
+  isPublished: true,
+};
+assert.equal(marketplaceListingSchema.safeParse(marketplaceListing).success, true);
+assert.equal(marketplaceListingSchema.safeParse({ ...marketplaceListing, externalUrl: "" }).success, false);
+assert.equal(marketplaceListingSchema.safeParse({ ...marketplaceListing, workId: null }).success, false);
+assert.equal(marketplaceUrl("https://example.com/item"), true);
+assert.equal(marketplaceUrl("https://user:secret@example.com/item"), false);
+console.log("Marketplace publication, canonical book and external-link checks passed");

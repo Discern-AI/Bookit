@@ -26,6 +26,7 @@ Chats persist from this update forward. Explicitly selected book context or an u
 - Saved card projects: record selected work IDs when project persistence is built, so the journal can link back to editable projects.
 - Encrypted context: migrate private journal/chat storage deliberately with key management and export/recovery design. Current private storage is access controlled, not end-to-end encrypted; don't claim otherwise.
 - Marketplace, nearby shops and reading plans: connect saved book-related outcomes using work IDs, without treating browsing as a purchase or publishing the reader's history.
+- Marketplace listings owned by the reader and marketplace ideas they explicitly save are separate sources. Both use canonical Work IDs in the private journal/export; unpublishing revokes other readers' saves and never changes shelves or bookshelf pins.
 
 ## References
 

@@ -76,6 +76,22 @@ type Journal = {
     outcome: string;
     visitedAt: string | null;
   }[];
+  marketplaceSaves: {
+    id: string;
+    title: string;
+    kind: string;
+    budgetTier: string;
+    makeDoAlternative: string;
+    isPublished: boolean;
+  }[];
+  marketplaceListings: {
+    id: string;
+    title: string;
+    kind: string;
+    budgetTier: string;
+    makeDoAlternative: string;
+    isPublished: boolean;
+  }[];
   clubReadings: {
     id: string;
     startsOn: string | null;
@@ -143,6 +159,14 @@ export function BookJournal({
                   bookshopOutcomes: [
                     ...old.bookshopOutcomes,
                     ...d.bookshopOutcomes,
+                  ],
+                  marketplaceSaves: [
+                    ...old.marketplaceSaves,
+                    ...d.marketplaceSaves,
+                  ],
+                  marketplaceListings: [
+                    ...old.marketplaceListings,
+                    ...d.marketplaceListings,
                   ],
                   shopEntry: old.shopEntry || d.shopEntry,
                   clubReadings: [...old.clubReadings, ...d.clubReadings],
@@ -525,6 +549,48 @@ export function BookJournal({
                 {data.shopEntry.shop.title}
               </Link>
               <p className="whitespace-pre-wrap">{data.shopEntry.note}</p>
+            </section>
+          )}
+          {!!data.marketplaceSaves?.length && (
+            <section
+              aria-label="Your saved marketplace ideas"
+              className="space-y-3"
+            >
+              <h2 className="font-display text-2xl">
+                Your saved marketplace ideas
+              </h2>
+              {data.marketplaceSaves.map((item) => (
+                <div key={item.id}>
+                  <Link className="underline" href="/library/marketplace">
+                    {item.title}
+                  </Link>{" "}
+                  / {item.budgetTier.replace("_", " ")}
+                  <p className="text-sm">
+                    Use what you have: {item.makeDoAlternative}
+                  </p>
+                </div>
+              ))}
+            </section>
+          )}
+          {!!data.marketplaceListings?.length && (
+            <section
+              aria-label="Your marketplace listings"
+              className="space-y-3"
+            >
+              <h2 className="font-display text-2xl">
+                Your marketplace listings
+              </h2>
+              {data.marketplaceListings.map((item) => (
+                <div key={item.id}>
+                  <Link className="underline" href="/library/marketplace">
+                    {item.title}
+                  </Link>{" "}
+                  / {item.isPublished ? "published" : "private draft"}
+                  <p className="text-sm">
+                    Use what you have: {item.makeDoAlternative}
+                  </p>
+                </div>
+              ))}
             </section>
           )}
           {!!data.videoProjects?.length && (
