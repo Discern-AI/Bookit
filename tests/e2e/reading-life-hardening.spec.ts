@@ -150,7 +150,7 @@ test("Reading Life writes are retry-safe, journalled, exported and erased", asyn
   await expect(
     page.getByRole("heading", { name: "Updated rainy kit", exact: true }),
   ).toBeVisible();
-  await expect(page.getByLabel("Reading kit")).toContainText(
+  await expect(page.getByLabel("Reading kit", { exact: true })).toContainText(
     "Updated rainy kit",
   );
   await page
@@ -162,7 +162,94 @@ test("Reading Life writes are retry-safe, journalled, exported and erased", asyn
   await page.getByRole("button", { name: "Save afternoon changes" }).click();
   await expect(page.getByText("PRIVATE_AFTERNOON_NOTE_UPDATED")).toBeVisible();
 
+  await db.readingKit.createMany({
+    data: Array.from({ length: 25 }, (_, index) => ({
+      id: crypto.randomUUID(),
+      userId: user.id,
+      title: `Paged kit ${String(index).padStart(2, "0")}`,
+      notes: index % 2 ? "Window reading" : "Evening reading",
+      makeDo: "Use the chair already at home.",
+      sensoryProfile: "A familiar lamp.",
+      budgetTier: "make_do",
+      updatedAt: new Date(Date.now() + index * 1000),
+    })),
+  });
+  await db.readingAfternoon.createMany({
+    data: Array.from({ length: 25 }, (_, index) => ({
+      id: crypto.randomUUID(),
+      userId: user.id,
+      date: new Date(Date.now() + (index + 1) * 86400000),
+      durationMinutes: 60,
+      place: `Paged place ${String(index).padStart(2, "0")}`,
+      weather: "indoors",
+      pace: "steady",
+      notes: index % 2 ? "Window plan" : "Evening plan",
+      status: "planned",
+    })),
+  });
+  await page.reload();
+  const kitRegion = page.getByRole("region", { name: "Saved kits" });
+  await expect(kitRegion.getByRole("article")).toHaveCount(20);
+  await kitRegion.getByRole("button", { name: "Load more kits" }).click();
+  await expect(kitRegion.getByRole("article")).toHaveCount(26);
+  await kitRegion
+    .getByRole("textbox", { name: "Search reading kits" })
+    .fill("Paged kit 24");
+  await kitRegion.getByRole("button", { name: "Search kits" }).click();
+  await expect(kitRegion.getByRole("article")).toHaveCount(1);
+  await expect(
+    kitRegion.getByText("Paged kit 24", { exact: true }),
+  ).toBeVisible();
+  const afternoonRegion = page.getByRole("region", {
+    name: "Your reading afternoons",
+  });
+  await expect(afternoonRegion.getByRole("article")).toHaveCount(20);
+  await afternoonRegion
+    .getByRole("button", { name: "Load more afternoons" })
+    .click();
+  await expect(afternoonRegion.getByRole("article")).toHaveCount(26);
+  await afternoonRegion
+    .getByRole("textbox", { name: "Search reading afternoons" })
+    .fill("Paged place 24");
+  await afternoonRegion
+    .getByRole("button", { name: "Search afternoons" })
+    .click();
+  await expect(afternoonRegion.getByRole("article")).toHaveCount(1);
+  await expect(afternoonRegion.getByText("Paged place 24")).toBeVisible();
+
+  await db.bookshopOutcome.createMany({
+    data: Array.from({ length: 25 }, (_, index) => ({
+      id: crypto.randomUUID(),
+      userId: user.id,
+      shopName: `Paged shop ${String(index).padStart(2, "0")}`,
+      outcome: "visited",
+      notes: index % 2 ? "Asked about a copy" : "Browsed the shelves",
+      externalUrl: "",
+      createdAt: new Date(Date.now() + index * 1000),
+    })),
+  });
+
   await page.goto("/library/bookshops");
+  const outcomeRegion = page.getByRole("region", {
+    name: "Saved bookshop outcomes",
+  });
+  await expect(outcomeRegion.getByRole("article")).toHaveCount(20);
+  await outcomeRegion
+    .getByRole("button", { name: "Load more outcomes" })
+    .click();
+  await expect(outcomeRegion.getByRole("article")).toHaveCount(26);
+  await outcomeRegion
+    .getByRole("textbox", { name: "Search bookshop outcomes" })
+    .fill("Paged shop 24");
+  await outcomeRegion.getByRole("button", { name: "Search outcomes" }).click();
+  await expect(outcomeRegion.getByRole("article")).toHaveCount(1);
+  await expect(
+    outcomeRegion.getByText("Paged shop 24", { exact: true }),
+  ).toBeVisible();
+  await outcomeRegion
+    .getByRole("textbox", { name: "Search bookshop outcomes" })
+    .fill("Local Books");
+  await outcomeRegion.getByRole("button", { name: "Search outcomes" }).click();
   await page
     .getByRole("article")
     .filter({ hasText: "Local Books" })

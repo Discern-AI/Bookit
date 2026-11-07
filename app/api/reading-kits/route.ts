@@ -15,12 +15,50 @@ const deleteSchema = z.object({
   version: z.number().int().positive(),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user?.id)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const params = new URL(request.url).searchParams;
+  const q = params.get("q")?.trim() ?? "";
+  const page = Number(params.get("page") ?? 0);
+  if (q.length > 100 || !Number.isInteger(page) || page < 0 || page > 100000)
+    return NextResponse.json(
+      { error: "Invalid reading kit search." },
+      { status: 400 },
+    );
   const kits = await prisma.readingKit.findMany({
-    where: { userId: session.user.id, deletedAt: null },
+    where: {
+      userId: session.user.id,
+      deletedAt: null,
+      ...(q
+        ? {
+            OR: [
+              { title: { contains: q, mode: "insensitive" as const } },
+              { notes: { contains: q, mode: "insensitive" as const } },
+              { makeDo: { contains: q, mode: "insensitive" as const } },
+              {
+                entries: {
+                  some: {
+                    work: {
+                      title: { contains: q, mode: "insensitive" as const },
+                    },
+                  },
+                },
+              },
+              {
+                entries: {
+                  some: {
+                    work: {
+                      authorName: { contains: q, mode: "insensitive" as const },
+                    },
+                  },
+                },
+              },
+            ],
+          }
+        : {}),
+    },
     include: {
       entries: {
         include: {
@@ -30,9 +68,13 @@ export async function GET() {
       },
     },
     orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
-    take: 50,
+    skip: page * 20,
+    take: 21,
   });
-  return NextResponse.json({ kits });
+  return NextResponse.json({
+    kits: kits.slice(0, 20),
+    nextPage: kits.length > 20 ? page + 1 : null,
+  });
 }
 
 export async function POST(request: Request) {

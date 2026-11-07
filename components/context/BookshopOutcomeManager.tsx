@@ -19,11 +19,18 @@ type Outcome = {
 export function BookshopOutcomeManager({
   works,
   initial,
+  initialNextPage,
 }: {
   works: Work[];
   initial: Outcome[];
+  initialNextPage: number | null;
 }) {
   const [items, setItems] = useState(initial);
+  const [nextPage, setNextPage] = useState(initialNextPage);
+  const [listQuery, setListQuery] = useState("");
+  const [workOptions, setWorkOptions] = useState(works);
+  const [workQuery, setWorkQuery] = useState("");
+  const [loadingList, setLoadingList] = useState(false);
   const [workId, setWorkId] = useState(works[0]?.id ?? "");
   const [shopName, setShopName] = useState("");
   const [outcome, setOutcome] = useState("saved_search");
@@ -84,7 +91,7 @@ export function BookshopOutcomeManager({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not save outcome.");
-      const work = works.find((item) => item.id === workId) ?? null;
+      const work = workOptions.find((item) => item.id === workId) ?? null;
       const saved = {
         id: data.outcomeId,
         version: data.version,
@@ -125,6 +132,8 @@ export function BookshopOutcomeManager({
   }
 
   function edit(item: Outcome) {
+    if (item.work && !workOptions.some((work) => work.id === item.work!.id))
+      setWorkOptions((current) => [item.work!, ...current]);
     setEditingId(item.id);
     setRequestId(item.id);
     setDraftVersion(item.version);
@@ -134,6 +143,69 @@ export function BookshopOutcomeManager({
     setNotes(item.notes);
     setMapUrl("");
     setError("");
+  }
+
+  async function searchWorks() {
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch(
+        `/api/library/works?q=${encodeURIComponent(workQuery)}`,
+      );
+      const data = await response.json();
+      if (!response.ok)
+        throw Error(data.error || "Could not search your library.");
+      setWorkOptions((current) => {
+        const selectedWork = current.find((work) => work.id === workId);
+        return selectedWork &&
+          !data.works.some((work: Work) => work.id === selectedWork.id)
+          ? [selectedWork, ...data.works]
+          : data.works;
+      });
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not search your library.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function loadOutcomes(reset: boolean) {
+    setLoadingList(true);
+    setError("");
+    try {
+      const page = reset ? 0 : nextPage;
+      const response = await fetch(
+        `/api/bookshop-outcomes?q=${encodeURIComponent(listQuery.trim())}&page=${page ?? 0}`,
+      );
+      const data = await response.json();
+      if (!response.ok)
+        throw Error(data.error || "Could not load bookshop outcomes.");
+      setItems((current) =>
+        reset
+          ? data.outcomes
+          : [
+              ...new Map(
+                [...current, ...data.outcomes].map((item: Outcome) => [
+                  item.id,
+                  item,
+                ]),
+              ).values(),
+            ],
+      );
+      setNextPage(data.nextPage);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not load bookshop outcomes.",
+      );
+    } finally {
+      setLoadingList(false);
+    }
   }
 
   const titles: Record<string, string> = {
@@ -173,13 +245,29 @@ export function BookshopOutcomeManager({
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="text-sm">
             Book
+            <div className="flex gap-2">
+              <Input
+                aria-label="Search books for bookshop outcome"
+                placeholder="Title, author or ISBN"
+                value={workQuery}
+                onChange={(event) => setWorkQuery(event.target.value)}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={saving}
+                onClick={() => void searchWorks()}
+              >
+                Search books
+              </Button>
+            </div>
             <select
               className="block w-full rounded border border-ink-200 bg-paper-50 p-2"
               value={workId}
               onChange={(e) => setWorkId(e.target.value)}
             >
               <option value="">No specific book</option>
-              {works.map((work) => (
+              {workOptions.map((work) => (
                 <option key={work.id} value={work.id}>
                   {work.title} — {work.authorName}
                 </option>
@@ -250,8 +338,25 @@ export function BookshopOutcomeManager({
           </Button>
         )}
       </section>
-      <section className="space-y-3">
+      <section aria-label="Saved bookshop outcomes" className="space-y-3">
         <h2 className="font-display text-2xl">Saved outcomes</h2>
+        <form
+          className="flex gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void loadOutcomes(true);
+          }}
+        >
+          <Input
+            aria-label="Search bookshop outcomes"
+            placeholder="Search shop, notes, outcome or book"
+            value={listQuery}
+            onChange={(event) => setListQuery(event.target.value)}
+          />
+          <Button type="submit" variant="ghost" disabled={loadingList}>
+            {loadingList ? "Searching..." : "Search outcomes"}
+          </Button>
+        </form>
         {items.map((item) => (
           <article key={item.id} className="rounded border border-ink-200 p-4">
             <div className="flex justify-between gap-4">
@@ -295,6 +400,15 @@ export function BookshopOutcomeManager({
           <p className="text-sm text-ink-500">
             No bookshop outcomes saved yet.
           </p>
+        )}
+        {nextPage !== null && (
+          <Button
+            variant="ghost"
+            disabled={loadingList}
+            onClick={() => void loadOutcomes(false)}
+          >
+            {loadingList ? "Loading..." : "Load more outcomes"}
+          </Button>
         )}
       </section>
     </div>

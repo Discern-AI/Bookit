@@ -87,6 +87,22 @@ test("published listings are retry-safe, saveable, journalled and revoked on unp
   expect(await db.marketplaceListing.count({ where: { id: listingId } })).toBe(
     1,
   );
+  await db.marketplaceListing.createMany({
+    data: Array.from({ length: 25 }, (_, index) => ({
+      id: crypto.randomUUID(),
+      userId: owner.id,
+      kind: "reading_object",
+      category: "reading_objects",
+      title: `Paged idea ${String(index).padStart(2, "0")}`,
+      description: index % 2 ? "A lamp idea" : "A bookmark idea",
+      makeDoAlternative: "Use a familiar object already at home.",
+      budgetTier: index % 2 ? "comfortable" : "make_do",
+      pricePence: 500 + index,
+      externalUrl: `https://example.com/object-${index}`,
+      isPublished: true,
+      updatedAt: new Date(Date.now() + index * 1000),
+    })),
+  });
 
   const invalid = await ownerPage.request.post("/api/marketplace", {
     data: {
@@ -112,6 +128,22 @@ test("published listings are retry-safe, saveable, journalled and revoked on unp
     data: { userId: reader.id, editionId: work.editions[0].id, shelf: "read" },
   });
   await readerPage.goto("/library/marketplace");
+  await expect(readerPage.locator("article")).toHaveCount(20);
+  await readerPage.getByRole("button", { name: "Load more ideas" }).click();
+  await expect(readerPage.locator("article")).toHaveCount(26);
+  await readerPage
+    .getByRole("textbox", { name: "Search marketplace" })
+    .fill("Paged idea 24");
+  await readerPage.getByRole("button", { name: "Search marketplace" }).click();
+  await expect(readerPage.locator("article")).toHaveCount(1);
+  await expect(
+    readerPage.getByRole("heading", { name: "Paged idea 24" }),
+  ).toBeVisible();
+  await readerPage
+    .getByRole("textbox", { name: "Search marketplace" })
+    .fill("");
+  await readerPage.getByLabel("Category").selectOption("book");
+  await readerPage.getByRole("button", { name: "Search marketplace" }).click();
   await expect(
     readerPage.getByRole("heading", { name: listing.title }),
   ).toBeVisible();
@@ -150,6 +182,11 @@ test("published listings are retry-safe, saveable, journalled and revoked on unp
   ).toHaveCount(0);
 
   await ownerPage.goto("/library/marketplace");
+  await ownerPage
+    .getByRole("textbox", { name: "Search marketplace" })
+    .fill(listing.title);
+  await ownerPage.getByLabel("Show").selectOption("mine");
+  await ownerPage.getByRole("button", { name: "Search marketplace" }).click();
   await expect(ownerPage.getByText("Private draft")).toBeVisible();
   await expect(
     ownerPage.getByRole("heading", { name: listing.title }),

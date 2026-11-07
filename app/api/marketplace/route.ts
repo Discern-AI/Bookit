@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { sameOriginJson } from "@/lib/book-journal";
 import { marketplaceListingSchema } from "@/lib/marketplace";
+import { marketplacePage } from "@/lib/marketplace-data";
 import { prisma } from "@/lib/prisma";
 
 const saveSchema = z.object({
@@ -20,38 +21,30 @@ const actionSchema = z.discriminatedUnion("action", [
   }),
 ]);
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user?.id)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const [listings, mine] = await Promise.all([
-    prisma.marketplaceListing.findMany({
-      where: { isPublished: true, deletedAt: null },
-      include: {
-        work: { select: { id: true, title: true, authorName: true } },
-        saves: { where: { userId: session.user.id }, select: { userId: true } },
-      },
-      orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
-      take: 50,
-    }),
-    prisma.marketplaceListing.findMany({
-      where: { userId: session.user.id, deletedAt: null },
-      include: {
-        work: { select: { id: true, title: true, authorName: true } },
-        saves: { where: { userId: session.user.id }, select: { userId: true } },
-      },
-      orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
-      take: 50,
-    }),
-  ]);
-  const byId = new Map([...listings, ...mine].map((item) => [item.id, item]));
-  return NextResponse.json({
-    listings: [...byId.values()].map(({ saves, userId, ...item }) => ({
-      ...item,
-      isSaved: saves.length > 0,
-      isOwner: userId === session.user.id,
-    })),
-  });
+  const params = new URL(request.url).searchParams;
+  const q = params.get("q")?.trim() ?? "";
+  const tier = params.get("tier") ?? "";
+  const kind = params.get("kind") ?? "";
+  const scope = params.get("scope") ?? "all";
+  const cursor = params.get("cursor") ?? "";
+  if (
+    q.length > 100 ||
+    !["", "make_do", "comfortable", "collector", "dream"].includes(tier) ||
+    !["", "book", "reading_object"].includes(kind) ||
+    !["all", "saved", "mine"].includes(scope) ||
+    cursor.length > 500
+  )
+    return NextResponse.json(
+      { error: "Invalid marketplace search." },
+      { status: 400 },
+    );
+  return NextResponse.json(
+    await marketplacePage(session.user.id, { q, tier, kind, scope, cursor }),
+  );
 }
 
 export async function POST(request: Request) {

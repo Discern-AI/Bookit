@@ -15,19 +15,55 @@ const deleteSchema = z.object({
   version: z.number().int().positive(),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user?.id)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const params = new URL(request.url).searchParams;
+  const q = params.get("q")?.trim() ?? "";
+  const page = Number(params.get("page") ?? 0);
+  if (q.length > 100 || !Number.isInteger(page) || page < 0 || page > 100000)
+    return NextResponse.json(
+      { error: "Invalid bookshop outcome search." },
+      { status: 400 },
+    );
   const outcomes = await prisma.bookshopOutcome.findMany({
-    where: { userId: session.user.id, deletedAt: null },
+    where: {
+      userId: session.user.id,
+      deletedAt: null,
+      ...(q
+        ? {
+            OR: [
+              { shopName: { contains: q, mode: "insensitive" as const } },
+              { notes: { contains: q, mode: "insensitive" as const } },
+              { outcome: { contains: q, mode: "insensitive" as const } },
+              {
+                work: {
+                  is: { title: { contains: q, mode: "insensitive" as const } },
+                },
+              },
+              {
+                work: {
+                  is: {
+                    authorName: { contains: q, mode: "insensitive" as const },
+                  },
+                },
+              },
+            ],
+          }
+        : {}),
+    },
     include: {
       work: { select: { id: true, title: true, authorName: true } },
     },
     orderBy: [{ createdAt: "desc" }, { id: "asc" }],
-    take: 50,
+    skip: page * 20,
+    take: 21,
   });
-  return NextResponse.json({ outcomes });
+  return NextResponse.json({
+    outcomes: outcomes.slice(0, 20),
+    nextPage: outcomes.length > 20 ? page + 1 : null,
+  });
 }
 
 export async function POST(request: Request) {

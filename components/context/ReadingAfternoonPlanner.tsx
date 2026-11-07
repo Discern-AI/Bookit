@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import type { ReadingKitData } from "@/components/context/ReadingKitBuilder";
 import {
   estimateReadingPages,
   weatherPlaceSuggestion,
@@ -39,13 +40,21 @@ export function ReadingAfternoonPlanner({
   works,
   kits,
   initial,
+  initialNextPage,
 }: {
   works: Work[];
   kits: Kit[];
   initial: Afternoon[];
+  initialNextPage: number | null;
 }) {
   const [items, setItems] = useState(initial);
+  const [nextPage, setNextPage] = useState(initialNextPage);
+  const [listQuery, setListQuery] = useState("");
   const [availableKits, setAvailableKits] = useState(kits);
+  const [kitQuery, setKitQuery] = useState("");
+  const [workOptions, setWorkOptions] = useState(works);
+  const [workQuery, setWorkQuery] = useState("");
+  const [loadingList, setLoadingList] = useState(false);
   const [date, setDate] = useState(tomorrowLocalDateTime);
   const [duration, setDuration] = useState(90);
   const [place, setPlace] = useState("home");
@@ -107,7 +116,7 @@ export function ReadingAfternoonPlanner({
       const data = await res.json();
       if (!res.ok)
         throw new Error(data.error || "Could not save the reading afternoon.");
-      const work = works.find((item) => item.id === workId) ?? null;
+      const work = workOptions.find((item) => item.id === workId) ?? null;
       const saved = {
         id: data.afternoonId,
         version: data.version,
@@ -156,6 +165,8 @@ export function ReadingAfternoonPlanner({
   }
 
   function edit(item: Afternoon) {
+    if (item.work && !workOptions.some((work) => work.id === item.work!.id))
+      setWorkOptions((current) => [item.work!, ...current]);
     setEditingId(item.id);
     setRequestId(item.id);
     setDraftVersion(item.version);
@@ -168,6 +179,101 @@ export function ReadingAfternoonPlanner({
     setKitId(item.kitId || "");
     setNotes(item.notes);
     setError("");
+  }
+
+  async function searchWorks() {
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch(
+        `/api/library/works?q=${encodeURIComponent(workQuery)}`,
+      );
+      const data = await response.json();
+      if (!response.ok)
+        throw Error(data.error || "Could not search your library.");
+      setWorkOptions((current) => {
+        const selectedWork = current.find((work) => work.id === workId);
+        return selectedWork &&
+          !data.works.some((work: Work) => work.id === selectedWork.id)
+          ? [selectedWork, ...data.works]
+          : data.works;
+      });
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not search your library.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function searchKits() {
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch(
+        `/api/reading-kits?q=${encodeURIComponent(kitQuery)}&page=0`,
+      );
+      const data = await response.json();
+      if (!response.ok)
+        throw Error(data.error || "Could not search reading kits.");
+      setAvailableKits((current) => {
+        const selectedKit = current.find((kit) => kit.id === kitId);
+        const found = data.kits.map((kit: ReadingKitData) => ({
+          id: kit.id,
+          title: kit.title,
+        }));
+        return selectedKit &&
+          !found.some((kit: Kit) => kit.id === selectedKit.id)
+          ? [selectedKit, ...found]
+          : found;
+      });
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not search reading kits.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function loadAfternoons(reset: boolean) {
+    setLoadingList(true);
+    setError("");
+    try {
+      const page = reset ? 0 : nextPage;
+      const response = await fetch(
+        `/api/reading-afternoons?q=${encodeURIComponent(listQuery.trim())}&page=${page ?? 0}`,
+      );
+      const data = await response.json();
+      if (!response.ok)
+        throw Error(data.error || "Could not load reading afternoons.");
+      setItems((current) =>
+        reset
+          ? data.afternoons
+          : [
+              ...new Map(
+                [...current, ...data.afternoons].map((item: Afternoon) => [
+                  item.id,
+                  item,
+                ]),
+              ).values(),
+            ],
+      );
+      setNextPage(data.nextPage);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not load reading afternoons.",
+      );
+    } finally {
+      setLoadingList(false);
+    }
   }
 
   return (
@@ -250,13 +356,29 @@ export function ReadingAfternoonPlanner({
           </label>
           <label className="text-sm">
             Book
+            <div className="flex gap-2">
+              <Input
+                aria-label="Search books for afternoon"
+                placeholder="Title, author or ISBN"
+                value={workQuery}
+                onChange={(event) => setWorkQuery(event.target.value)}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={saving}
+                onClick={() => void searchWorks()}
+              >
+                Search books
+              </Button>
+            </div>
             <select
               className="block w-full rounded border border-ink-200 bg-paper-50 p-2"
               value={workId}
               onChange={(e) => setWorkId(e.target.value)}
             >
               <option value="">No specific book</option>
-              {works.map((work) => (
+              {workOptions.map((work) => (
                 <option key={work.id} value={work.id}>
                   {work.title} — {work.authorName}
                 </option>
@@ -265,7 +387,24 @@ export function ReadingAfternoonPlanner({
           </label>
           <label className="text-sm sm:col-span-2">
             Reading kit
+            <div className="flex gap-2">
+              <Input
+                aria-label="Search kits for afternoon"
+                placeholder="Kit title or linked book"
+                value={kitQuery}
+                onChange={(event) => setKitQuery(event.target.value)}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={saving}
+                onClick={() => void searchKits()}
+              >
+                Search kits
+              </Button>
+            </div>
             <select
+              aria-label="Reading kit"
               className="block w-full rounded border border-ink-200 bg-paper-50 p-2"
               value={kitId}
               onChange={(e) => setKitId(e.target.value)}
@@ -326,8 +465,25 @@ export function ReadingAfternoonPlanner({
           </Button>
         )}
       </section>
-      <section className="space-y-3">
+      <section aria-label="Your reading afternoons" className="space-y-3">
         <h2 className="font-display text-2xl">Upcoming and planned</h2>
+        <form
+          className="flex gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void loadAfternoons(true);
+          }}
+        >
+          <Input
+            aria-label="Search reading afternoons"
+            placeholder="Search place, conditions, notes or book"
+            value={listQuery}
+            onChange={(event) => setListQuery(event.target.value)}
+          />
+          <Button type="submit" variant="ghost" disabled={loadingList}>
+            {loadingList ? "Searching..." : "Search afternoons"}
+          </Button>
+        </form>
         {items.map((item) => (
           <article key={item.id} className="rounded border border-ink-200 p-4">
             <div className="flex justify-between gap-4">
@@ -361,6 +517,15 @@ export function ReadingAfternoonPlanner({
           <p className="text-sm text-ink-500">
             No reading afternoons planned yet.
           </p>
+        )}
+        {nextPage !== null && (
+          <Button
+            variant="ghost"
+            disabled={loadingList}
+            onClick={() => void loadAfternoons(false)}
+          >
+            {loadingList ? "Loading..." : "Load more afternoons"}
+          </Button>
         )}
       </section>
     </div>

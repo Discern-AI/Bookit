@@ -50,18 +50,27 @@ const empty: MarketplaceForm = {
 export function MarketplaceFoundation({
   works,
   initial,
+  initialCursor,
 }: {
   works: Work[];
   initial: MarketplaceItem[];
+  initialCursor: string | null;
 }) {
   const [items, setItems] = useState(initial);
+  const [nextCursor, setNextCursor] = useState(initialCursor);
+  const [workOptions, setWorkOptions] = useState(works);
+  const [workQuery, setWorkQuery] = useState("");
   const [form, setForm] = useState(empty);
   const [listingId, setListingId] = useState(() => crypto.randomUUID());
   const [version, setVersion] = useState(0);
   const [editing, setEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [tier, setTier] = useState("all");
+  const [query, setQuery] = useState("");
+  const [tier, setTier] = useState("");
+  const [kind, setKind] = useState("");
+  const [scope, setScope] = useState("all");
+  const [loadingResults, setLoadingResults] = useState(false);
 
   const reset = () => {
     setForm(empty);
@@ -124,6 +133,8 @@ export function MarketplaceFoundation({
   }
 
   function edit(item: MarketplaceItem) {
+    if (item.work && !workOptions.some((work) => work.id === item.work!.id))
+      setWorkOptions((current) => [item.work!, ...current]);
     setEditing(item.id);
     setListingId(item.id);
     setVersion(item.version);
@@ -139,6 +150,71 @@ export function MarketplaceFoundation({
       isPublished: item.isPublished,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function searchWorks() {
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(
+        `/api/library/works?q=${encodeURIComponent(workQuery)}`,
+      );
+      const data = await response.json();
+      if (!response.ok)
+        throw Error(data.error || "Could not search your library.");
+      setWorkOptions((current) => {
+        const selected = current.find((work) => work.id === form.workId);
+        return selected &&
+          !data.works.some((work: Work) => work.id === selected.id)
+          ? [selected, ...data.works]
+          : data.works;
+      });
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not search your library.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function loadResults(resetResults: boolean) {
+    setLoadingResults(true);
+    setError("");
+    try {
+      const params = new URLSearchParams();
+      if (query.trim()) params.set("q", query.trim());
+      if (tier) params.set("tier", tier);
+      if (kind) params.set("kind", kind);
+      if (scope !== "all") params.set("scope", scope);
+      if (!resetResults && nextCursor) params.set("cursor", nextCursor);
+      const response = await fetch(`/api/marketplace?${params}`);
+      const data = await response.json();
+      if (!response.ok)
+        throw Error(data.error || "Could not load marketplace ideas.");
+      setItems((current) => {
+        const incoming = data.listings as MarketplaceItem[];
+        const combined: MarketplaceItem[] = resetResults
+          ? incoming
+          : [...current, ...incoming];
+        return [
+          ...new Map<string, MarketplaceItem>(
+            combined.map((item: MarketplaceItem) => [item.id, item]),
+          ).values(),
+        ];
+      });
+      setNextCursor(data.nextCursor);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not load marketplace ideas.",
+      );
+    } finally {
+      setLoadingResults(false);
+    }
   }
 
   async function action(
@@ -175,11 +251,6 @@ export function MarketplaceFoundation({
       );
   }
 
-  const visible = items.filter(
-    (item) =>
-      (item.isPublished || item.isOwner) &&
-      (tier === "all" || item.budgetTier === tier),
-  );
   return (
     <div className="space-y-8">
       <section className="rounded-xl border border-paper-300 bg-white p-5 space-y-4">
@@ -219,24 +290,54 @@ export function MarketplaceFoundation({
           onChange={(event) => setForm({ ...form, title: event.target.value })}
         />
         {form.kind === "book" && (
-          <label className="block text-sm">
-            Library book
-            <select
-              aria-label="Library book"
-              className="mt-1 w-full rounded border p-2"
-              value={form.workId}
-              onChange={(event) =>
-                setForm({ ...form, workId: event.target.value })
-              }
+          <div className="space-y-2">
+            <label
+              className="block text-sm"
+              htmlFor="marketplace-library-search"
             >
-              <option value="">Choose a book</option>
-              {works.map((work) => (
-                <option key={work.id} value={work.id}>
-                  {work.title} — {work.authorName}
-                </option>
-              ))}
-            </select>
-          </label>
+              Search your library
+            </label>
+            <div className="flex gap-2">
+              <Input
+                id="marketplace-library-search"
+                placeholder="Title, author or ISBN"
+                value={workQuery}
+                onChange={(event) => setWorkQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    void searchWorks();
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={busy}
+                onClick={() => void searchWorks()}
+              >
+                Search books
+              </Button>
+            </div>
+            <label className="block text-sm">
+              Library book
+              <select
+                aria-label="Library book"
+                className="mt-1 w-full rounded border p-2"
+                value={form.workId}
+                onChange={(event) =>
+                  setForm({ ...form, workId: event.target.value })
+                }
+              >
+                <option value="">Choose a book</option>
+                {workOptions.map((work) => (
+                  <option key={work.id} value={work.id}>
+                    {work.title} — {work.authorName}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         )}
         <textarea
           aria-label="Description"
@@ -333,23 +434,64 @@ export function MarketplaceFoundation({
               purchases happen on external sites.
             </p>
           </div>
+        </div>
+        <form
+          className="grid gap-3 rounded border border-paper-300 bg-white p-4 sm:grid-cols-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void loadResults(true);
+          }}
+        >
+          <Input
+            aria-label="Search marketplace"
+            placeholder="Search ideas or books"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
           <label className="text-sm">
-            Budget{" "}
+            Budget
             <select
-              className="rounded border p-2"
+              className="block w-full rounded border p-2"
               value={tier}
               onChange={(event) => setTier(event.target.value)}
             >
-              <option value="all">All tiers</option>
+              <option value="">All tiers</option>
               <option value="make_do">Make do</option>
               <option value="comfortable">Comfortable</option>
               <option value="collector">Collector</option>
               <option value="dream">Dream library</option>
             </select>
           </label>
-        </div>
+          <label className="text-sm">
+            Category
+            <select
+              className="block w-full rounded border p-2"
+              value={kind}
+              onChange={(event) => setKind(event.target.value)}
+            >
+              <option value="">All categories</option>
+              <option value="book">Books & collecting</option>
+              <option value="reading_object">Reading objects</option>
+            </select>
+          </label>
+          <label className="text-sm">
+            Show
+            <select
+              className="block w-full rounded border p-2"
+              value={scope}
+              onChange={(event) => setScope(event.target.value)}
+            >
+              <option value="all">Published and mine</option>
+              <option value="saved">My saved ideas</option>
+              <option value="mine">My listings</option>
+            </select>
+          </label>
+          <Button disabled={loadingResults} type="submit">
+            {loadingResults ? "Searching…" : "Search marketplace"}
+          </Button>
+        </form>
         <div className="grid md:grid-cols-2 gap-4">
-          {visible.map((item) => (
+          {items.map((item) => (
             <article
               key={item.id}
               className="rounded-xl border border-paper-300 bg-white p-5 space-y-3"
@@ -429,10 +571,19 @@ export function MarketplaceFoundation({
             </article>
           ))}
         </div>
-        {!visible.length && (
+        {!items.length && (
           <p className="text-ink-500">
             No marketplace ideas match this budget yet.
           </p>
+        )}
+        {nextCursor && (
+          <Button
+            variant="ghost"
+            disabled={loadingResults}
+            onClick={() => void loadResults(false)}
+          >
+            {loadingResults ? "Loading…" : "Load more ideas"}
+          </Button>
         )}
       </section>
     </div>

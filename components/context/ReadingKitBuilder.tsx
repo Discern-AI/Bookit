@@ -20,11 +20,18 @@ export type ReadingKitData = {
 export function ReadingKitBuilder({
   works,
   initial,
+  initialNextPage,
 }: {
   works: KitWork[];
   initial: ReadingKitData[];
+  initialNextPage: number | null;
 }) {
   const [kits, setKits] = useState(initial);
+  const [nextPage, setNextPage] = useState(initialNextPage);
+  const [kitQuery, setKitQuery] = useState("");
+  const [workOptions, setWorkOptions] = useState(works);
+  const [workQuery, setWorkQuery] = useState("");
+  const [loadingList, setLoadingList] = useState(false);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
   const [makeDo, setMakeDo] = useState("");
@@ -61,7 +68,7 @@ export function ReadingKitBuilder({
       const data = await res.json();
       if (!res.ok)
         throw new Error(data.error || "Reading kit could not be saved.");
-      const kitWork = new Map(works.map((work) => [work.id, work]));
+      const kitWork = new Map(workOptions.map((work) => [work.id, work]));
       const savedKit = {
         id: data.kitId,
         version: data.version,
@@ -125,6 +132,14 @@ export function ReadingKitBuilder({
   }
 
   function edit(kit: ReadingKitData) {
+    setWorkOptions((current) => [
+      ...new Map(
+        [...kit.entries.map((entry) => entry.work), ...current].map((work) => [
+          work.id,
+          work,
+        ]),
+      ).values(),
+    ]);
     setEditingId(kit.id);
     setRequestId(kit.id);
     setDraftVersion(kit.version);
@@ -135,6 +150,70 @@ export function ReadingKitBuilder({
     setBudgetTier(kit.budgetTier);
     setSelected(kit.entries.map((entry) => entry.workId));
     setError("");
+  }
+
+  async function searchWorks() {
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch(
+        `/api/library/works?q=${encodeURIComponent(workQuery)}`,
+      );
+      const data = await response.json();
+      if (!response.ok)
+        throw Error(data.error || "Could not search your library.");
+      setWorkOptions((current) => {
+        const chosen = current.filter((work) => selected.includes(work.id));
+        return [
+          ...new Map(
+            [...chosen, ...data.works].map((work: KitWork) => [work.id, work]),
+          ).values(),
+        ];
+      });
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not search your library.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function loadKits(reset: boolean) {
+    setLoadingList(true);
+    setError("");
+    try {
+      const page = reset ? 0 : nextPage;
+      const response = await fetch(
+        `/api/reading-kits?q=${encodeURIComponent(kitQuery.trim())}&page=${page ?? 0}`,
+      );
+      const data = await response.json();
+      if (!response.ok)
+        throw Error(data.error || "Could not load reading kits.");
+      setKits((current) =>
+        reset
+          ? data.kits
+          : [
+              ...new Map(
+                [...current, ...data.kits].map((kit: ReadingKitData) => [
+                  kit.id,
+                  kit,
+                ]),
+              ).values(),
+            ],
+      );
+      setNextPage(data.nextPage);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not load reading kits.",
+      );
+    } finally {
+      setLoadingList(false);
+    }
   }
 
   return (
@@ -224,7 +303,29 @@ export function ReadingKitBuilder({
         </section>
         <fieldset className="space-y-2">
           <legend className="text-sm font-medium">Books in the kit</legend>
-          {works.map((work) => (
+          <div className="flex gap-2">
+            <Input
+              aria-label="Search books for kit"
+              placeholder="Title, author or ISBN"
+              value={workQuery}
+              onChange={(event) => setWorkQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  void searchWorks();
+                }
+              }}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={saving}
+              onClick={() => void searchWorks()}
+            >
+              Search books
+            </Button>
+          </div>
+          {workOptions.map((work) => (
             <label key={work.id} className="flex gap-2 text-sm">
               <input
                 type="checkbox"
@@ -279,8 +380,25 @@ export function ReadingKitBuilder({
           </Button>
         )}
       </section>
-      <section className="space-y-3">
+      <section aria-label="Saved kits" className="space-y-3">
         <h2 className="font-display text-2xl">Your kits</h2>
+        <form
+          className="flex gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void loadKits(true);
+          }}
+        >
+          <Input
+            aria-label="Search reading kits"
+            placeholder="Search kits or linked books"
+            value={kitQuery}
+            onChange={(event) => setKitQuery(event.target.value)}
+          />
+          <Button type="submit" variant="ghost" disabled={loadingList}>
+            {loadingList ? "Searching..." : "Search kits"}
+          </Button>
+        </form>
         {kits.map((kit) => (
           <article
             key={kit.id}
@@ -327,6 +445,15 @@ export function ReadingKitBuilder({
         ))}
         {!kits.length && (
           <p className="text-sm text-ink-500">No reading kits yet.</p>
+        )}
+        {nextPage !== null && (
+          <Button
+            variant="ghost"
+            disabled={loadingList}
+            onClick={() => void loadKits(false)}
+          >
+            {loadingList ? "Loading..." : "Load more kits"}
+          </Button>
         )}
       </section>
     </div>

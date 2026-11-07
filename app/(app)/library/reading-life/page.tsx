@@ -22,7 +22,7 @@ export default async function ReadingLifePage() {
         },
       },
       orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
-      take: 50,
+      take: 21,
     }),
     prisma.work.findMany({
       where: {
@@ -32,7 +32,7 @@ export default async function ReadingLifePage() {
       },
       select: { id: true, title: true, authorName: true },
       orderBy: [{ title: "asc" }, { id: "asc" }],
-      take: 100,
+      take: 20,
     }),
     prisma.readingAfternoon.findMany({
       where: { userId: session.user.id, deletedAt: null },
@@ -40,7 +40,7 @@ export default async function ReadingLifePage() {
         work: { select: { id: true, title: true, authorName: true } },
       },
       orderBy: [{ date: "asc" }, { id: "asc" }],
-      take: 50,
+      take: 21,
     }),
   ]);
   return (
@@ -62,16 +62,20 @@ export default async function ReadingLifePage() {
       </header>
       <ReadingKitBuilder
         works={savedWorks}
-        initial={kits as ReadingKitData[]}
+        initial={kits.slice(0, 20) as ReadingKitData[]}
+        initialNextPage={kits.length > 20 ? 1 : null}
       />
       <ReadingAfternoonPlanner
         works={savedWorks}
-        kits={kits.map((kit) => ({ id: kit.id, title: kit.title }))}
-        initial={afternoons.map((item) => ({
+        kits={kits
+          .slice(0, 20)
+          .map((kit) => ({ id: kit.id, title: kit.title }))}
+        initial={afternoons.slice(0, 20).map((item) => ({
           ...item,
           date: item.date.toISOString(),
           work: item.work,
         }))}
+        initialNextPage={afternoons.length > 20 ? 1 : null}
       />
     </main>
   );

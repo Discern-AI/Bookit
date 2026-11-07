@@ -605,3 +605,10 @@ The [consolidated build checklist](BUILD_CHECKLIST.md) replaces the former remai
 - Book listings must use a canonical Work already in the owner's library. Owned listings and explicit saves retain separate provenance in private book journals and library export. Unpublishing revokes other readers' saves; deletion clears private listing content.
 - Writes use stable client IDs, advisory locks, optimistic versions, lost-response retry handling and same-origin JSON checks. Client payloads omit internal owner IDs.
 - Applied the `20261106020000_marketplace_foundation` migration to the isolated test database. Type checking, unit tests, the production build and the focused two-account marketplace browser scenario pass. Live commerce/provider calls and deployment were not performed.
+
+## Reading Life and marketplace pagination - 7 November 2026
+
+- Replaced silent 50-record Reading Life/marketplace ceilings and 100-work selectors with 20-item pages and authenticated server-side search. Private kits, reading afternoons and bookshop outcomes search owner-scoped text plus canonical linked-work titles/authors. Every book picker now searches only the signed-in reader's library.
+- Marketplace catalogue search covers listing text and linked books, with category, budget, saved-idea and owned-listing filters. Its opaque keyset cursor follows the existing updated-time/id ordering; internal owner IDs remain excluded from client payloads.
+- Existing journal/export associations, explicit saves, privacy, optimistic writes and deletion behaviour are unchanged. No schema migration, live provider call or deployment was required.
+- Validation passed: standalone type checking, unit suite and the final production build. The marketplace browser scenario passed with 26 listings and second-page/search/filter checks. Both Reading Life hardening scenarios passed with 26 kits, afternoons and outcomes, including second-page/search coverage plus the existing privacy, journal/export, erasure and moderation checks.

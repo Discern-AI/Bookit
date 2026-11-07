@@ -94,11 +94,11 @@ No overall completion percentage is assigned: an integration, marketplace or rel
 - [ ] **Deferred:** end-to-end live verification of opted-in context after API-key setup.
 - [x] Private Reading Kit foundation: owner-scoped editable private plans, library-work entries, make-do notes and budget tiers, with source-linked book journals and private export; public publication remains out of scope.
 - [x] Bounded Reading Life marketplace foundation for Reading Objects and Books: explicit draft/publish listings, four budget tiers, external purchase links paired with make-do alternatives, private saves, canonical book-journal provenance and private export. No checkout, stock, seller or verified-price claims.
-- [ ] **Partial:** marketplace catalogue/search pagination, trust/moderation, richer creator kits and any explicitly scoped transactional services remain unfinished.
+- [ ] **Partial:** marketplace trust/moderation, richer creator kits and any explicitly scoped transactional services remain unfinished. Catalogue search, filters and cursor pagination are implemented.
 - [x] Local sensory Reading Kit foundation: deterministic private atmosphere, lighting, sound and comfort suggestions saved with each kit; no live provider inference.
 - [x] Private reading-afternoon foundation: editable user-entered conditions, places, duration, pace and library/kit associations; local page estimates, book-journal links and private export, with no live weather or provider claims.
 - [x] Nearby bookshops screen: explicit-location Google Maps search and editable owner-scoped private outcomes. Coordinate-bearing links stay in the browser and are not stored; an upgrade clears earlier saved map URLs. Book-linked outcomes appear in journals and private export. External results do not verify stock or opening hours.
-- [ ] **Partial:** Reading Life lists remain bounded to the first 50 records and library-book selectors to 100 works; larger-account search/pagination remains unfinished.
+- [x] Reading Life and marketplace collection scaling foundation: 20-item pagination and server-side search for marketplace listings, private kits, reading afternoons and bookshop outcomes; marketplace filters and owner-scoped library-work search replace silent first-page selector limits.
 - [ ] **Partial:** edition comparison now supports physical-only filtering and sorting by loaded order, year, pages or publisher. Nice/collectable value judgments, cover-quality comparison, special-edition classification and live pricing remain not built.
 
 ## 7. Public-launch gates
@@ -124,7 +124,7 @@ Recommended sequence:
 2. Completed: explicit AI context-sharing controls and local tests; live verification remains deferred.
 3. Discovery and Reading Life foundations are hardened and integrated; canonical author releases, live acquisition and richer nice-edition data remain partial.
 4. Completed: bounded Reading Life marketplace foundation with journal/export and explicit-action rules; transactional scope remains deliberately excluded.
-5. Next: paginate and search larger Reading Life/marketplace collections, then continue public video/social and delivery integrations as provider access becomes available.
+5. Completed: paginate and search larger Reading Life/marketplace collections. Next, add marketplace trust/moderation before continuing public video/social and delivery integrations as provider access becomes available.
 6. Finish release gates and live-provider acceptance checks before launch. Security/operational preparation can proceed alongside feature work.
 
 Future continuations should update this checklist and append evidence to BUILD_STATUS.md. Do not mark a live integration complete because fixture tests pass. Validation is recorded per continuation in BUILD_STATUS.md; targeted regression runs are not a fresh full-product regression.

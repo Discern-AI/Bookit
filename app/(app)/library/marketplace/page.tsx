@@ -5,11 +5,12 @@ import {
   type MarketplaceItem,
 } from "@/components/context/MarketplaceFoundation";
 import { prisma } from "@/lib/prisma";
+import { marketplacePage } from "@/lib/marketplace-data";
 
 export default async function MarketplacePage() {
   const session = await auth();
   if (!session?.user?.id) return null;
-  const [works, published, mine] = await Promise.all([
+  const [works, firstPage] = await Promise.all([
     prisma.work.findMany({
       where: {
         editions: {
@@ -18,37 +19,10 @@ export default async function MarketplacePage() {
       },
       select: { id: true, title: true, authorName: true },
       orderBy: [{ title: "asc" }, { id: "asc" }],
-      take: 100,
+      take: 20,
     }),
-    prisma.marketplaceListing.findMany({
-      where: { isPublished: true, deletedAt: null },
-      include: {
-        work: { select: { id: true, title: true, authorName: true } },
-        saves: { where: { userId: session.user.id }, select: { userId: true } },
-      },
-      orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
-      take: 50,
-    }),
-    prisma.marketplaceListing.findMany({
-      where: { userId: session.user.id, deletedAt: null },
-      include: {
-        work: { select: { id: true, title: true, authorName: true } },
-        saves: { where: { userId: session.user.id }, select: { userId: true } },
-      },
-      orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
-      take: 50,
-    }),
+    marketplacePage(session.user.id, {}),
   ]);
-  const items = new Map(
-    [...published, ...mine].map(({ saves, userId, ...item }) => [
-      item.id,
-      {
-        ...item,
-        isSaved: saves.length > 0,
-        isOwner: userId === session.user.id,
-      },
-    ]),
-  );
   return (
     <main className="max-w-5xl mx-auto px-4 sm:px-8 py-8 space-y-6">
       <nav className="flex gap-4">
@@ -68,7 +42,8 @@ export default async function MarketplacePage() {
       </header>
       <MarketplaceFoundation
         works={works}
-        initial={[...items.values()] as MarketplaceItem[]}
+        initial={firstPage.listings as MarketplaceItem[]}
+        initialCursor={firstPage.nextCursor}
       />
     </main>
   );
