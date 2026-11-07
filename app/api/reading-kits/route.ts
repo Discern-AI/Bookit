@@ -250,6 +250,7 @@ export async function DELETE(request: Request) {
       );
     await tx.readingKitEntry.deleteMany({ where: { kitId: old.id } });
     await tx.readingKitItem.deleteMany({ where: { kitId: old.id } });
+    await tx.readingKitSave.deleteMany({ where: { kitId: old.id } });
     await tx.readingKit.update({
       where: { id: old.id },
       data: {

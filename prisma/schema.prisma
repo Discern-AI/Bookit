@@ -52,6 +52,7 @@ model User {
   marketplaceSaves MarketplaceSave[]
   marketplaceReports MarketplaceReport[]
   readingKitReports ReadingKitReport[]
+  readingKitSaves ReadingKitSave[]
   bookshopOutcomes BookshopOutcome[]
   readingAfternoons ReadingAfternoon[]
   readingKits ReadingKit[]
@@ -893,9 +894,20 @@ model ReadingKit {
   entries ReadingKitEntry[]
   items ReadingKitItem[]
   reports ReadingKitReport[]
+  saves ReadingKitSave[]
   afternoons ReadingAfternoon[]
   @@index([userId, deletedAt, updatedAt])
   @@index([isPublic, deletedAt, updatedAt])
+}
+
+model ReadingKitSave {
+  kitId String @db.Uuid
+  userId String
+  createdAt DateTime @default(now())
+  kit ReadingKit @relation(fields: [kitId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([kitId, userId])
+  @@index([userId, createdAt])
 }
 
 model ReadingKitReport {

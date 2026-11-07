@@ -4,6 +4,7 @@ export type PublicKitFilters = {
   q: string;
   budget: (typeof budgetTiers)[number] | "all";
   content: "all" | "books" | "items";
+  scope: "all" | "saved";
   cursor: { publishedAt: Date; id: string } | null;
 };
 
@@ -46,10 +47,12 @@ export function parsePublicKitFilters(
   const rawContent = first(params.content);
   const content =
     rawContent === "books" || rawContent === "items" ? rawContent : "all";
+  const scope = first(params.scope) === "saved" ? "saved" : "all";
   return {
     q,
     budget,
     content,
+    scope,
     cursor: decodePublicKitCursor(first(params.cursor)),
   };
 }
@@ -59,6 +62,7 @@ export function publicKitQuery(filters: PublicKitFilters, cursor?: string) {
   if (filters.q) params.set("q", filters.q);
   if (filters.budget !== "all") params.set("budget", filters.budget);
   if (filters.content !== "all") params.set("content", filters.content);
+  if (filters.scope !== "all") params.set("scope", filters.scope);
   if (cursor) params.set("cursor", cursor);
   const query = params.toString();
   return query ? `/community/kits?${query}` : "/community/kits";

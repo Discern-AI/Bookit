@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
+import { FollowReader } from "@/components/community/FollowReader";
 import { ReportReadingKit } from "@/components/context/ReadingKitModeration";
+import { SaveReadingKit } from "@/components/context/SaveReadingKit";
 import { prisma } from "@/lib/prisma";
 
 export default async function PublicKitPage({
@@ -25,9 +27,32 @@ export default async function PublicKitPage({
         orderBy: { position: "asc" },
       },
       items: { orderBy: { position: "asc" } },
+      user: {
+        select: {
+          username: true,
+          publicName: true,
+          profilePublic: true,
+        },
+      },
+      saves: session?.user?.id
+        ? { where: { userId: session.user.id }, select: { userId: true } }
+        : false,
     },
   });
   if (!kit) notFound();
+  const publicCreator = kit.user.profilePublic && kit.user.username;
+  const following =
+    publicCreator && session?.user?.id && session.user.id !== kit.userId
+      ? await prisma.readerFollow.findUnique({
+          where: {
+            followerId_readerId: {
+              followerId: session.user.id,
+              readerId: kit.userId,
+            },
+          },
+          select: { readerId: true },
+        })
+      : null;
   return (
     <main className="max-w-3xl mx-auto p-6 space-y-6">
       <nav>
@@ -39,7 +64,34 @@ export default async function PublicKitPage({
         <h1 className="font-display text-4xl">{kit.title}</h1>
         <p>{kit.publicDescription}</p>
         <p className="text-sm uppercase">{kit.budgetTier.replace("_", " ")}</p>
+        <p className="text-sm">
+          {publicCreator ? (
+            <Link className="underline" href={`/profile/${kit.user.username}`}>
+              Created by {kit.user.publicName || `@${kit.user.username}`}
+            </Link>
+          ) : (
+            "Created by a community reader"
+          )}
+        </p>
       </header>
+      {session?.user?.id && session.user.id !== kit.userId ? (
+        <div className="flex flex-wrap gap-3">
+          <SaveReadingKit
+            kitId={kit.id}
+            initialSaved={Array.isArray(kit.saves) && kit.saves.length > 0}
+          />
+          {publicCreator && (
+            <FollowReader
+              readerId={kit.userId}
+              initialFollowing={!!following}
+            />
+          )}
+        </div>
+      ) : !session?.user?.id ? (
+        <Link className="underline" href="/login">
+          Sign in to save this kit
+        </Link>
+      ) : null}
       {kit.creatorEssay && (
         <section>
           <h2 className="font-display text-2xl">Introduction</h2>

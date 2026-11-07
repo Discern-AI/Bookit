@@ -1,5 +1,6 @@
 import { ArticleList } from "@/components/articles/ArticleList";
 import { ProfileCollections } from "@/components/community/ProfileCollections";
+import { ProfileReadingKits } from "@/components/community/ProfileReadingKits";
 import { auth } from "@/auth";
 import { FollowReader } from "@/components/community/FollowReader";
 import Link from "next/link";
@@ -33,6 +34,7 @@ export default async function Page({
   const tab =
     searchParams.tab === "shelves" ||
     searchParams.tab === "paths" ||
+    searchParams.tab === "kits" ||
     (searchParams.tab === "blog" && user.blogEnabled)
       ? searchParams.tab
       : "reviews";
@@ -94,6 +96,7 @@ export default async function Page({
           "reviews",
           "shelves",
           "paths",
+          "kits",
           ...(user.blogEnabled ? ["blog"] : []),
         ].map((section) => (
           <Link
@@ -104,11 +107,13 @@ export default async function Page({
           >
             {section === "paths"
               ? "Reading paths"
-              : section === "shelves"
-                ? "Shelves"
-                : section === "blog"
-                  ? "Blog"
-                  : "Reviews"}
+              : section === "kits"
+                ? "Reading Kits"
+                : section === "shelves"
+                  ? "Shelves"
+                  : section === "blog"
+                    ? "Blog"
+                    : "Reviews"}
           </Link>
         ))}
       </nav>
@@ -123,6 +128,12 @@ export default async function Page({
             basePath={`/profile/${user.username}?tab=blog`}
           />
         </>
+      ) : tab === "kits" ? (
+        <ProfileReadingKits
+          userId={user.id}
+          username={user.username!}
+          page={reviewPage(searchParams.page)}
+        />
       ) : tab !== "reviews" ? (
         <ProfileCollections
           userId={user.id}

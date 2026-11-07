@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
+import { auth } from "@/auth";
+import { SaveReadingKit } from "@/components/context/SaveReadingKit";
 import { prisma } from "@/lib/prisma";
 import {
   encodePublicKitCursor,
@@ -14,6 +16,7 @@ export default async function PublicKitsPage({
 }: {
   searchParams: Record<string, string | string[] | undefined>;
 }) {
+  const session = await auth();
   const filters = parsePublicKitFilters(searchParams);
   const where: Prisma.ReadingKitWhereInput = {
     isPublic: true,
@@ -23,6 +26,11 @@ export default async function PublicKitsPage({
     ...(filters.budget === "all" ? {} : { budgetTier: filters.budget }),
     ...(filters.content === "books" ? { entries: { some: {} } } : {}),
     ...(filters.content === "items" ? { items: { some: {} } } : {}),
+    ...(filters.scope === "saved"
+      ? session?.user?.id
+        ? { saves: { some: { userId: session.user.id } } }
+        : { id: { in: [] } }
+      : {}),
     AND: [
       ...(filters.q
         ? [
@@ -101,6 +109,17 @@ export default async function PublicKitsPage({
       publicDescription: true,
       budgetTier: true,
       publishedAt: true,
+      userId: true,
+      user: {
+        select: {
+          username: true,
+          publicName: true,
+          profilePublic: true,
+        },
+      },
+      saves: session?.user?.id
+        ? { where: { userId: session.user.id }, select: { userId: true } }
+        : false,
       entries: {
         select: { work: { select: { title: true, authorName: true } } },
         orderBy: { position: "asc" },
@@ -130,7 +149,7 @@ export default async function PublicKitsPage({
           availability are not verified; kits are not sold by Folio.
         </p>
       </header>
-      <form className="grid gap-3 rounded border border-ink-200 p-4 md:grid-cols-4">
+      <form className="grid gap-3 rounded border border-ink-200 p-4 md:grid-cols-5">
         <label className="md:col-span-2">
           Search public kits
           <input
@@ -166,6 +185,17 @@ export default async function PublicKitsPage({
             <option value="items">Objects or resources</option>
           </select>
         </label>
+        <label>
+          Show
+          <select
+            className="mt-1 w-full rounded border p-2"
+            defaultValue={filters.scope}
+            name="scope"
+          >
+            <option value="all">All public kits</option>
+            <option value="saved">My saved kits</option>
+          </select>
+        </label>
         <div className="flex gap-3 md:col-span-4">
           <button className="rounded bg-ink-900 px-4 py-2 text-white">
             Search kits
@@ -188,16 +218,38 @@ export default async function PublicKitsPage({
             </h2>
             <p>{kit.publicDescription}</p>
             <p className="text-sm">{kit.budgetTier.replace("_", " ")}</p>
+            <p className="text-sm">
+              {kit.user.profilePublic && kit.user.username ? (
+                <Link
+                  className="underline"
+                  href={`/profile/${kit.user.username}`}
+                >
+                  By {kit.user.publicName || `@${kit.user.username}`}
+                </Link>
+              ) : (
+                "By a community reader"
+              )}
+            </p>
             {kit.entries.map((entry) => (
               <p key={entry.work.title} className="text-sm">
                 {entry.work.title} — {entry.work.authorName}
               </p>
             ))}
+            {session?.user?.id && session.user.id !== kit.userId && (
+              <SaveReadingKit
+                kitId={kit.id}
+                initialSaved={Array.isArray(kit.saves) && kit.saves.length > 0}
+              />
+            )}
           </article>
         ))}
       </div>
       {!visibleKits.length && (
-        <p>No public Reading Kits match these filters.</p>
+        <p>
+          {filters.scope === "saved" && !session?.user?.id
+            ? "Sign in to see your saved Reading Kits."
+            : "No public Reading Kits match these filters."}
+        </p>
       )}
       {nextCursor && (
         <Link

@@ -97,7 +97,8 @@ No overall completion percentage is assigned: an integration, marketplace or rel
 - [x] Marketplace trust foundation: signed-in reporting with public-field snapshots, moderator pending/resolved queues, dismiss/hide/restore decisions, owner-edit restriction preservation and save revocation on hide.
 - [x] Structured creator-ready Reading Kits with essays, playlist links, suggested order, ordered objects/resources and canonical books; explicit community publication uses a public-field allowlist and keeps private Plan notes hidden.
 - [x] Public Reading Kit reporting and moderation foundation with versioned hide/dismiss/restore decisions and owner-edit restriction preservation.
-- [ ] **Partial:** public-kit discovery has search, filters and cursor pagination. Creator attribution, following/saving and any explicitly scoped transactional services remain unfinished.
+- [x] Public-kit discovery with search, filters and cursor pagination; opt-in public-profile attribution, existing reader following and private saved-kit views/exports.
+- [ ] **Partial:** explicitly scoped transactional Reading Kit services remain unfinished; no checkout, payments, fulfilment or verified availability are implied by publication or saving.
 - [x] Local sensory Reading Kit foundation: deterministic private atmosphere, lighting, sound and comfort suggestions saved with each kit; no live provider inference.
 - [x] Private reading-afternoon foundation: editable user-entered conditions, places, duration, pace and library/kit associations; local page estimates, book-journal links and private export, with no live weather or provider claims.
 - [x] Nearby bookshops screen: explicit-location Google Maps search and editable owner-scoped private outcomes. Coordinate-bearing links stay in the browser and are not stored; an upgrade clears earlier saved map URLs. Book-linked outcomes appear in journals and private export. External results do not verify stock or opening hours.
@@ -127,7 +128,7 @@ Recommended sequence:
 2. Completed: explicit AI context-sharing controls and local tests; live verification remains deferred.
 3. Discovery and Reading Life foundations are hardened and integrated; canonical author releases, live acquisition and richer nice-edition data remain partial.
 4. Completed: bounded Reading Life marketplace foundation with journal/export and explicit-action rules; transactional scope remains deliberately excluded.
-5. Completed: paginate/search larger Reading Life and marketplace collections, add marketplace reporting/moderation, and build structured creator-ready Reading Kits with safe public/community publication. Next, add creator attribution and optional public-kit saving/following before continuing provider-dependent social and delivery integrations.
+5. Completed: paginate/search larger Reading Life and marketplace collections, add marketplace reporting/moderation, and build structured creator-ready Reading Kits with safe public publication, creator attribution and optional saving/following. Next, return to the remaining non-provider product gaps or begin release-gate hardening before provider-dependent social and delivery integrations.
 6. Finish release gates and live-provider acceptance checks before launch. Security/operational preparation can proceed alongside feature work.
 
 Future continuations should update this checklist and append evidence to BUILD_STATUS.md. Do not mark a live integration complete because fixture tests pass. Validation is recorded per continuation in BUILD_STATUS.md; targeted regression runs are not a fresh full-product regression.

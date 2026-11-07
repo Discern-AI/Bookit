@@ -63,6 +63,22 @@ export async function GET() {
     include: { listing: true },
     orderBy: [{ createdAt: "asc" }, { listingId: "asc" }],
   });
+  const readingKitSaves = await prisma.readingKitSave.findMany({
+    where: { userId: session.user.id, kit: { deletedAt: null } },
+    select: {
+      kitId: true,
+      createdAt: true,
+      kit: {
+        select: {
+          title: true,
+          publicDescription: true,
+          isPublic: true,
+          publicModerationStatus: true,
+        },
+      },
+    },
+    orderBy: [{ createdAt: "asc" }, { kitId: "asc" }],
+  });
   const books = await prisma.userBook.findMany({
     where: { userId: session.user.id },
     include: {
@@ -112,6 +128,7 @@ export async function GET() {
         bookshopOutcomes,
         marketplaceListings,
         marketplaceSaves,
+        readingKitSaves,
       },
       null,
       2,
