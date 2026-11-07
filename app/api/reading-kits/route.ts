@@ -40,6 +40,12 @@ export async function GET(request: Request) {
               { creatorEssay: { contains: q, mode: "insensitive" as const } },
               { suggestedOrder: { contains: q, mode: "insensitive" as const } },
               {
+                publicDescription: {
+                  contains: q,
+                  mode: "insensitive" as const,
+                },
+              },
+              {
                 items: {
                   some: {
                     title: { contains: q, mode: "insensitive" as const },
@@ -135,8 +141,9 @@ export async function POST(request: Request) {
       old.creatorEssay === kit.creatorEssay &&
       old.playlistUrl === kit.playlistUrl &&
       old.suggestedOrder === kit.suggestedOrder &&
+      old.publicDescription === kit.publicDescription &&
       old.budgetTier === kit.budgetTier &&
-      old.isPublic === false &&
+      old.isPublic === kit.isPublic &&
       JSON.stringify(
         old.entries.map(({ workId, note }) => ({ workId, note })),
       ) === JSON.stringify(kit.entries) &&
@@ -188,8 +195,10 @@ export async function POST(request: Request) {
       creatorEssay: kit.creatorEssay,
       playlistUrl: kit.playlistUrl,
       suggestedOrder: kit.suggestedOrder,
+      publicDescription: kit.publicDescription,
       budgetTier: kit.budgetTier,
-      isPublic: false,
+      isPublic: kit.isPublic,
+      publishedAt: kit.isPublic ? (old?.publishedAt ?? new Date()) : null,
       entries: {
         create: kit.entries.map((entry, position) => ({ ...entry, position })),
       },
@@ -251,7 +260,9 @@ export async function DELETE(request: Request) {
         creatorEssay: "",
         playlistUrl: "",
         suggestedOrder: "",
+        publicDescription: "",
         isPublic: false,
+        publishedAt: null,
         deletedAt: new Date(),
         version: { increment: 1 },
       },

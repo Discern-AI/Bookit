@@ -21,6 +21,7 @@ export type ReadingKitData = {
   creatorEssay: string;
   playlistUrl: string;
   suggestedOrder: string;
+  publicDescription: string;
   budgetTier: string;
   isPublic: boolean;
   entries: { workId: string; note: string; work: KitWork }[];
@@ -49,6 +50,8 @@ export function ReadingKitBuilder({
   const [creatorEssay, setCreatorEssay] = useState("");
   const [playlistUrl, setPlaylistUrl] = useState("");
   const [suggestedOrder, setSuggestedOrder] = useState("");
+  const [publicDescription, setPublicDescription] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
   const [items, setItems] = useState<KitItem[]>([]);
   const [itemKind, setItemKind] = useState<KitItem["kind"]>("reading_object");
   const [itemTitle, setItemTitle] = useState("");
@@ -80,8 +83,9 @@ export function ReadingKitBuilder({
             creatorEssay,
             playlistUrl,
             suggestedOrder,
+            publicDescription,
             budgetTier,
-            isPublic: false,
+            isPublic,
             entries: selected.map((workId) => ({ workId, note: "" })),
             items,
           },
@@ -101,8 +105,9 @@ export function ReadingKitBuilder({
         creatorEssay,
         playlistUrl,
         suggestedOrder,
+        publicDescription,
         budgetTier,
-        isPublic: false,
+        isPublic,
         entries: selected.map((workId) => ({
           workId,
           note: "",
@@ -127,6 +132,8 @@ export function ReadingKitBuilder({
       setCreatorEssay("");
       setPlaylistUrl("");
       setSuggestedOrder("");
+      setPublicDescription("");
+      setIsPublic(false);
       setItems([]);
       setSelected([]);
       setRequestId(crypto.randomUUID());
@@ -180,6 +187,8 @@ export function ReadingKitBuilder({
     setCreatorEssay(kit.creatorEssay);
     setPlaylistUrl(kit.playlistUrl);
     setSuggestedOrder(kit.suggestedOrder);
+    setPublicDescription(kit.publicDescription);
+    setIsPublic(kit.isPublic);
     setItems(kit.items);
     setBudgetTier(kit.budgetTier);
     setSelected(kit.entries.map((entry) => entry.workId));
@@ -469,6 +478,41 @@ export function ReadingKitBuilder({
             </ol>
           </fieldset>
         </section>
+        <section className="space-y-3 rounded border border-ink-100 p-3">
+          <div>
+            <h3 className="font-medium">Community publication</h3>
+            <p className="text-xs text-ink-500">
+              Explicit publication shows the title, public description, essay,
+              make-do and sensory guidance, playlist, suggested order,
+              structured items and selected books. Private Plan notes are never
+              shown.
+            </p>
+          </div>
+          <label className="block text-sm">
+            Public description
+            <textarea
+              aria-label="Public kit description"
+              className="block w-full rounded border border-ink-200 bg-paper-50 p-2 min-h-20"
+              maxLength={1000}
+              value={publicDescription}
+              onChange={(event) => setPublicDescription(event.target.value)}
+            />
+          </label>
+          <label className="block text-sm">
+            <input
+              type="checkbox"
+              checked={isPublic}
+              onChange={(event) => setIsPublic(event.target.checked)}
+            />{" "}
+            Publish this kit to the community
+          </label>
+          {isPublic && (
+            <p className="text-xs text-ink-500">
+              Publishing does not sell the kit, verify products or expose
+              private Plan notes.
+            </p>
+          )}
+        </section>
         <fieldset className="space-y-2">
           <legend className="text-sm font-medium">Books in the kit</legend>
           <div className="flex gap-2">
@@ -544,6 +588,8 @@ export function ReadingKitBuilder({
               setCreatorEssay("");
               setPlaylistUrl("");
               setSuggestedOrder("");
+              setPublicDescription("");
+              setIsPublic(false);
               setItems([]);
               setSelected([]);
             }}
@@ -590,6 +636,7 @@ export function ReadingKitBuilder({
             </div>
             <p className="text-xs uppercase text-ink-500">
               {kit.budgetTier.replace("_", " ")}
+              {kit.isPublic ? " · published" : " · private"}
             </p>
             {kit.notes && (
               <p className="whitespace-pre-wrap text-sm">{kit.notes}</p>

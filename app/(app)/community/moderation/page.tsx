@@ -49,6 +49,9 @@ export default async function Page({
       <Link className="underline" href="/community/moderation/marketplace">
         Marketplace reports
       </Link>
+      <Link className="underline" href="/community/moderation/reading-kits">
+        Reading Kit reports
+      </Link>
       <Link className="underline" href="/community/moderation/appeals">
         Review appeals
       </Link>

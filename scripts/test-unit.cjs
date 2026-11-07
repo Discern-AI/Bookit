@@ -500,6 +500,9 @@ assert.equal(readingKitSchema.safeParse({ title: "Valid kit", budgetTier: "unkno
 assert.equal(readingKitSchema.safeParse({ title: "Valid kit", entries: [{ workId: "work-1", note: "" }, { workId: "work-1", note: "again" }] }).success, false);
 assert.equal(readingKitSchema.safeParse({ title: "Sensory kit", sensoryProfile: "Warm lamp. Quiet music." , entries: [] }).success, true);
 assert.equal(readingKitSchema.safeParse({ title: "Creator kit", creatorEssay: "An introduction", playlistUrl: "https://example.com/playlist", suggestedOrder: "Essay, story, reflection", entries: [], items: [{ kind: "reading_object", title: "Bookmark", details: "Use a favourite one", externalUrl: "https://example.com/bookmark" }] }).success, true);
+assert.equal(readingKitSchema.safeParse({ title: "Public kit", isPublic: true, publicDescription: "Too short", entries: [{ workId: "work-1", note: "" }] }).success, false);
+assert.equal(readingKitSchema.safeParse({ title: "Empty public kit", isPublic: true, publicDescription: "A public description for readers.", entries: [] }).success, false);
+assert.equal(readingKitSchema.safeParse({ title: "Public creator kit", isPublic: true, publicDescription: "A public description for readers.", entries: [], items: [{ kind: "resource", title: "Reading guide", externalUrl: "https://example.com/guide" }] }).success, true);
 assert.equal(readingKitSchema.safeParse({ title: "Unsafe playlist", playlistUrl: "javascript:alert(1)", entries: [] }).success, false);
 assert.equal(readingKitSchema.safeParse({ title: "Unsafe item", entries: [], items: [{ kind: "resource", title: "Essay", externalUrl: "https://user:secret@example.com" }] }).success, false);
 const { buildSensoryProfile } = require("../lib/reading-kit.ts");

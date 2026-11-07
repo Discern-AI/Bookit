@@ -51,6 +51,7 @@ model User {
   marketplaceListings MarketplaceListing[]
   marketplaceSaves MarketplaceSave[]
   marketplaceReports MarketplaceReport[]
+  readingKitReports ReadingKitReport[]
   bookshopOutcomes BookshopOutcome[]
   readingAfternoons ReadingAfternoon[]
   readingKits ReadingKit[]
@@ -879,8 +880,11 @@ model ReadingKit {
   creatorEssay String @default("")
   playlistUrl String @default("")
   suggestedOrder String @default("")
+  publicDescription String @default("")
   budgetTier String @default("comfortable")
   isPublic Boolean @default(false)
+  publicModerationStatus String @default("active")
+  publishedAt DateTime?
   version Int @default(1)
   deletedAt DateTime?
   createdAt DateTime @default(now())
@@ -888,9 +892,32 @@ model ReadingKit {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   entries ReadingKitEntry[]
   items ReadingKitItem[]
+  reports ReadingKitReport[]
   afternoons ReadingAfternoon[]
   @@index([userId, deletedAt, updatedAt])
   @@index([isPublic, deletedAt, updatedAt])
+}
+
+model ReadingKitReport {
+  id String @id @default(cuid())
+  kitId String @db.Uuid
+  reporterId String
+  kitVersion Int
+  title String
+  publicDescription String
+  publicContent Json
+  reason String
+  details String
+  status String @default("pending")
+  decisionVersion Int?
+  note String @default("")
+  resolvedById String?
+  resolvedAt DateTime?
+  createdAt DateTime @default(now())
+  kit ReadingKit @relation(fields: [kitId], references: [id], onDelete: Cascade)
+  reporter User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  @@unique([kitId, reporterId, kitVersion])
+  @@index([status, createdAt])
 }
 
 model ReadingKitItem {

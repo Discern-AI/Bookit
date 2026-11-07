@@ -37,6 +37,9 @@ export default async function Page({
       <Link className="underline" href="/community/articles">
         Reader articles
       </Link>
+      <Link className="underline" href="/community/kits">
+        Community Reading Kits
+      </Link>
       <Link className="underline" href="/creator">
         Your articles
       </Link>

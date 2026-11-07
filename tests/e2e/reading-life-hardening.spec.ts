@@ -56,6 +56,7 @@ test.afterAll(async () => {
 
 test("Reading Life writes are retry-safe, journalled, exported and erased", async ({
   page,
+  browser,
 }) => {
   const user = await login(page, "owner");
   const work = await addBook(user.id);
@@ -69,8 +70,10 @@ test("Reading Life writes are retry-safe, journalled, exported and erased", asyn
     creatorEssay: "PRIVATE_CREATOR_ESSAY",
     playlistUrl: "https://example.com/private-playlist",
     suggestedOrder: "Read the essay, then the book.",
+    publicDescription:
+      "A public rainy-day ritual with one book and familiar objects.",
     budgetTier: "make_do",
-    isPublic: false,
+    isPublic: true,
     entries: [{ workId: work.id, note: "Kit book" }],
     items: [
       {
@@ -163,6 +166,7 @@ test("Reading Life writes are retry-safe, journalled, exported and erased", asyn
   ).toBeVisible();
   await expect(page.getByText("PRIVATE_CREATOR_ESSAY")).toBeVisible();
   await expect(page.getByText("Favourite bookmark")).toBeVisible();
+  await expect(page.getByText("published", { exact: false })).toBeVisible();
   await expect(page.getByLabel("Reading kit", { exact: true })).toContainText(
     "Updated rainy kit",
   );
@@ -174,6 +178,97 @@ test("Reading Life writes are retry-safe, journalled, exported and erased", asyn
   await page.getByLabel("Notes").fill("PRIVATE_AFTERNOON_NOTE_UPDATED");
   await page.getByRole("button", { name: "Save afternoon changes" }).click();
   await expect(page.getByText("PRIVATE_AFTERNOON_NOTE_UPDATED")).toBeVisible();
+
+  const publicContext = await browser.newContext();
+  const publicPage = await publicContext.newPage();
+  await publicPage.goto(`/kit/${kitId}`);
+  await expect(
+    publicPage.getByRole("heading", { name: "Updated rainy kit" }),
+  ).toBeVisible();
+  await expect(publicPage.getByText("PRIVATE_CREATOR_ESSAY")).toBeVisible();
+  await expect(publicPage.getByText("PRIVATE_KIT_NOTE")).toHaveCount(0);
+  await publicPage.goto("/community/kits");
+  await expect(
+    publicPage.getByRole("link", { name: "Updated rainy kit" }),
+  ).toBeVisible();
+
+  const reporterContext = await browser.newContext();
+  const reporterPage = await reporterContext.newPage();
+  const reporter = await login(reporterPage, "kit-reporter");
+  expect(
+    (
+      await reporterPage.request.post(`/api/reading-kits/${kitId}/report`, {
+        data: {
+          reason: "misleading",
+          details: "Please review this public kit.",
+        },
+      })
+    ).status(),
+  ).toBe(200);
+  const kitReport = await db.readingKitReport.findFirstOrThrow({
+    where: { kitId, reporterId: reporter.id },
+  });
+  expect(JSON.stringify(kitReport.publicContent)).not.toContain(
+    "PRIVATE_KIT_NOTE",
+  );
+  const moderatorContext = await browser.newContext();
+  const moderatorPage = await moderatorContext.newPage();
+  const moderator = await login(moderatorPage, "kit-moderator");
+  await db.user.update({
+    where: { id: moderator.id },
+    data: { isModerator: true },
+  });
+  expect(
+    (
+      await moderatorPage.request.patch(
+        `/api/moderation/reading-kits/${kitReport.id}`,
+        {
+          data: {
+            action: "hide",
+            version: 2,
+            note: "Hidden for a public-content review.",
+          },
+        },
+      )
+    ).status(),
+  ).toBe(200);
+  const updatedKit = { ...kit, title: "Updated rainy kit" };
+  expect(
+    (
+      await page.request.post("/api/reading-kits", {
+        data: { kitId, version: 3, kit: updatedKit },
+      })
+    ).status(),
+  ).toBe(200);
+  expect(
+    (await db.readingKit.findUniqueOrThrow({ where: { id: kitId } }))
+      .publicModerationStatus,
+  ).toBe("hidden");
+  await publicPage.goto(`/kit/${kitId}`);
+  await expect(
+    publicPage.getByRole("heading", { name: "Updated rainy kit" }),
+  ).toHaveCount(0);
+  expect(
+    (
+      await moderatorPage.request.patch(
+        `/api/moderation/reading-kits/${kitReport.id}`,
+        {
+          data: {
+            action: "restore",
+            version: 4,
+            note: "Restored after a second review.",
+          },
+        },
+      )
+    ).status(),
+  ).toBe(200);
+  await publicPage.goto(`/kit/${kitId}`);
+  await expect(
+    publicPage.getByRole("heading", { name: "Updated rainy kit" }),
+  ).toBeVisible();
+  await publicContext.close();
+  await reporterContext.close();
+  await moderatorContext.close();
 
   await db.readingKit.createMany({
     data: Array.from({ length: 25 }, (_, index) => ({
@@ -322,7 +417,7 @@ test("Reading Life writes are retry-safe, journalled, exported and erased", asyn
   for (const [url, data] of [
     ["/api/reading-afternoons", { afternoonId, version: 2 }],
     ["/api/bookshop-outcomes", { outcomeId, version: 2 }],
-    ["/api/reading-kits", { kitId, version: 2 }],
+    ["/api/reading-kits", { kitId, version: 5 }],
   ] as const)
     expect((await page.request.delete(url, { data })).status()).toBe(200);
 
@@ -354,7 +449,7 @@ test("Reading Life writes are retry-safe, journalled, exported and erased", asyn
   expect(
     (
       await page.request.post("/api/reading-kits", {
-        data: { kitId, version: 2, kit },
+        data: { kitId, version: 5, kit },
       })
     ).status(),
   ).toBe(409);

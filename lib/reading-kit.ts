@@ -57,38 +57,53 @@ export function buildSensoryProfile(
     base.push("Keep the selected book and the next possible book nearby");
   return base.join(". ") + ".";
 }
-export const readingKitSchema = z.object({
-  title: z.string().trim().min(3).max(120),
-  notes: z.string().trim().max(2000).default(""),
-  makeDo: z.string().trim().max(1000).default(""),
-  sensoryProfile: z.string().trim().max(1000).default(""),
-  creatorEssay: z.string().trim().max(6000).default(""),
-  playlistUrl: optionalPublicUrl.default(""),
-  suggestedOrder: z.string().trim().max(2000).default(""),
-  budgetTier: z.enum(budgetTiers).default("comfortable"),
-  isPublic: z.boolean().default(false),
-  entries: z
-    .array(
-      z.object({
-        workId: z.string().min(1).max(100),
-        note: z.string().trim().max(500).default(""),
-      }),
-    )
-    .max(20)
-    .refine(
-      (items) =>
-        new Set(items.map((item) => item.workId)).size === items.length,
-      "Choose each book once.",
-    ),
-  items: z
-    .array(
-      z.object({
-        kind: z.enum(readingKitItemKinds),
-        title: z.string().trim().min(2).max(120),
-        details: z.string().trim().max(500).default(""),
-        externalUrl: optionalPublicUrl.default(""),
-      }),
-    )
-    .max(20)
-    .default([]),
-});
+export const readingKitSchema = z
+  .object({
+    title: z.string().trim().min(3).max(120),
+    notes: z.string().trim().max(2000).default(""),
+    makeDo: z.string().trim().max(1000).default(""),
+    sensoryProfile: z.string().trim().max(1000).default(""),
+    creatorEssay: z.string().trim().max(6000).default(""),
+    playlistUrl: optionalPublicUrl.default(""),
+    suggestedOrder: z.string().trim().max(2000).default(""),
+    publicDescription: z.string().trim().max(1000).default(""),
+    budgetTier: z.enum(budgetTiers).default("comfortable"),
+    isPublic: z.boolean().default(false),
+    entries: z
+      .array(
+        z.object({
+          workId: z.string().min(1).max(100),
+          note: z.string().trim().max(500).default(""),
+        }),
+      )
+      .max(20)
+      .refine(
+        (items) =>
+          new Set(items.map((item) => item.workId)).size === items.length,
+        "Choose each book once.",
+      ),
+    items: z
+      .array(
+        z.object({
+          kind: z.enum(readingKitItemKinds),
+          title: z.string().trim().min(2).max(120),
+          details: z.string().trim().max(500).default(""),
+          externalUrl: optionalPublicUrl.default(""),
+        }),
+      )
+      .max(20)
+      .default([]),
+  })
+  .superRefine((kit, ctx) => {
+    if (kit.isPublic && kit.publicDescription.length < 10)
+      ctx.addIssue({
+        code: "custom",
+        path: ["publicDescription"],
+        message: "Add a public description of at least 10 characters.",
+      });
+    if (kit.isPublic && !kit.entries.length && !kit.items.length)
+      ctx.addIssue({
+        code: "custom",
+        message: "A public kit needs at least one book or package item.",
+      });
+  });
