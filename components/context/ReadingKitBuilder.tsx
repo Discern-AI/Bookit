@@ -5,6 +5,12 @@ import { Input } from "@/components/ui/Input";
 import { buildSensoryProfile } from "@/lib/reading-kit";
 
 export type KitWork = { id: string; title: string; authorName: string };
+type KitItem = {
+  kind: "reading_object" | "atmosphere" | "food_drink" | "resource";
+  title: string;
+  details: string;
+  externalUrl: string;
+};
 export type ReadingKitData = {
   id: string;
   version: number;
@@ -12,9 +18,13 @@ export type ReadingKitData = {
   notes: string;
   makeDo: string;
   sensoryProfile: string;
+  creatorEssay: string;
+  playlistUrl: string;
+  suggestedOrder: string;
   budgetTier: string;
   isPublic: boolean;
   entries: { workId: string; note: string; work: KitWork }[];
+  items: KitItem[];
 };
 
 export function ReadingKitBuilder({
@@ -36,6 +46,14 @@ export function ReadingKitBuilder({
   const [notes, setNotes] = useState("");
   const [makeDo, setMakeDo] = useState("");
   const [sensoryProfile, setSensoryProfile] = useState("");
+  const [creatorEssay, setCreatorEssay] = useState("");
+  const [playlistUrl, setPlaylistUrl] = useState("");
+  const [suggestedOrder, setSuggestedOrder] = useState("");
+  const [items, setItems] = useState<KitItem[]>([]);
+  const [itemKind, setItemKind] = useState<KitItem["kind"]>("reading_object");
+  const [itemTitle, setItemTitle] = useState("");
+  const [itemDetails, setItemDetails] = useState("");
+  const [itemUrl, setItemUrl] = useState("");
   const [budgetTier, setBudgetTier] = useState("comfortable");
   const [selected, setSelected] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -59,9 +77,13 @@ export function ReadingKitBuilder({
             notes,
             makeDo,
             sensoryProfile,
+            creatorEssay,
+            playlistUrl,
+            suggestedOrder,
             budgetTier,
             isPublic: false,
             entries: selected.map((workId) => ({ workId, note: "" })),
+            items,
           },
         }),
       });
@@ -76,6 +98,9 @@ export function ReadingKitBuilder({
         notes,
         makeDo,
         sensoryProfile,
+        creatorEssay,
+        playlistUrl,
+        suggestedOrder,
         budgetTier,
         isPublic: false,
         entries: selected.map((workId) => ({
@@ -83,6 +108,7 @@ export function ReadingKitBuilder({
           note: "",
           work: kitWork.get(workId)!,
         })),
+        items,
       };
       setKits((items) =>
         editingId
@@ -98,6 +124,10 @@ export function ReadingKitBuilder({
       setNotes("");
       setMakeDo("");
       setSensoryProfile("");
+      setCreatorEssay("");
+      setPlaylistUrl("");
+      setSuggestedOrder("");
+      setItems([]);
       setSelected([]);
       setRequestId(crypto.randomUUID());
       setDraftVersion(0);
@@ -147,9 +177,29 @@ export function ReadingKitBuilder({
     setNotes(kit.notes);
     setMakeDo(kit.makeDo);
     setSensoryProfile(kit.sensoryProfile);
+    setCreatorEssay(kit.creatorEssay);
+    setPlaylistUrl(kit.playlistUrl);
+    setSuggestedOrder(kit.suggestedOrder);
+    setItems(kit.items);
     setBudgetTier(kit.budgetTier);
     setSelected(kit.entries.map((entry) => entry.workId));
     setError("");
+  }
+
+  function addItem() {
+    if (itemTitle.trim().length < 2 || items.length >= 20) return;
+    setItems((current) => [
+      ...current,
+      {
+        kind: itemKind,
+        title: itemTitle.trim(),
+        details: itemDetails.trim(),
+        externalUrl: itemUrl.trim(),
+      },
+    ]);
+    setItemTitle("");
+    setItemDetails("");
+    setItemUrl("");
   }
 
   async function searchWorks() {
@@ -301,6 +351,124 @@ export function ReadingKitBuilder({
             />
           </label>
         </section>
+        <section className="space-y-3 rounded border border-ink-100 p-3">
+          <div>
+            <h3 className="font-medium">Creator package</h3>
+            <p className="text-xs text-ink-500">
+              Private structured material for now. Saving does not publish, sell
+              or open external links.
+            </p>
+          </div>
+          <label className="block text-sm">
+            Short essay or introduction
+            <textarea
+              aria-label="Kit essay"
+              className="block w-full rounded border border-ink-200 bg-paper-50 p-2 min-h-28"
+              maxLength={6000}
+              value={creatorEssay}
+              onChange={(event) => setCreatorEssay(event.target.value)}
+            />
+          </label>
+          <label className="block text-sm">
+            Playlist link
+            <Input
+              aria-label="Playlist link"
+              type="url"
+              maxLength={2000}
+              placeholder="Optional public http or https link"
+              value={playlistUrl}
+              onChange={(event) => setPlaylistUrl(event.target.value)}
+            />
+          </label>
+          <label className="block text-sm">
+            Suggested reading order
+            <textarea
+              aria-label="Suggested reading order"
+              className="block w-full rounded border border-ink-200 bg-paper-50 p-2 min-h-20"
+              maxLength={2000}
+              value={suggestedOrder}
+              onChange={(event) => setSuggestedOrder(event.target.value)}
+            />
+          </label>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium">
+              Objects and resources
+            </legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <label className="text-sm">
+                Type
+                <select
+                  className="block w-full rounded border p-2"
+                  value={itemKind}
+                  onChange={(event) =>
+                    setItemKind(event.target.value as KitItem["kind"])
+                  }
+                >
+                  <option value="reading_object">Reading object</option>
+                  <option value="atmosphere">Atmosphere</option>
+                  <option value="food_drink">Food or drink</option>
+                  <option value="resource">Essay or resource</option>
+                </select>
+              </label>
+              <Input
+                aria-label="Package item title"
+                maxLength={120}
+                placeholder="Item title"
+                value={itemTitle}
+                onChange={(event) => setItemTitle(event.target.value)}
+              />
+              <Input
+                aria-label="Package item details"
+                maxLength={500}
+                placeholder="Optional details"
+                value={itemDetails}
+                onChange={(event) => setItemDetails(event.target.value)}
+              />
+              <Input
+                aria-label="Package item link"
+                type="url"
+                maxLength={2000}
+                placeholder="Optional public link"
+                value={itemUrl}
+                onChange={(event) => setItemUrl(event.target.value)}
+              />
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={itemTitle.trim().length < 2 || items.length >= 20}
+              onClick={addItem}
+            >
+              Add package item
+            </Button>
+            <ol className="space-y-2">
+              {items.map((item, index) => (
+                <li
+                  key={`${item.kind}-${index}`}
+                  className="flex justify-between gap-3 rounded bg-ink-50 p-2 text-sm"
+                >
+                  <span>
+                    <strong>{item.title}</strong> ·{" "}
+                    {item.kind.replace("_", " ")}
+                    {item.details ? ` — ${item.details}` : ""}
+                  </span>
+                  <button
+                    type="button"
+                    className="underline"
+                    onClick={() =>
+                      setItems((current) =>
+                        current.filter((_, itemIndex) => itemIndex !== index),
+                      )
+                    }
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </fieldset>
+        </section>
         <fieldset className="space-y-2">
           <legend className="text-sm font-medium">Books in the kit</legend>
           <div className="flex gap-2">
@@ -373,6 +541,10 @@ export function ReadingKitBuilder({
               setNotes("");
               setMakeDo("");
               setSensoryProfile("");
+              setCreatorEssay("");
+              setPlaylistUrl("");
+              setSuggestedOrder("");
+              setItems([]);
               setSelected([]);
             }}
           >
@@ -433,6 +605,53 @@ export function ReadingKitBuilder({
                 <span className="font-medium">Sensory plan:</span>{" "}
                 {kit.sensoryProfile}
               </p>
+            )}
+            {kit.creatorEssay && (
+              <p className="text-sm whitespace-pre-wrap">
+                <span className="font-medium">Creator essay:</span>{" "}
+                {kit.creatorEssay}
+              </p>
+            )}
+            {kit.playlistUrl && (
+              <p className="text-sm">
+                <a
+                  className="underline"
+                  href={kit.playlistUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open playlist link
+                </a>
+              </p>
+            )}
+            {kit.suggestedOrder && (
+              <p className="text-sm whitespace-pre-wrap">
+                <span className="font-medium">Suggested order:</span>{" "}
+                {kit.suggestedOrder}
+              </p>
+            )}
+            {!!kit.items.length && (
+              <ol className="text-sm list-decimal pl-5">
+                {kit.items.map((item, index) => (
+                  <li key={`${item.kind}-${index}`}>
+                    {item.title} · {item.kind.replace("_", " ")}
+                    {item.externalUrl && (
+                      <>
+                        {" "}
+                        ·{" "}
+                        <a
+                          className="underline"
+                          href={item.externalUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open link
+                        </a>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ol>
             )}
             <ul className="text-sm list-disc pl-5">
               {kit.entries.map((entry) => (

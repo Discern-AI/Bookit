@@ -66,9 +66,20 @@ test("Reading Life writes are retry-safe, journalled, exported and erased", asyn
     notes: "PRIVATE_KIT_NOTE",
     makeDo: "Existing blanket",
     sensoryProfile: "Warm lamp and quiet music",
+    creatorEssay: "PRIVATE_CREATOR_ESSAY",
+    playlistUrl: "https://example.com/private-playlist",
+    suggestedOrder: "Read the essay, then the book.",
     budgetTier: "make_do",
     isPublic: false,
     entries: [{ workId: work.id, note: "Kit book" }],
+    items: [
+      {
+        kind: "reading_object",
+        title: "Favourite bookmark",
+        details: "Use the one already at home.",
+        externalUrl: "https://example.com/bookmark",
+      },
+    ],
   };
   const firstKit = await page.request.post("/api/reading-kits", {
     data: { kitId, version: 0, kit },
@@ -150,6 +161,8 @@ test("Reading Life writes are retry-safe, journalled, exported and erased", asyn
   await expect(
     page.getByRole("heading", { name: "Updated rainy kit", exact: true }),
   ).toBeVisible();
+  await expect(page.getByText("PRIVATE_CREATOR_ESSAY")).toBeVisible();
+  await expect(page.getByText("Favourite bookmark")).toBeVisible();
   await expect(page.getByLabel("Reading kit", { exact: true })).toContainText(
     "Updated rainy kit",
   );
@@ -275,6 +288,8 @@ test("Reading Life writes are retry-safe, journalled, exported and erased", asyn
   expect(journal.bookshopOutcomes[0].id).toBe(outcomeId);
   const exported = await (await page.request.get("/api/library/export")).json();
   expect(exported.readingKits[0].notes).toBe("PRIVATE_KIT_NOTE");
+  expect(exported.readingKits[0].creatorEssay).toBe("PRIVATE_CREATOR_ESSAY");
+  expect(exported.readingKits[0].items[0].title).toBe("Favourite bookmark");
   expect(exported.readingAfternoons[0].notes).toBe(
     "PRIVATE_AFTERNOON_NOTE_UPDATED",
   );
@@ -314,10 +329,16 @@ test("Reading Life writes are retry-safe, journalled, exported and erased", asyn
   const deletedKit = await db.readingKit.findUniqueOrThrow({
     where: { id: kitId },
   });
-  expect(deletedKit.title + deletedKit.notes + deletedKit.sensoryProfile).toBe(
-    "",
-  );
+  expect(
+    deletedKit.title +
+      deletedKit.notes +
+      deletedKit.sensoryProfile +
+      deletedKit.creatorEssay +
+      deletedKit.playlistUrl +
+      deletedKit.suggestedOrder,
+  ).toBe("");
   expect(await db.readingKitEntry.count({ where: { kitId } })).toBe(0);
+  expect(await db.readingKitItem.count({ where: { kitId } })).toBe(0);
   const deletedAfternoon = await db.readingAfternoon.findUniqueOrThrow({
     where: { id: afternoonId },
   });

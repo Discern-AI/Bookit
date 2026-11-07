@@ -37,6 +37,22 @@ export async function GET(request: Request) {
               { title: { contains: q, mode: "insensitive" as const } },
               { notes: { contains: q, mode: "insensitive" as const } },
               { makeDo: { contains: q, mode: "insensitive" as const } },
+              { creatorEssay: { contains: q, mode: "insensitive" as const } },
+              { suggestedOrder: { contains: q, mode: "insensitive" as const } },
+              {
+                items: {
+                  some: {
+                    title: { contains: q, mode: "insensitive" as const },
+                  },
+                },
+              },
+              {
+                items: {
+                  some: {
+                    details: { contains: q, mode: "insensitive" as const },
+                  },
+                },
+              },
               {
                 entries: {
                   some: {
@@ -66,6 +82,7 @@ export async function GET(request: Request) {
         },
         orderBy: { position: "asc" },
       },
+      items: { orderBy: { position: "asc" } },
     },
     orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
     skip: page * 20,
@@ -94,7 +111,10 @@ export async function POST(request: Request) {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"reading-kit:" + kitId}))`;
     const old = await tx.readingKit.findUnique({
       where: { id: kitId },
-      include: { entries: { orderBy: { position: "asc" } } },
+      include: {
+        entries: { orderBy: { position: "asc" } },
+        items: { orderBy: { position: "asc" } },
+      },
     });
     if (old && old.userId !== session.user.id)
       return NextResponse.json(
@@ -112,11 +132,22 @@ export async function POST(request: Request) {
       old.notes === kit.notes &&
       old.makeDo === kit.makeDo &&
       old.sensoryProfile === kit.sensoryProfile &&
+      old.creatorEssay === kit.creatorEssay &&
+      old.playlistUrl === kit.playlistUrl &&
+      old.suggestedOrder === kit.suggestedOrder &&
       old.budgetTier === kit.budgetTier &&
       old.isPublic === false &&
       JSON.stringify(
         old.entries.map(({ workId, note }) => ({ workId, note })),
-      ) === JSON.stringify(kit.entries);
+      ) === JSON.stringify(kit.entries) &&
+      JSON.stringify(
+        old.items.map(({ kind, title, details, externalUrl }) => ({
+          kind,
+          title,
+          details,
+          externalUrl,
+        })),
+      ) === JSON.stringify(kit.items);
     if (old && old.version !== version) {
       if (same && old.version === version + 1)
         return NextResponse.json({ kitId, version: old.version });
@@ -145,16 +176,25 @@ export async function POST(request: Request) {
         { error: "One or more books are not in your library." },
         { status: 409 },
       );
-    if (old) await tx.readingKitEntry.deleteMany({ where: { kitId } });
+    if (old) {
+      await tx.readingKitEntry.deleteMany({ where: { kitId } });
+      await tx.readingKitItem.deleteMany({ where: { kitId } });
+    }
     const data = {
       title: kit.title,
       notes: kit.notes,
       makeDo: kit.makeDo,
       sensoryProfile: kit.sensoryProfile,
+      creatorEssay: kit.creatorEssay,
+      playlistUrl: kit.playlistUrl,
+      suggestedOrder: kit.suggestedOrder,
       budgetTier: kit.budgetTier,
       isPublic: false,
       entries: {
         create: kit.entries.map((entry, position) => ({ ...entry, position })),
+      },
+      items: {
+        create: kit.items.map((item, position) => ({ ...item, position })),
       },
     };
     const saved = old
@@ -200,6 +240,7 @@ export async function DELETE(request: Request) {
         { status: 409 },
       );
     await tx.readingKitEntry.deleteMany({ where: { kitId: old.id } });
+    await tx.readingKitItem.deleteMany({ where: { kitId: old.id } });
     await tx.readingKit.update({
       where: { id: old.id },
       data: {
@@ -207,6 +248,9 @@ export async function DELETE(request: Request) {
         notes: "",
         makeDo: "",
         sensoryProfile: "",
+        creatorEssay: "",
+        playlistUrl: "",
+        suggestedOrder: "",
         isPublic: false,
         deletedAt: new Date(),
         version: { increment: 1 },

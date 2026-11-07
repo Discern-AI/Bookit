@@ -42,6 +42,7 @@ export async function GET() {
     where: { userId: session.user.id, deletedAt: null },
     include: {
       entries: { orderBy: { position: "asc" } },
+      items: { orderBy: { position: "asc" } },
     },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
   });

@@ -20,6 +20,7 @@ export default async function ReadingLifePage() {
           },
           orderBy: { position: "asc" },
         },
+        items: { orderBy: { position: "asc" } },
       },
       orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
       take: 21,

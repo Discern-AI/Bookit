@@ -155,6 +155,8 @@ Marketplace ideas, private reading kits, reading afternoons and bookshop outcome
 
 Signed-in readers can report published marketplace listings. Reports snapshot public listing text and canonical work identity only; private saves, journals, library history and drafts are excluded. Trusted moderators can dismiss reports, hide listings and restore current restrictions. Owner edits preserve a hidden status, and hiding revokes other readers' saves so restricted content does not remain in their book journals.
 
+Private Reading Kits can also be structured as creator-ready packages with an introduction or short essay, a public playlist link, suggested reading order, ordered canonical books, and up to twenty reading objects, atmosphere ideas, food/drink ideas or resources with optional public links. These fields remain private and are included in the owner's library export. Saving a package does not publish it, sell it, verify linked products or open its links automatically.
+
 Creator > Your curated book shop supports up to twenty ordered recommendations with optional HTTPS retailer links and affiliate disclosures. Shops start private; publishing requires a public profile and exposes only deliberately entered shop content. Public profiles link to published shops. Book journals and JSON export retain the original canonical book associations. Folio does not enrol curators in affiliate programmes, process checkout or pay commissions.
 
 

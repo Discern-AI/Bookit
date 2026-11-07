@@ -876,6 +876,9 @@ model ReadingKit {
   notes String @default("")
   makeDo String @default("")
   sensoryProfile String @default("")
+  creatorEssay String @default("")
+  playlistUrl String @default("")
+  suggestedOrder String @default("")
   budgetTier String @default("comfortable")
   isPublic Boolean @default(false)
   version Int @default(1)
@@ -884,9 +887,21 @@ model ReadingKit {
   updatedAt DateTime @updatedAt
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   entries ReadingKitEntry[]
+  items ReadingKitItem[]
   afternoons ReadingAfternoon[]
   @@index([userId, deletedAt, updatedAt])
   @@index([isPublic, deletedAt, updatedAt])
+}
+
+model ReadingKitItem {
+  kitId String @db.Uuid
+  position Int
+  kind String
+  title String
+  details String @default("")
+  externalUrl String @default("")
+  kit ReadingKit @relation(fields: [kitId], references: [id], onDelete: Cascade)
+  @@id([kitId, position])
 }
 
 model MarketplaceListing {

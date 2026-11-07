@@ -499,6 +499,9 @@ assert.equal(readingKitSchema.safeParse({ title: "No", entries: [] }).success, f
 assert.equal(readingKitSchema.safeParse({ title: "Valid kit", budgetTier: "unknown", entries: [] }).success, false);
 assert.equal(readingKitSchema.safeParse({ title: "Valid kit", entries: [{ workId: "work-1", note: "" }, { workId: "work-1", note: "again" }] }).success, false);
 assert.equal(readingKitSchema.safeParse({ title: "Sensory kit", sensoryProfile: "Warm lamp. Quiet music." , entries: [] }).success, true);
+assert.equal(readingKitSchema.safeParse({ title: "Creator kit", creatorEssay: "An introduction", playlistUrl: "https://example.com/playlist", suggestedOrder: "Essay, story, reflection", entries: [], items: [{ kind: "reading_object", title: "Bookmark", details: "Use a favourite one", externalUrl: "https://example.com/bookmark" }] }).success, true);
+assert.equal(readingKitSchema.safeParse({ title: "Unsafe playlist", playlistUrl: "javascript:alert(1)", entries: [] }).success, false);
+assert.equal(readingKitSchema.safeParse({ title: "Unsafe item", entries: [], items: [{ kind: "resource", title: "Essay", externalUrl: "https://user:secret@example.com" }] }).success, false);
 const { buildSensoryProfile } = require("../lib/reading-kit.ts");
 assert.match(buildSensoryProfile("make_do", true, true), /familiar soundtrack/);
 assert.match(buildSensoryProfile("dream", false, true), /Warm dimmable lighting/);
