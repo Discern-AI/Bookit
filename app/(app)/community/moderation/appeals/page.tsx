@@ -4,11 +4,10 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { reviewPage } from "@/components/community/ReviewList";
 import { DecideAppeal } from "@/components/community/AppealReview";
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: { page?: string; status?: string };
+export default async function Page(props: {
+  searchParams: Promise<{ page?: string; status?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   const me = await prisma.user.findUnique({
     where: { id: session!.user.id },
@@ -34,18 +33,16 @@ export default async function Page({
     },
   });
   const rows = await Promise.all(
-    appeals
-      .slice(0, 20)
-      .map(async (appeal) => ({
-        appeal,
-        latest: resolved
-          ? null
-          : await prisma.bookReview.findFirst({
-              where: { userId: appeal.userId, workId: appeal.workId },
-              orderBy: { version: "desc" },
-              select: { id: true, body: true, version: true, active: true },
-            }),
-      })),
+    appeals.slice(0, 20).map(async (appeal) => ({
+      appeal,
+      latest: resolved
+        ? null
+        : await prisma.bookReview.findFirst({
+            where: { userId: appeal.userId, workId: appeal.workId },
+            orderBy: { version: "desc" },
+            select: { id: true, body: true, version: true, active: true },
+          }),
+    })),
   );
   const base = `/community/moderation/appeals?status=${resolved ? "resolved" : "pending"}`;
   return (

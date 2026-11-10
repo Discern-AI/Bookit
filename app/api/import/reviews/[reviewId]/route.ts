@@ -6,8 +6,9 @@ import { importEdition, jobSelect } from "@/lib/import-jobs";
 import type { ImportRow } from "@/lib/goodreads";
 export async function POST(
   request: Request,
-  { params }: { params: { reviewId: string } },
+  props: { params: Promise<{ reviewId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

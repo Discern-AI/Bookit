@@ -12,13 +12,12 @@ export const metadata = {
   title: "Reader profile | Folio",
   robots: { index: false, follow: false },
 };
-export default async function Page({
-  params,
-  searchParams,
-}: {
-  params: { username: string };
-  searchParams: { page?: string; tab?: string };
+export default async function Page(props: {
+  params: Promise<{ username: string }>;
+  searchParams: Promise<{ page?: string; tab?: string }>;
 }) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const user = await prisma.user.findFirst({
     where: { username: params.username, profilePublic: true },
     select: {

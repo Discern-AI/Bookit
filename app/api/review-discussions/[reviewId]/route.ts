@@ -111,20 +111,23 @@ async function mutate(
 }
 export async function PUT(
   request: Request,
-  { params }: { params: { reviewId: string } },
+  props: { params: Promise<{ reviewId: string }> },
 ) {
+  const params = await props.params;
   return mutate(request, params.reviewId, "like");
 }
 export async function DELETE(
   request: Request,
-  { params }: { params: { reviewId: string } },
+  props: { params: Promise<{ reviewId: string }> },
 ) {
+  const params = await props.params;
   return mutate(request, params.reviewId, "unlike");
 }
 export async function POST(
   request: Request,
-  { params }: { params: { reviewId: string } },
+  props: { params: Promise<{ reviewId: string }> },
 ) {
+  const params = await props.params;
   return mutate(
     request,
     params.reviewId,

@@ -109,7 +109,7 @@ No overall completion percentage is assigned: an integration, marketplace or rel
 
 These are outstanding release work, not claims that the local build is already ready for production.
 
-- [ ] **Release gate:** refresh the dependency audit, resolve/test required framework/toolchain upgrades. The historical audit recorded nine high-severity dependency entries; that is not a new audit or nine independent application exploits.
+- [x] **Release gate:** dependency audit refreshed 10 November 2026 and reduced from 21 package entries (including one critical) to zero production and development findings. Patched Next 15, Prisma, Sharp, Zod, PostCSS and lint transitive versions are locked; typecheck, lint, unit tests, migration status and production build pass.
 - [ ] **Release gate:** production hosting/database, migration procedure, secret provisioning and consistent encryption keys across instances.
 - [ ] **Release gate:** separately protected database/key backups, tested restore and documented retention/recovery. Automated key rotation is not implemented.
 - [ ] **Release gate:** cross-instance/edge abuse limits, monitoring, error reporting and operational email delivery checks.

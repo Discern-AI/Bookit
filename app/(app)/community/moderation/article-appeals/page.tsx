@@ -6,11 +6,10 @@ import { reviewPage } from "@/components/community/ReviewList";
 import { ArticleContent } from "@/components/articles/ArticleContent";
 import { parseArticleContent } from "@/lib/articles";
 import { DecideArticleAppeal } from "@/components/articles/ArticleAppealActions";
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: { page?: string; status?: string };
+export default async function Page(props: {
+  searchParams: Promise<{ page?: string; status?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   const me = await prisma.user.findUnique({
     where: { id: session!.user.id },

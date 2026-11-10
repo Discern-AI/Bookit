@@ -5,8 +5,9 @@ import { randomBytes } from "node:crypto";
 import { clubActionSchema, clubPage } from "@/lib/clubs";
 import { clubReply, clubSummary, inviteHash } from "@/lib/club-server";
 import { sameOriginJson } from "@/lib/book-journal";
-type Context = { params: { clubId: string } };
-export async function GET(request: Request, { params }: Context) {
+type Context = { params: Promise<{ clubId: string }> };
+export async function GET(request: Request, props: Context) {
+  const params = await props.params;
   const s = await auth();
   if (!s?.user.id) return clubReply({ error: "Sign in first." }, 401);
   if (!z.string().uuid().safeParse(params.clubId).success)
@@ -100,7 +101,8 @@ export async function GET(request: Request, { params }: Context) {
     });
   });
 }
-export async function PATCH(request: Request, { params }: Context) {
+export async function PATCH(request: Request, props: Context) {
+  const params = await props.params;
   const s = await auth();
   if (!s?.user.id) return clubReply({ error: "Sign in first." }, 401);
   if (!sameOriginJson(request))

@@ -66,13 +66,15 @@ async function change(request: Request, entryId: string, remove: boolean) {
 }
 export async function PATCH(
   r: Request,
-  { params }: { params: { entryId: string } },
+  props: { params: Promise<{ entryId: string }> },
 ) {
+  const params = await props.params;
   return change(r, params.entryId, false);
 }
 export async function DELETE(
   r: Request,
-  { params }: { params: { entryId: string } },
+  props: { params: Promise<{ entryId: string }> },
 ) {
+  const params = await props.params;
   return change(r, params.entryId, true);
 }

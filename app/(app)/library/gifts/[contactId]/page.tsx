@@ -7,11 +7,10 @@ import { GIFT_PRIORITY, nextOccasion, pounds } from "@/lib/gifts";
 import { GiftSharing } from "@/components/gifts/GiftSharing";
 import { GiftClaim } from "@/components/gifts/GiftClaim";
 import { GetBook } from "@/components/books/GetBook";
-export default async function GiftPage({
-  params,
-}: {
-  params: { contactId: string };
+export default async function GiftPage(props: {
+  params: Promise<{ contactId: string }>;
 }) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user) return null;
   const stored = await prisma.giftContact.findFirst({
@@ -146,7 +145,11 @@ export default async function GiftPage({
               >
                 Compare editions
               </Link>
-              <GetBook title={item.work.title} author={item.work.authorName} workId={item.workId} />
+              <GetBook
+                title={item.work.title}
+                author={item.work.authorName}
+                workId={item.workId}
+              />
             </article>
           ))}
         </section>

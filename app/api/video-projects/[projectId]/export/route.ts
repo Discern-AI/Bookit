@@ -10,8 +10,9 @@ const headers = {
 };
 export async function GET(
   request: Request,
-  { params }: { params: { projectId: string } },
+  props: { params: Promise<{ projectId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   const id = new URL(request.url).searchParams.get("clip");
   const missing = () =>

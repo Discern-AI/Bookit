@@ -19,8 +19,9 @@ const schema = z
   .strict();
 export async function POST(
   request: Request,
-  { params }: { params: { userBookId: string } },
+  props: { params: Promise<{ userBookId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user.id)
     return Response.json({ error: "Sign in first." }, { status: 401 });
@@ -121,8 +122,9 @@ const cancellationSchema = z
   .strict();
 export async function DELETE(
   request: Request,
-  { params }: { params: { userBookId: string } },
+  props: { params: Promise<{ userBookId: string }> },
 ) {
+  const params = await props.params;
   const reply = (data: unknown, status: number) =>
     Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
   const session = await auth();

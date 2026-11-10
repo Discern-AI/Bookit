@@ -3,11 +3,10 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { pathCardSelect } from "@/lib/path-data";
 import { PathCard } from "@/components/paths/PathCard";
-export default async function PathsPage({
-  searchParams,
-}: {
-  searchParams: { view?: string; page?: string };
+export default async function PathsPage(props: {
+  searchParams: Promise<{ view?: string; page?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   if (!session?.user) return null;
   const view = ["mine", "following"].includes(searchParams.view ?? "")

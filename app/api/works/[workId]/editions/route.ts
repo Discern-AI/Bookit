@@ -32,8 +32,9 @@ function failure(e: unknown) {
 }
 export async function GET(
   request: Request,
-  { params }: { params: { workId: string } },
+  props: { params: Promise<{ workId: string }> },
 ) {
+  const params = await props.params;
   if (!(await auth())?.user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const offset = Number(new URL(request.url).searchParams.get("offset") ?? "0");
@@ -56,8 +57,9 @@ export async function GET(
 }
 export async function POST(
   request: Request,
-  { params }: { params: { workId: string } },
+  props: { params: Promise<{ workId: string }> },
 ) {
+  const params = await props.params;
   if (!(await auth())?.user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const parsed = z

@@ -4,7 +4,10 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { PublishingForm } from "@/components/community/PublishingForm";
-export default async function Page({ params }: { params: { workId: string } }) {
+export default async function Page(props: {
+  params: Promise<{ workId: string }>;
+}) {
+  const params = await props.params;
   const session = await auth();
   const book = await prisma.userBook.findFirst({
     where: { userId: session!.user.id, edition: { workId: params.workId } },

@@ -3,8 +3,9 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 export async function GET(
   _request: Request,
-  { params }: { params: { userBookId: string } },
+  props: { params: Promise<{ userBookId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

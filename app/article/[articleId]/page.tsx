@@ -7,11 +7,10 @@ import { publishedArticles, parseArticleContent } from "@/lib/articles";
 import { ArticleContent } from "@/components/articles/ArticleContent";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Article | Folio" };
-export default async function Page({
-  params,
-}: {
-  params: { articleId: string };
+export default async function Page(props: {
+  params: Promise<{ articleId: string }>;
 }) {
+  const params = await props.params;
   const article = await prisma.article.findFirst({
     where: { id: params.articleId, ...publishedArticles },
     select: {

@@ -1,9 +1,8 @@
 import { BookDiscussions } from "@/components/community/BookDiscussions";
-export default function Page({
-  searchParams,
-}: {
-  searchParams: { work?: string; community?: string };
+export default async function Page(props: {
+  searchParams: Promise<{ work?: string; community?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   return (
     <BookDiscussions
       key={`${searchParams.work || ""}:${searchParams.community || ""}`}

@@ -1,8 +1,7 @@
 import { CommunityChallenges } from "@/components/community/CommunityChallenges";
-export default function Page({
-  searchParams,
-}: {
-  searchParams: { challenge?: string };
+export default async function Page(props: {
+  searchParams: Promise<{ challenge?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   return <CommunityChallenges challengeId={searchParams.challenge} />;
 }

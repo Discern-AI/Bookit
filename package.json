@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "typecheck": "tsc --noEmit",
     "test": "node scripts/test-unit.cjs",
     "test:e2e": "playwright test",
@@ -17,23 +17,23 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.124.0",
     "@auth/prisma-adapter": "^2.11.3",
-    "@prisma/adapter-pg": "^7.10.0",
-    "@prisma/client": "^7.10.0",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "@tiptap/core": "3.31.3",
     "@tiptap/pm": "3.31.3",
     "@tiptap/react": "3.31.3",
     "@tiptap/starter-kit": "3.31.3",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
-    "next": "14.2.35",
+    "next": "^15.5.29",
     "next-auth": "^5.0.0-beta.32",
     "pg": "^8.23.0",
-    "prisma": "^7.10.0",
+    "prisma": "^7.10.1",
     "react": "^18",
     "react-dom": "^18",
     "react-markdown": "^10.1.0",
-    "sharp": "0.35.4",
-    "zod": "^4.5.4"
+    "sharp": "^0.35.5",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
@@ -43,10 +43,14 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",
-    "eslint-config-next": "14.2.35",
-    "postcss": "^8",
+    "eslint-config-next": "^15.5.29",
+    "postcss": "8.5.32",
     "prettier": "^3.9.6",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
+  },
+  "overrides": {
+    "postcss": "$postcss",
+    "minimatch": "11.0.1"
   }
 }

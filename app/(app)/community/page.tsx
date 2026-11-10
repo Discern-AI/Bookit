@@ -2,11 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import Link from "next/link";
 import { ReviewList, reviewPage } from "@/components/community/ReviewList";
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: { page?: string; feed?: string };
+export default async function Page(props: {
+  searchParams: Promise<{ page?: string; feed?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   const me = await prisma.user.findUnique({
     where: { id: session!.user.id },

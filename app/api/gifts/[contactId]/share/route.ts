@@ -5,8 +5,9 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 export async function POST(
   request: Request,
-  { params }: { params: { contactId: string } },
+  props: { params: Promise<{ contactId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

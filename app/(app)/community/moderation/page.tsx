@@ -4,11 +4,10 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { reviewPage } from "@/components/community/ReviewList";
 import { ModerateReport } from "@/components/community/DiscussionActions";
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: { page?: string; status?: string };
+export default async function Page(props: {
+  searchParams: Promise<{ page?: string; status?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   const user = await prisma.user.findUnique({
     where: { id: session!.user.id },

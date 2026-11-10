@@ -115,13 +115,15 @@ async function change(request: Request, sessionId: string, remove: boolean) {
 }
 export async function PATCH(
   request: Request,
-  { params }: { params: { sessionId: string } },
+  props: { params: Promise<{ sessionId: string }> },
 ) {
+  const params = await props.params;
   return change(request, params.sessionId, false);
 }
 export async function DELETE(
   request: Request,
-  { params }: { params: { sessionId: string } },
+  props: { params: Promise<{ sessionId: string }> },
 ) {
+  const params = await props.params;
   return change(request, params.sessionId, true);
 }

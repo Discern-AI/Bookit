@@ -7,8 +7,9 @@ const reply = (data: unknown, status = 200) =>
   Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
 export async function PATCH(
   request: Request,
-  { params }: { params: { challengeId: string } },
+  props: { params: Promise<{ challengeId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user.id) return reply({ error: "Sign in first." }, 401);
   if (!sameOriginJson(request))

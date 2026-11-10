@@ -3,8 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { reviewSchema, deleteReviewSchema } from "@/lib/community";
 export async function PUT(
   request: Request,
-  { params }: { params: { workId: string } },
+  props: { params: Promise<{ workId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user?.id)
     return Response.json({ error: "Sign in first." }, { status: 401 });
@@ -68,8 +69,9 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { workId: string } },
+  props: { params: Promise<{ workId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user?.id)
     return Response.json({ error: "Sign in first." }, { status: 401 });

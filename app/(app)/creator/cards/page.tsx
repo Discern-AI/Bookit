@@ -4,11 +4,10 @@ import { cardProjectInclude, serializeCardProject } from "@/lib/card-projects";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ShareCardStudio } from "@/components/articles/ShareCardStudio";
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: { project?: string };
+export default async function Page(props: {
+  searchParams: Promise<{ project?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   if (!session?.user.id) return null;
   const user = await prisma.user.findUniqueOrThrow({

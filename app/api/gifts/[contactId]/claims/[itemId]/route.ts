@@ -1,8 +1,9 @@
 import { changeGiftClaim } from "@/lib/gift-claims";
 export async function DELETE(
   request: Request,
-  { params }: { params: { contactId: string; itemId: string } },
+  props: { params: Promise<{ contactId: string; itemId: string }> },
 ) {
+  const params = await props.params;
   return changeGiftClaim(
     request,
     params.itemId,

@@ -123,7 +123,6 @@ export function GiftEditor({ initial }: { initial?: GiftData }) {
         );
       }
       router.push(remove ? "/library/gifts" : `/library/gifts/${data.id}`);
-      router.refresh();
     } catch (e) {
       setError(
         e instanceof Error

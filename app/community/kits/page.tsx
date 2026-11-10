@@ -11,11 +11,10 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export default async function PublicKitsPage({
-  searchParams,
-}: {
-  searchParams: Record<string, string | string[] | undefined>;
+export default async function PublicKitsPage(props: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   const filters = parsePublicKitFilters(searchParams);
   const where: Prisma.ReadingKitWhereInput = {

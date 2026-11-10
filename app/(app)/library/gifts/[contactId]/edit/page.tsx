@@ -3,11 +3,10 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { giftInclude, serializeGift } from "@/lib/gift-data";
 import { GiftEditor } from "@/components/gifts/GiftEditor";
-export default async function EditGiftPage({
-  params,
-}: {
-  params: { contactId: string };
+export default async function EditGiftPage(props: {
+  params: Promise<{ contactId: string }>;
 }) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user) return null;
   const contact = await prisma.giftContact.findFirst({

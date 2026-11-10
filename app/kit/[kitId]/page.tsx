@@ -6,11 +6,10 @@ import { ReportReadingKit } from "@/components/context/ReadingKitModeration";
 import { SaveReadingKit } from "@/components/context/SaveReadingKit";
 import { prisma } from "@/lib/prisma";
 
-export default async function PublicKitPage({
-  params,
-}: {
-  params: { kitId: string };
+export default async function PublicKitPage(props: {
+  params: Promise<{ kitId: string }>;
 }) {
+  const params = await props.params;
   const session = await auth();
   const kit = await prisma.readingKit.findFirst({
     where: {

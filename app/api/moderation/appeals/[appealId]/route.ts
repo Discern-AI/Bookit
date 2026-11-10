@@ -3,8 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 export async function PATCH(
   request: Request,
-  { params }: { params: { appealId: string } },
+  props: { params: Promise<{ appealId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user?.id)
     return Response.json({ error: "Sign in first." }, { status: 401 });

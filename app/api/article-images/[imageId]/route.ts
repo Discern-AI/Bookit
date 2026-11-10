@@ -4,8 +4,9 @@ import { articleNodes, parseArticleContent } from "@/lib/articles";
 export const dynamic = "force-dynamic";
 export async function GET(
   _request: Request,
-  { params }: { params: { imageId: string } },
+  props: { params: Promise<{ imageId: string }> },
 ) {
+  const params = await props.params;
   const image = await prisma.articleImage.findUnique({
     where: { id: params.imageId },
     select: {
@@ -84,8 +85,9 @@ export async function GET(
 }
 export async function DELETE(
   _request: Request,
-  { params }: { params: { imageId: string } },
+  props: { params: Promise<{ imageId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user?.id)
     return Response.json({ error: "Sign in first." }, { status: 401 });

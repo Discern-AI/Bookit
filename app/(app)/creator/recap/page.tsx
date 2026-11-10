@@ -3,11 +3,10 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ShareCardStudio } from "@/components/articles/ShareCardStudio";
 import { recapCounts, recapPeriod } from "@/lib/reading-recap";
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: { year?: string };
+export default async function Page(props: {
+  searchParams: Promise<{ year?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   const period = recapPeriod(
     searchParams.year,

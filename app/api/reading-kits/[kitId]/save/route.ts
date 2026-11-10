@@ -40,14 +40,16 @@ async function changeSave(request: Request, kitId: string, enabled: boolean) {
 
 export async function PUT(
   request: Request,
-  { params }: { params: { kitId: string } },
+  props: { params: Promise<{ kitId: string }> },
 ) {
+  const params = await props.params;
   return changeSave(request, params.kitId, true);
 }
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { kitId: string } },
+  props: { params: Promise<{ kitId: string }> },
 ) {
+  const params = await props.params;
   return changeSave(request, params.kitId, false);
 }

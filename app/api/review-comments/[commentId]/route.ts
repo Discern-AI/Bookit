@@ -2,8 +2,9 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 export async function DELETE(
   _request: Request,
-  { params }: { params: { commentId: string } },
+  props: { params: Promise<{ commentId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user?.id)
     return Response.json({ error: "Sign in first." }, { status: 401 });

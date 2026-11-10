@@ -7,13 +7,12 @@ export const metadata = {
   title: "Shared shelf | Folio",
   robots: { index: false, follow: false },
 };
-export default async function Page({
-  params,
-  searchParams,
-}: {
-  params: { shelfId: string };
-  searchParams: { page?: string };
+export default async function Page(props: {
+  params: Promise<{ shelfId: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const shelf = await prisma.customShelf.findFirst({
     where: {
       id: params.shelfId,

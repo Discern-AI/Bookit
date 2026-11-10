@@ -3,8 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 export async function PUT(
   request: Request,
-  { params }: { params: { shelfId: string } },
+  props: { params: Promise<{ shelfId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user?.id)
     return Response.json({ error: "Sign in first." }, { status: 401 });

@@ -30,13 +30,15 @@ async function follow(pathId: string, enabled: boolean) {
 }
 export async function PUT(
   _request: Request,
-  { params }: { params: { pathId: string } },
+  props: { params: Promise<{ pathId: string }> },
 ) {
+  const params = await props.params;
   return follow(params.pathId, true);
 }
 export async function DELETE(
   _request: Request,
-  { params }: { params: { pathId: string } },
+  props: { params: Promise<{ pathId: string }> },
 ) {
+  const params = await props.params;
   return follow(params.pathId, false);
 }

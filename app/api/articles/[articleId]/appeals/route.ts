@@ -5,8 +5,9 @@ import { z } from "zod";
 import { parseArticleContent, articleNodes } from "@/lib/articles";
 export async function POST(
   request: Request,
-  { params }: { params: { articleId: string } },
+  props: { params: Promise<{ articleId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user?.id)
     return Response.json({ error: "Sign in first." }, { status: 401 });

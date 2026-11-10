@@ -10,11 +10,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
   referrer: "no-referrer",
 };
-export default async function SharedGiftPage({
-  params,
-}: {
-  params: { token: string };
+export default async function SharedGiftPage(props: {
+  params: Promise<{ token: string }>;
 }) {
+  const params = await props.params;
   if (!/^[a-f0-9]{64}$/.test(params.token)) notFound();
   const [contact, session] = await Promise.all([
     prisma.giftContact.findUnique({

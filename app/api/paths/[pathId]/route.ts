@@ -62,13 +62,15 @@ async function mutate(request: Request, pathId: string, remove: boolean) {
 }
 export async function PATCH(
   request: Request,
-  { params }: { params: { pathId: string } },
+  props: { params: Promise<{ pathId: string }> },
 ) {
+  const params = await props.params;
   return mutate(request, params.pathId, false);
 }
 export async function DELETE(
   request: Request,
-  { params }: { params: { pathId: string } },
+  props: { params: Promise<{ pathId: string }> },
 ) {
+  const params = await props.params;
   return mutate(request, params.pathId, true);
 }

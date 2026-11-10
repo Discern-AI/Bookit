@@ -2,11 +2,10 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { reviewPage } from "@/components/community/ReviewList";
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: { page?: string };
+export default async function Page(props: {
+  searchParams: Promise<{ page?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   const page = reviewPage(searchParams.page);
   const appeals = await prisma.reviewAppeal.findMany({

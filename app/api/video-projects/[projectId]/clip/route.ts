@@ -11,7 +11,7 @@ const headers = {
 };
 const reply = (error: string, status: number) =>
   Response.json({ error }, { status, headers });
-type Context = { params: { projectId: string } };
+type Context = { params: Promise<{ projectId: string }> };
 async function owner(projectId: string) {
   const session = await auth();
   if (!session?.user?.id) return null;
@@ -21,7 +21,8 @@ async function owner(projectId: string) {
     select: { id: true },
   });
 }
-export async function GET(request: Request, { params }: Context) {
+export async function GET(request: Request, props: Context) {
+  const params = await props.params;
   if (!(await owner(params.projectId))) return reply("Video not found.", 404);
   const meta = await prisma.videoClip.findUnique({
     where: { projectId: params.projectId },
@@ -69,7 +70,8 @@ export async function GET(request: Request, { params }: Context) {
     },
   });
 }
-export async function POST(request: Request, { params }: Context) {
+export async function POST(request: Request, props: Context) {
+  const params = await props.params;
   if (request.headers.get("origin") !== new URL(request.url).origin)
     return reply("Invalid request.", 403);
   if (!(await owner(params.projectId)))
@@ -139,7 +141,8 @@ export async function POST(request: Request, { params }: Context) {
     );
   }
 }
-export async function DELETE(request: Request, { params }: Context) {
+export async function DELETE(request: Request, props: Context) {
+  const params = await props.params;
   if (request.headers.get("origin") !== new URL(request.url).origin)
     return reply("Invalid request.", 403);
   if (!(await owner(params.projectId))) return reply("Video not found.", 404);
@@ -152,7 +155,8 @@ export async function DELETE(request: Request, { params }: Context) {
   return Response.json({ ok: true }, { headers });
 }
 
-export async function PATCH(request: Request, { params }: Context) {
+export async function PATCH(request: Request, props: Context) {
+  const params = await props.params;
   if (
     request.headers.get("origin") !== new URL(request.url).origin ||
     !request.headers.get("content-type")?.startsWith("application/json")

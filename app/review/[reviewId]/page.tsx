@@ -14,13 +14,12 @@ export const metadata = {
   title: "Review discussion | Folio",
   robots: { index: false, follow: false },
 };
-export default async function Page({
-  params,
-  searchParams,
-}: {
-  params: { reviewId: string };
-  searchParams: { page?: string };
+export default async function Page(props: {
+  params: Promise<{ reviewId: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const review = await prisma.bookReview.findFirst({
     where: { id: params.reviewId, ...publishedReviews },
     select: reviewSelect,

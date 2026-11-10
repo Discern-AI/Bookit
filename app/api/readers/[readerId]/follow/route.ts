@@ -32,13 +32,15 @@ async function follow(readerId: string, enabled: boolean) {
 }
 export async function PUT(
   _request: Request,
-  { params }: { params: { readerId: string } },
+  props: { params: Promise<{ readerId: string }> },
 ) {
+  const params = await props.params;
   return follow(params.readerId, true);
 }
 export async function DELETE(
   _request: Request,
-  { params }: { params: { readerId: string } },
+  props: { params: Promise<{ readerId: string }> },
 ) {
+  const params = await props.params;
   return follow(params.readerId, false);
 }

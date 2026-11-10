@@ -42,11 +42,10 @@ const getWork = cache((id: string) =>
     },
   }),
 );
-export async function generateMetadata({
-  params,
-}: {
-  params: { workId: string };
+export async function generateMetadata(props: {
+  params: Promise<{ workId: string }>;
 }): Promise<Metadata> {
+  const params = await props.params;
   const work = await getWork(params.workId);
   return {
     title: work
@@ -57,13 +56,12 @@ export async function generateMetadata({
       : undefined,
   };
 }
-export default async function BookPage({
-  params,
-  searchParams,
-}: {
-  params: { workId: string };
-  searchParams: { page?: string };
+export default async function BookPage(props: {
+  params: Promise<{ workId: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const [work, session] = await Promise.all([getWork(params.workId), auth()]);
   if (!work) notFound();
   const first = work.editions[0];
@@ -122,7 +120,11 @@ export default async function BookPage({
               </span>
             ))}
           </div>
-          <GetBook title={work.title} author={work.authorName} workId={work.id} />
+          <GetBook
+            title={work.title}
+            author={work.authorName}
+            workId={work.id}
+          />
         </div>
       </header>
       <section className="space-y-3">

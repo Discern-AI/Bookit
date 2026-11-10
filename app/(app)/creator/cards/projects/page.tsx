@@ -2,11 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: { page?: string };
+export default async function Page(props: {
+  searchParams: Promise<{ page?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   if (!session?.user.id) return null;
   const page = Number(searchParams.page || 0);

@@ -7,11 +7,10 @@ import {
   serializeVideoProject,
 } from "@/lib/video-projects";
 import { VideoProjectEditor } from "@/components/articles/VideoProjectEditor";
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: { project?: string };
+export default async function Page(props: {
+  searchParams: Promise<{ project?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   if (!session?.user.id) return null;
   if (

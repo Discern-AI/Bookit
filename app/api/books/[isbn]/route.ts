@@ -3,8 +3,9 @@ import { auth } from "@/auth";
 import { lookupByIsbn } from "@/lib/openLibrary";
 export async function GET(
   _request: Request,
-  { params }: { params: { isbn: string } },
+  props: { params: Promise<{ isbn: string }> },
 ) {
+  const params = await props.params;
   if (!(await auth())?.user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {

@@ -5,8 +5,9 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 export async function PATCH(
   request: Request,
-  { params }: { params: { shelfId: string } },
+  props: { params: Promise<{ shelfId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -49,8 +50,9 @@ export async function PATCH(
 }
 export async function DELETE(
   _request: Request,
-  { params }: { params: { shelfId: string } },
+  props: { params: Promise<{ shelfId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

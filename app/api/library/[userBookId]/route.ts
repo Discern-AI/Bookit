@@ -15,12 +15,17 @@ const schema = z.object({
 });
 export async function PATCH(
   request: Request,
-  { params }: { params: { userBookId: string } },
+  props: { params: Promise<{ userBookId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!sameOriginJson(request)) return NextResponse.json({ error: "Use the library on this site." }, { status: 403 });
+  if (!sameOriginJson(request))
+    return NextResponse.json(
+      { error: "Use the library on this site." },
+      { status: 403 },
+    );
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success)
     return NextResponse.json({ error: "Invalid update." }, { status: 400 });

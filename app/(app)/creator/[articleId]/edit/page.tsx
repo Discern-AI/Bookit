@@ -3,13 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { ArticleEditor } from "@/components/articles/ArticleEditor";
 import { parseArticleContent } from "@/lib/articles";
-export default async function Page({
-  params,
-  searchParams,
-}: {
-  params: { articleId: string };
-  searchParams: { saved?: string };
+export default async function Page(props: {
+  params: Promise<{ articleId: string }>;
+  searchParams: Promise<{ saved?: string }>;
 }) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const session = await auth();
   const article = await prisma.article.findFirst({
     where: { id: params.articleId, userId: session!.user.id, deletedAt: null },

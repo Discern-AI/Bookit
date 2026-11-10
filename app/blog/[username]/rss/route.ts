@@ -3,8 +3,9 @@ import { publishedArticles, escapeXml } from "@/lib/articles";
 export const dynamic = "force-dynamic";
 export async function GET(
   request: Request,
-  { params }: { params: { username: string } },
+  props: { params: Promise<{ username: string }> },
 ) {
+  const params = await props.params;
   const user = await prisma.user.findFirst({
     where: {
       username: params.username,

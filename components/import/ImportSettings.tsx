@@ -121,12 +121,13 @@ export function ImportSettings() {
       <ImportReviews />
       <div className="pt-4 border-t border-ink-200">
         <h3 className="font-display text-lg mb-2">Keep a copy</h3>
-        <a
+        <Link
           href="/api/library/export"
+          prefetch={false}
           className="text-shelf-700 hover:underline text-sm"
         >
           Export your library as JSON
-        </a>
+        </Link>
       </div>
     </section>
   );

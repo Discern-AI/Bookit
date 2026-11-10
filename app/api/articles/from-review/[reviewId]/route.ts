@@ -6,8 +6,9 @@ import { z } from "zod";
 import { reviewArticleContent } from "@/lib/review-article";
 export async function POST(
   request: Request,
-  { params }: { params: { reviewId: string } },
+  props: { params: Promise<{ reviewId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user?.id)
     return Response.json({ error: "Sign in first." }, { status: 401 });

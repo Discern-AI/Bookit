@@ -5,8 +5,9 @@ import { advanceImport, jobSelect } from "@/lib/import-jobs";
 export const maxDuration = 60;
 export async function GET(
   _request: Request,
-  { params }: { params: { jobId: string } },
+  props: { params: Promise<{ jobId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -18,8 +19,9 @@ export async function GET(
 }
 export async function POST(
   _request: Request,
-  { params }: { params: { jobId: string } },
+  props: { params: Promise<{ jobId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

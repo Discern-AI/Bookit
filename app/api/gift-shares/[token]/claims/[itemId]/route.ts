@@ -1,6 +1,7 @@
 import { changeGiftClaim } from "@/lib/gift-claims";
-type Context = { params: { token: string; itemId: string } };
-export async function PUT(request: Request, { params }: Context) {
+type Context = { params: Promise<{ token: string; itemId: string }> };
+export async function PUT(request: Request, props: Context) {
+  const params = await props.params;
   return changeGiftClaim(
     request,
     params.itemId,
@@ -8,6 +9,7 @@ export async function PUT(request: Request, { params }: Context) {
     false,
   );
 }
-export async function DELETE(request: Request, { params }: Context) {
+export async function DELETE(request: Request, props: Context) {
+  const params = await props.params;
   return changeGiftClaim(request, params.itemId, { token: params.token }, true);
 }

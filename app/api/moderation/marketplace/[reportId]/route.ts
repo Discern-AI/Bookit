@@ -11,8 +11,9 @@ const decisionSchema = z.object({
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { reportId: string } },
+  props: { params: Promise<{ reportId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user?.id)
     return Response.json({ error: "Sign in first." }, { status: 401 });

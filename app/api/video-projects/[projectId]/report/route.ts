@@ -5,8 +5,9 @@ import { sameOriginJson } from "@/lib/book-journal";
 
 export async function POST(
   request: Request,
-  { params }: { params: { projectId: string } },
+  props: { params: Promise<{ projectId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user?.id)
     return Response.json({ error: "Sign in first." }, { status: 401 });

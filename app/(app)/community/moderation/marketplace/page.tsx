@@ -4,11 +4,10 @@ import { auth } from "@/auth";
 import { ModerateMarketplaceReport } from "@/components/context/MarketplaceModeration";
 import { prisma } from "@/lib/prisma";
 
-export default async function MarketplaceModerationPage({
-  searchParams,
-}: {
-  searchParams: { status?: string };
+export default async function MarketplaceModerationPage(props: {
+  searchParams: Promise<{ status?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   const moderator = await prisma.user.findUnique({
     where: { id: session?.user?.id },

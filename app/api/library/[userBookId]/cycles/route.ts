@@ -4,14 +4,15 @@ import { z } from "zod";
 import { validDate, shiftDay } from "@/lib/reading";
 import { ensureReadingCycle } from "@/lib/reading-cycles";
 import { libraryInclude, serializeBook } from "@/lib/book-data";
-type Context = { params: { userBookId: string } };
+type Context = { params: Promise<{ userBookId: string }> };
 function reply(data: unknown, status = 200) {
   return Response.json(data, {
     status,
     headers: { "Cache-Control": "no-store" },
   });
 }
-export async function GET(_request: Request, { params }: Context) {
+export async function GET(_request: Request, props: Context) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user.id) return reply({ error: "Sign in first." }, 401);
   const book = await prisma.userBook.findFirst({
@@ -85,7 +86,8 @@ const schema = z.union([
   z.object({ ...identity, dateFinished: correctionDate.nullable() }).strict(),
   z.object({ ...identity, dateStarted: correctionDate }).strict(),
 ]);
-export async function PATCH(request: Request, { params }: Context) {
+export async function PATCH(request: Request, props: Context) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user.id) return reply({ error: "Sign in first." }, 401);
   if (

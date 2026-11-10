@@ -6,11 +6,10 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { reviewPage } from "@/components/community/ReviewList";
 import { DeleteReview } from "@/components/community/DeleteReview";
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: { page?: string; status?: string; q?: string };
+export default async function Page(props: {
+  searchParams: Promise<{ page?: string; status?: string; q?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   const userId = session!.user.id;
   const page = reviewPage(searchParams.page);

@@ -17,8 +17,9 @@ function reply(data: unknown, status: number) {
 }
 export async function POST(
   request: Request,
-  { params }: { params: { userBookId: string } },
+  props: { params: Promise<{ userBookId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user.id) return reply({ error: "Sign in first." }, 401);
   if (

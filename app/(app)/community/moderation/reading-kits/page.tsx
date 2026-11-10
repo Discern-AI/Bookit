@@ -3,11 +3,10 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { ModerateReadingKitReport } from "@/components/context/ReadingKitModeration";
 import { prisma } from "@/lib/prisma";
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: { status?: string };
+export default async function Page(props: {
+  searchParams: Promise<{ status?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   const moderator = await prisma.user.findUnique({
     where: { id: session?.user?.id },

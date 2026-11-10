@@ -2,11 +2,10 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { libraryInclude, serializeBook } from "@/lib/book-data";
 import { LibraryView } from "@/components/library/LibraryView";
-export default async function LibraryPage({
-  searchParams,
-}: {
-  searchParams: { book?: string };
+export default async function LibraryPage(props: {
+  searchParams: Promise<{ book?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   if (!session?.user) return null;
   const [books, shelves] = await Promise.all([

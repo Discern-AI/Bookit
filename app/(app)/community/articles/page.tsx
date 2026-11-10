@@ -2,11 +2,10 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { ArticleList } from "@/components/articles/ArticleList";
 import { reviewPage } from "@/components/community/ReviewList";
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: { page?: string; feed?: string };
+export default async function Page(props: {
+  searchParams: Promise<{ page?: string; feed?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   const following = searchParams.feed === "following";
   return (

@@ -4,11 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { giftInclude, serializeGift } from "@/lib/gift-data";
 import { nextOccasion, pounds } from "@/lib/gifts";
 import { DismissReminder } from "@/components/gifts/DismissReminder";
-export default async function GiftsPage({
-  searchParams,
-}: {
-  searchParams: { page?: string };
+export default async function GiftsPage(props: {
+  searchParams: Promise<{ page?: string }>;
 }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   if (!session?.user) return null;
   const page = Math.max(

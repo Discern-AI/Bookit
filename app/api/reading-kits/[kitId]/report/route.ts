@@ -8,8 +8,9 @@ const schema = z.object({
 });
 export async function POST(
   request: Request,
-  { params }: { params: { kitId: string } },
+  props: { params: Promise<{ kitId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user?.id)
     return Response.json({ error: "Sign in first." }, { status: 401 });

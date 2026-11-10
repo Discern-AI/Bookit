@@ -2,11 +2,10 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { PathEditor } from "@/components/paths/PathEditor";
-export default async function EditPathPage({
-  params,
-}: {
-  params: { pathId: string };
+export default async function EditPathPage(props: {
+  params: Promise<{ pathId: string }>;
 }) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user) return null;
   const path = await prisma.readingPath.findFirst({

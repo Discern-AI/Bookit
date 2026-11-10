@@ -6,11 +6,10 @@ export const metadata = {
   title: "Curated books | Folio",
   robots: { index: false, follow: false },
 };
-export default async function Page({
-  params,
-}: {
-  params: { username: string };
+export default async function Page(props: {
+  params: Promise<{ username: string }>;
 }) {
+  const params = await props.params;
   const shop = await prisma.curatorShop.findFirst({
     where: {
       isPublic: true,

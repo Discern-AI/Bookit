@@ -4,11 +4,10 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { FollowPath, SharePath } from "@/components/paths/PathActions";
 export const dynamic = "force-dynamic";
-export default async function PathPage({
-  params,
-}: {
-  params: { pathId: string };
+export default async function PathPage(props: {
+  params: Promise<{ pathId: string }>;
 }) {
+  const params = await props.params;
   const session = await auth();
   const path = await prisma.readingPath.findFirst({
     where: {

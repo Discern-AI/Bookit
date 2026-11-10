@@ -15,8 +15,9 @@ const reply = (data: unknown, status = 200) =>
   Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
 export async function POST(
   request: Request,
-  { params }: { params: { contactId: string } },
+  props: { params: Promise<{ contactId: string }> },
 ) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user.id) return reply({ error: "Sign in first." }, 401);
   if (!sameOriginJson(request))
