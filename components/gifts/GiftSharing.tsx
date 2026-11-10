@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
@@ -22,7 +21,8 @@ export function GiftSharing({
   const [error, setError] = useState("");
   const [copied, setCopied] = useState("");
   const [origin, setOrigin] = useState("");
-  const router = useRouter();
+  const [currentToken, setCurrentToken] = useState(token);
+  const [currentVersion, setCurrentVersion] = useState(version);
   useEffect(() => setOrigin(window.location.origin), []);
   async function change() {
     if (!confirm) return;
@@ -32,12 +32,13 @@ export function GiftSharing({
       const res = await fetch(`/api/gifts/${contactId}/share`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: confirm, version }),
+        body: JSON.stringify({ action: confirm, version: currentVersion }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setConfirm(null);
-      router.refresh();
+      setCurrentToken(data.shareToken ?? null);
+      setCurrentVersion(data.version);
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "Sharing could not be changed.",
@@ -50,7 +51,7 @@ export function GiftSharing({
   return (
     <section className="rounded border border-ink-200 p-4 space-y-3">
       <h2 className="font-display text-xl">Gift-list sharing</h2>
-      {token ? (
+      {currentToken ? (
         <>
           <p className="text-sm text-ink-500">
             Anyone with this link can see the recipient name, books,
@@ -60,7 +61,7 @@ export function GiftSharing({
           <Input
             aria-label="Shared gift link"
             readOnly
-            value={`${origin}/gift/${token}`}
+            value={`${origin}/gift/${currentToken}`}
             onFocus={(e) => e.target.select()}
           />
           <div className="flex flex-wrap gap-2">
@@ -70,7 +71,7 @@ export function GiftSharing({
               onClick={async () => {
                 try {
                   await navigator.clipboard.writeText(
-                    `${window.location.origin}/gift/${token}`,
+                    `${window.location.origin}/gift/${currentToken}`,
                   );
                   setCopied("Link copied.");
                 } catch {
@@ -81,7 +82,7 @@ export function GiftSharing({
               Copy link
             </Button>
             <a
-              href={`/gift/${token}`}
+              href={`/gift/${currentToken}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-shelf-700 px-2 py-1"

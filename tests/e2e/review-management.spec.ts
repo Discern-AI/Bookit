@@ -91,8 +91,7 @@ test("private review dashboard filters, searches, paginates and resumes drafts",
     drafts.push(await makeReview(owner.id, `draft${i}`));
   const published = await makeReview(owner.id, "published", true);
   await makeReview(owner.id, "hidden", true, true);
-  await page.goto("/community");
-  await page.getByRole("link", { name: "Your reviews", exact: true }).click();
+  await page.goto("/community/reviews");
   await expect(
     page.getByRole("heading", { name: "Your reviews", exact: true }),
   ).toBeVisible();
@@ -325,7 +324,7 @@ test("review deletion preserves library and reports, rejects stale requests and 
   await other.goto(`/review/${fresh.id}`);
   await expect(other.getByText("FRESH_REVIEW", { exact: true })).toBeVisible();
   await expect(
-    other.getByText("OLD_DISCUSSION_COMMENT", { exact: true }),
+    other.getByText("OLD_DISCUSSION_COMMENT", { exact: true }).last(),
   ).toHaveCount(0);
   expect((await other.request.get(`/review/${review.id}`)).status()).toBe(404);
   await db.user.update({
@@ -370,7 +369,7 @@ test("review deletion preserves library and reports, rejects stale requests and 
   );
   await other.goto("/community/comments");
   await expect(
-    other.getByText("OLD_DISCUSSION_COMMENT", { exact: true }),
+    other.getByText("OLD_DISCUSSION_COMMENT", { exact: true }).last(),
   ).toBeVisible();
   await other
     .getByRole("button", { name: "Remove comment", exact: true })

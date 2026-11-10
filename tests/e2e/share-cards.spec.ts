@@ -263,7 +263,9 @@ test("collection search and pagination stay private and recover from lookup fail
   await login(other, "empty");
   await other.goto("/creator/cards");
   await expect(
-    other.getByText("No matching books in your collection.", { exact: true }),
+    other
+      .getByText("No matching books in your collection.", { exact: true })
+      .last(),
   ).toBeVisible();
   await expect(
     other.getByRole("button", { name: "Download PNG", exact: true }),
@@ -745,7 +747,7 @@ test("project directory paginates and account deletion removes saved designs wit
     ).ok(),
   ).toBe(true);
   await page.goto(`/creator/cards?project=${id}`);
-  await expect(page.getByLabel("Quote", { exact: true })).toHaveValue(
+  await expect(page.getByLabel("Quote", { exact: true }).last()).toHaveValue(
     "A private quotation",
   );
   await expect(page.getByLabel("Page or reference (optional)")).toHaveValue(

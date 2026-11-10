@@ -82,9 +82,11 @@ test("curator shops publish explicitly with private journals and revocation", as
   const editor = page.getByRole("form", { name: "Shop editor" });
   await page
     .getByLabel("Shop title", { exact: true })
+    .last()
     .fill("My carefully chosen books");
   await page
     .getByLabel("Shop introduction", { exact: true })
+    .last()
     .fill("A public introduction I chose to write.");
   await page
     .getByRole("button", { name: `Add ${first.title}`, exact: true })
@@ -197,7 +199,7 @@ test("curator shops publish explicitly with private journals and revocation", as
   ).toHaveValue("My conflicting draft");
   page.once("dialog", (d) => d.accept());
   await page.reload();
-  await page.getByLabel("Publish my shop", { exact: true }).uncheck();
+  await page.getByLabel("Publish my shop", { exact: true }).last().uncheck();
   await page.getByRole("button", { name: "Save shop", exact: true }).click();
   await expect(
     editor.getByRole("status").filter({ hasText: "Shop saved" }),

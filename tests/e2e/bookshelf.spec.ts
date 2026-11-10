@@ -342,7 +342,7 @@ test("chat persists book associations, notes and logged thoughts without a live 
   const input = page.getByRole("textbox", {
     name: "Message your reading companion",
   });
-  await expect(page.getByLabel("Book for this conversation")).toHaveValue(
+  await expect(page.getByLabel("Book for this conversation").last()).toHaveValue(
     book.edition.workId,
   );
   await input.fill("The opening scene felt hopeful.");

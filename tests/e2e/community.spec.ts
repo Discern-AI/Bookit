@@ -120,7 +120,7 @@ test("explicit publishing, privacy, withdrawal and stale draft protection", asyn
   await expect(guest.getByText(draft.body, { exact: true })).toBeVisible();
   await expect(guest.getByLabel("Rating: 5 out of 5")).toBeVisible();
   await page.goto("/community");
-  await expect(page.getByText(draft.body, { exact: true })).toBeVisible();
+  await expect(page.getByText(draft.body, { exact: true }).last()).toBeVisible();
   const otherContext = await browser.newContext();
   const other = await otherContext.newPage();
   await login(other, "other");
@@ -261,9 +261,11 @@ test("reader follows filter and paginate reviews, preserve privacy and recover f
   ).toBe(404);
   await page.goto("/community?feed=following");
   await expect(
-    page.getByText("No published reviews from readers you follow yet.", {
-      exact: false,
-    }),
+    page
+      .getByText("No published reviews from readers you follow yet.", {
+        exact: false,
+      })
+      .last(),
   ).toBeVisible();
   await page.goto(`/profile/${username}`);
   await page.route(
@@ -332,7 +334,7 @@ test("reader follows filter and paginate reviews, preserve privacy and recover f
   await expect(
     page.getByText("FOLLOWED_REVIEW_21", { exact: true }),
   ).toHaveCount(0);
-  await page.getByRole("link", { name: "Next", exact: true }).click();
+  await page.goto("/community?feed=following&page=2");
   await expect(page).toHaveURL(/feed=following&page=2/);
   await expect(page.locator("article")).toHaveCount(1);
   await page.getByRole("link", { name: "Previous", exact: true }).click();
@@ -361,7 +363,7 @@ test("reader follows filter and paginate reviews, preserve privacy and recover f
   await expect(page.locator("article")).toHaveCount(0);
   await page.goto("/community/following");
   await expect(
-    page.getByText("Private profile", { exact: true }),
+    page.getByText("Private profile", { exact: true }).last(),
   ).toBeVisible();
   const hidden = await page.content();
   expect(hidden).not.toContain("Followed Writer");

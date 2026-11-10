@@ -312,7 +312,7 @@ test("private reports support moderator dismissal and hiding without author over
   expect(await page.content()).not.toContain("PRIVATE_REPORT_DETAILS");
   await mod.goto("/community/moderation");
   await expect(
-    mod.getByText("PRIVATE_REPORT_DETAILS", { exact: true }),
+    mod.getByText("PRIVATE_REPORT_DETAILS", { exact: true }).last(),
   ).toBeVisible();
   await mod.getByRole("button", { name: "Hide content", exact: true }).click();
   await mod.getByRole("button", { name: "Confirm hide", exact: true }).click();
@@ -346,7 +346,7 @@ test("private reports support moderator dismissal and hiding without author over
     .getByRole("button", { name: "Dismiss report", exact: true })
     .click();
   await expect(
-    mod.getByText("PRIVATE_REVIEW_REPORT", { exact: true }),
+    mod.getByText("PRIVATE_REVIEW_REPORT", { exact: true }).last(),
   ).toHaveCount(0);
   await reporter.reload();
   await expect(reporter.getByText(review.body, { exact: true })).toBeVisible();
@@ -397,7 +397,7 @@ test("private reports support moderator dismissal and hiding without author over
     );
   await mod.goto("/community/moderation?status=resolved");
   await expect(
-    mod.getByText("PRIVATE_REVIEW_REPORT", { exact: true }),
+    mod.getByText("PRIVATE_REVIEW_REPORT", { exact: true }).last(),
   ).toBeVisible();
   expect(
     (await db.reviewReport.findUniqueOrThrow({ where: { id: report.id } }))

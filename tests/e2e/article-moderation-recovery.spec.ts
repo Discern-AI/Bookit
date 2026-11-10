@@ -339,7 +339,7 @@ test("opt-in browser recovery restores new and saved drafts, rejects stale copie
   await page
     .getByRole("button", { name: "Restore recovery copy", exact: true })
     .click();
-  await expect(page.getByLabel("Title", { exact: true })).toHaveValue(
+  await expect(page.getByLabel("Title", { exact: true }).last()).toHaveValue(
     "Recovered new essay",
   );
   await page.getByRole("button", { name: "Save draft", exact: true }).click();
@@ -365,7 +365,7 @@ test("opt-in browser recovery restores new and saved drafts, rejects stale copie
   await expect(
     page.getByRole("button", { name: "Restore recovery copy", exact: true }),
   ).toBeDisabled();
-  await expect(page.getByLabel("Title", { exact: true })).toHaveValue(
+  await expect(page.getByLabel("Title", { exact: true }).last()).toHaveValue(
     "Newer server draft",
   );
   await page
@@ -380,6 +380,7 @@ test("opt-in browser recovery restores new and saved drafts, rejects stale copie
   await page.goto("/creator/new");
   await page
     .getByLabel("Title", { exact: true })
+    .last()
     .fill("Account-private new draft");
   await expect(
     page.getByRole("region", { name: "Draft recovery" }),

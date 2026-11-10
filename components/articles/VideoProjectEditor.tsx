@@ -122,7 +122,6 @@ export function VideoProjectEditor({
       setSaved(fingerprint);
       if (remove) {
         router.push("/creator/videos");
-        router.refresh();
         return;
       }
       setId(data.id);

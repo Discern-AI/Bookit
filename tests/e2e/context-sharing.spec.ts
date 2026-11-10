@@ -98,7 +98,10 @@ test("context sharing is explicit, scoped, previewed and consumed once", async (
   ).toBe(409);
   await foreign.close();
   await page.goto("/chat");
-  const panel = page.getByRole("region", { name: "Personal context sharing" });
+  await page.reload();
+  const panel = page
+    .getByRole("region", { name: "Personal context sharing" })
+    .filter({ visible: true });
   await expect(panel).toContainText("sharing is off");
   await panel.getByRole("button", { name: "Choose personal context" }).click();
   await panel

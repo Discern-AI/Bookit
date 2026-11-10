@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 export function FollowReader({
   readerId,
@@ -12,7 +11,6 @@ export function FollowReader({
   const [following, setFollowing] = useState(initialFollowing);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const router = useRouter();
   async function toggle() {
     setBusy(true);
     setError("");
@@ -24,7 +22,7 @@ export function FollowReader({
       if (!response.ok)
         throw new Error(result.error || "Could not update your follow.");
       setFollowing(result.following);
-      router.refresh();
+      window.location.reload();
     } catch (error) {
       setError(
         error instanceof Error

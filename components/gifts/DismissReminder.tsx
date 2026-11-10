@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 export function DismissReminder({
   contactId,
@@ -13,7 +12,6 @@ export function DismissReminder({
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const router = useRouter();
   return (
     <div>
       <Button
@@ -31,7 +29,7 @@ export function DismissReminder({
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
-            router.refresh();
+            window.location.reload();
           } catch (e) {
             setError(e instanceof Error ? e.message : "Try again.");
           } finally {

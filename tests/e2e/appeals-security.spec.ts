@@ -186,7 +186,7 @@ test("private appeals reject stale decisions, restore with publication controls 
   ).toBe(false);
   await page.goto("/community/appeals");
   await expect(
-    page.getByText("Status: restored", { exact: true }),
+    page.getByText("Status: restored", { exact: true }).last(),
   ).toBeVisible();
   await db.user.update({
     where: { id: owner.id },
@@ -393,12 +393,18 @@ test("password changes and device sign-out revoke existing sessions without a lo
     (await db.user.findUniqueOrThrow({ where: { id: owner.id } })).authVersion,
   ).toBe(0);
   await page.goto("/settings");
-  await page.getByLabel("Current password", { exact: true }).fill(password);
+  await page
+    .getByRole("main")
+    .last()
+    .getByLabel("Current password", { exact: true })
+    .fill(password);
   await page
     .getByLabel("New password", { exact: true })
+    .last()
     .fill("replacement-password");
   await page
     .getByLabel("Confirm new password", { exact: true })
+    .last()
     .fill("replacement-password");
   await page
     .getByRole("button", { name: "Change password", exact: true })
@@ -431,6 +437,7 @@ test("password changes and device sign-out revoke existing sessions without a lo
   await page.goto("/settings");
   await page
     .getByLabel("Current password", { exact: true })
+    .last()
     .fill("replacement-password");
   await page
     .getByRole("button", { name: "Sign out all devices", exact: true })

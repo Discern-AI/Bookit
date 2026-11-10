@@ -599,7 +599,9 @@ export function GiftEditor({ initial }: { initial?: GiftData }) {
               variant="danger"
               loading={busy}
               onClick={() =>
-                confirm === "delete" ? void save(true) : router.push(back)
+                confirm === "delete"
+                  ? void save(true)
+                  : window.location.assign(back)
               }
             >
               {confirm === "delete" ? "Confirm deletion" : "Discard changes"}

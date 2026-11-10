@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 export function DeleteReview({
@@ -17,7 +16,6 @@ export function DeleteReview({
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const router = useRouter();
   async function remove() {
     setBusy(true);
     setError("");
@@ -31,7 +29,7 @@ export function DeleteReview({
       if (!response.ok)
         throw new Error(result.error || "Could not delete. Try again.");
       setOpen(false);
-      router.refresh();
+      window.location.reload();
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "Could not delete. Try again.",

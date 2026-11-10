@@ -193,7 +193,6 @@ export function ReportContent({
   );
 }
 export function RemoveComment({ commentId }: { commentId: string }) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -205,7 +204,7 @@ export function RemoveComment({ commentId }: { commentId: string }) {
       });
       if (!response.ok) throw new Error("Could not remove comment. Try again.");
       setOpen(false);
-      router.refresh();
+      window.location.reload();
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "Could not remove comment.",
@@ -239,7 +238,6 @@ export function RemoveComment({ commentId }: { commentId: string }) {
   );
 }
 export function ModerateReport({ reportId }: { reportId: string }) {
-  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [confirm, setConfirm] = useState(false);
@@ -254,7 +252,7 @@ export function ModerateReport({ reportId }: { reportId: string }) {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       setConfirm(false);
-      router.refresh();
+      window.location.reload();
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "Could not resolve report.",

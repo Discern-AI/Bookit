@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { localSessionTime, sessionTimeValue } from "@/lib/session-times";
@@ -10,7 +9,6 @@ export function SessionActions({
 }: {
   session: SessionData & { version: number };
 }) {
-  const router = useRouter();
   const [mode, setMode] = useState<"edit" | "delete" | null>(null);
   const [date, setDate] = useState(session.date.slice(0, 10));
   const [start, setStart] = useState(String(session.pageStart));
@@ -62,7 +60,7 @@ export function SessionActions({
       if (!response.ok)
         throw new Error(data.error || "Could not save this change.");
       setMode(null);
-      router.refresh();
+      window.location.reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save this change.");
     } finally {

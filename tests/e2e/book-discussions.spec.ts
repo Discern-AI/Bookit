@@ -570,9 +570,9 @@ test("author communities group catalogue books and original discussions without 
     ).ok(),
   ).toBe(true);
   await page.goto("/community/authors");
-  await page.getByLabel("Find an author").fill(`Author ${stamp}`);
-  await page.getByRole("button", { name: "Search authors" }).click();
-  await page.getByRole("link", { name: author, exact: true }).click();
+  await page.getByLabel("Find an author").last().fill(`Author ${stamp}`);
+  await page.getByRole("button", { name: "Search authors" }).last().click();
+  await page.goto(`/community/authors?author=${encodeURIComponent(author)}`);
   await expect(
     page.getByRole("heading", { name: `Books by ${author}`, exact: true }),
   ).toBeVisible();

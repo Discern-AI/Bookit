@@ -112,7 +112,7 @@ test("session corrections and deletion update totals, reject stale changes and p
     .click();
   await expect(edit).not.toBeVisible();
   await expect(
-    page.getByText("PRIVATE_CORRECTED", { exact: true }),
+    page.getByText("PRIVATE_CORRECTED", { exact: true }).last(),
   ).toBeVisible();
   const changed = await db.readingSession.findUniqueOrThrow({
     where: { id: saved.id },
@@ -277,7 +277,7 @@ test("session times handle local midnight and daylight-saving changes with stale
     .getByRole("button", { name: "Save session changes", exact: true })
     .click();
   await expect(dialog).not.toBeVisible();
-  await expect(page.getByText("105 min", { exact: true })).toBeVisible();
+  await expect(page.getByText("105 min", { exact: true }).last()).toBeVisible();
   const edited = await db.readingSession.findUniqueOrThrow({
     where: { id: saved.id },
   });

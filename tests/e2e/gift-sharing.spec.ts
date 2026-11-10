@@ -170,7 +170,9 @@ test("shared gift links expose only selected fields, return after signup and pre
   await expect(publicPage.getByText("Claimed", { exact: true })).toBeVisible();
   await page.reload();
   await expect(
-    page.getByText("claimed by Private Giver Name", { exact: false }),
+    page
+      .getByText("claimed by Private Giver Name", { exact: false })
+      .last(),
   ).toBeVisible();
   await page.getByRole("link", { name: "Edit gift list", exact: true }).click();
   await page

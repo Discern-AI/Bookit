@@ -127,7 +127,7 @@ test("gift planning persists privately with budget reminders and bought/given st
   );
   await page.reload();
   await expect(
-    page.getByText("PRIVATE_GIFT_NOTE", { exact: true }),
+    page.getByText("PRIVATE_GIFT_NOTE", { exact: true }).last(),
   ).toBeVisible();
   await expect(page.getByText("Over budget", { exact: false })).toBeVisible();
   const anonContext = await browser.newContext();

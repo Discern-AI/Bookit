@@ -103,7 +103,6 @@ export function PathEditor({ initial }: { initial?: PathDraft }) {
         );
       }
       router.push(remove ? "/browse/paths?view=mine" : `/path/${data.id}`);
-      router.refresh();
     } catch (e) {
       setError(
         e instanceof Error

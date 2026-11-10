@@ -320,7 +320,9 @@ test("article appeals are private, reject stale decisions and restore without pu
     .getByRole("button", { name: "Confirm appeal restore", exact: true })
     .click();
   await expect(
-    mod.getByText("No article appeals on this page.", { exact: true }),
+    mod
+      .getByText("No article appeals on this page.", { exact: true })
+      .last(),
   ).toBeVisible();
   const restored = await db.article.findUniqueOrThrow({
     where: { id: article.id },
@@ -335,7 +337,7 @@ test("article appeals are private, reject stale decisions and restore without pu
   expect(resolved.status).toBe("restored");
   await page.goto("/creator/appeals");
   await expect(
-    page.getByText(`Response: ${response}`, { exact: true }),
+    page.getByText(`Response: ${response}`, { exact: true }).last(),
   ).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({

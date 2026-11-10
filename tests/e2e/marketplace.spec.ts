@@ -278,7 +278,7 @@ test("published listings are retry-safe, saveable, journalled and revoked on unp
   await ownerPage
     .getByRole("textbox", { name: "Search marketplace" })
     .fill(listing.title);
-  await ownerPage.getByLabel("Show").selectOption("mine");
+  await ownerPage.getByLabel("Show").last().selectOption("mine");
   await ownerPage.getByRole("button", { name: "Search marketplace" }).click();
   await expect(ownerPage.getByText("Private draft")).toBeVisible();
   await expect(

@@ -34,7 +34,7 @@ test("signup, resumable import, shelves, private edits, add, chat and isolation"
   ).toBeVisible();
   await page.goto("/settings");
   const csv = `Title,Author,Exclusive Shelf,My Rating,Date Read,Date Added,Bookshelves,My Review\n"${prefix} First book",Test Writer,read,4,2026/09/01,2026/08/01,"read, favourites","A review, with a comma"\n"${prefix} Second book",Test Writer,currently-reading,0,,2026/09/01,currently-reading,\n"${prefix} First book",Test Writer,read,4,,,,\n`;
-  const csvInput = page.getByLabel("Goodreads CSV");
+  const csvInput = page.getByLabel("Goodreads CSV").last();
   await expect
     .poll(() =>
       csvInput.evaluate((input) =>
@@ -194,6 +194,7 @@ test("signup, resumable import, shelves, private edits, add, chat and isolation"
   await page.goto("/chat");
   await page
     .getByLabel("Message your reading companion")
+    .last()
     .fill("What should I read?");
   await page.getByRole("button", { name: "Send", exact: true }).click();
   await expect(

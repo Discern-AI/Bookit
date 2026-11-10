@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 export function ShareShelf({
@@ -14,10 +13,11 @@ export function ShareShelf({
   isPublic: boolean;
   version: number;
 }) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [shared, setShared] = useState(isPublic);
+  const [currentVersion, setCurrentVersion] = useState(version);
   async function save() {
     setBusy(true);
     setError("");
@@ -25,13 +25,15 @@ export function ShareShelf({
       const response = await fetch(`/api/shelves/${id}/sharing`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isPublic: !isPublic, version }),
+        body: JSON.stringify({ isPublic: !shared, version: currentVersion }),
       });
       const result = await response.json();
       if (!response.ok)
         throw new Error(result.error || "Could not save. Try again.");
       setOpen(false);
-      router.refresh();
+      setShared(!shared);
+      setCurrentVersion((saved) => saved + 1);
+      window.location.reload();
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "Could not save. Try again.",
@@ -51,21 +53,21 @@ export function ShareShelf({
           setOpen(true);
         }}
       >
-        {isPublic ? "Stop sharing" : "Share shelf"}
+        {shared ? "Stop sharing" : "Share shelf"}
       </Button>
       <Modal
         open={open}
         onClose={() => {
           if (!busy) setOpen(false);
         }}
-        title={isPublic ? "Stop sharing shelf" : "Publish shelf"}
+        title={shared ? "Stop sharing shelf" : "Publish shelf"}
       >
         <p className="mb-3">
-          {isPublic
+          {shared
             ? `Hide ${name} and its public page?`
             : `Publish ${name}? Anyone will see its name, book titles, authors and edition details.`}
         </p>
-        {!isPublic && (
+        {!shared && (
           <p className="text-sm text-ink-500 mb-4">
             This is a live shelf: renaming it or adding/removing books updates
             the public page. Notes, ratings, reading status and dates stay
@@ -74,7 +76,7 @@ export function ShareShelf({
           </p>
         )}
         <Button loading={busy} onClick={save}>
-          {isPublic ? "Confirm stop sharing" : "Confirm publish"}
+          {shared ? "Confirm stop sharing" : "Confirm publish"}
         </Button>
         {error && (
           <p role="alert" className="text-rose-600 mt-3">

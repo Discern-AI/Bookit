@@ -173,7 +173,7 @@ test("opt-in live shelves protect private fields, profile visibility and stale s
   expect((await guest.request.get(`/shelf/${shelf.id}`)).status()).toBe(404);
   await page.reload();
   await expect(
-    page.getByText("Shared - profile private", { exact: true }),
+    page.getByText("Shared - profile private", { exact: true }).last(),
   ).toBeVisible();
   await page.getByRole("button", { name: "Stop sharing", exact: true }).click();
   await page
