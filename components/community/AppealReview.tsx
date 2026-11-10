@@ -97,7 +97,6 @@ export function DecideAppeal({
   reviewId: string;
   reviewVersion: number;
 }) {
-  const router = useRouter();
   const [action, setAction] = useState<"restore" | "reject" | null>(null);
   const [responseText, setResponseText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -120,7 +119,7 @@ export function DecideAppeal({
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       setAction(null);
-      router.refresh();
+      window.location.reload();
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "Could not resolve appeal.",

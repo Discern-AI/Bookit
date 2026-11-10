@@ -1,7 +1,6 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 export function AppealArticle({
@@ -81,7 +80,6 @@ export function DecideArticleAppeal({
   appealId: string;
   version: number;
 }) {
-  const router = useRouter();
   const [action, setAction] = useState<"restore" | "reject" | null>(null);
   const [response, setResponse] = useState("");
   const [busy, setBusy] = useState(false);
@@ -101,7 +99,7 @@ export function DecideArticleAppeal({
       const data = await result.json();
       if (!result.ok) throw new Error(data.error);
       setAction(null);
-      router.refresh();
+      window.location.reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not resolve appeal.");
     } finally {

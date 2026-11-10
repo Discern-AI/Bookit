@@ -87,7 +87,11 @@ test("editor inserts image and collection card, strips photo metadata and publis
     },
   });
   await page.goto("/creator/new");
-  await page.getByLabel("Title", { exact: true }).fill("Illustrated essay");
+  await page
+    .getByRole("main")
+    .last()
+    .getByLabel("Title", { exact: true })
+    .fill("Illustrated essay");
   await page
     .getByRole("textbox", { name: "Article body" })
     .fill("An illustrated essay.");
