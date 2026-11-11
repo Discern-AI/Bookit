@@ -751,9 +751,9 @@ test("project directory paginates and account deletion removes saved designs wit
   await expect(page.getByLabel("Quote", { exact: true }).last()).toHaveValue(
     "A private quotation",
   );
-  await expect(page.getByLabel("Page or reference (optional)")).toHaveValue(
-    "p. 8",
-  );
+  await expect(
+    page.getByLabel("Page or reference (optional)").last(),
+  ).toHaveValue("p. 8");
   const additional = Array.from({ length: 21 }, (_, i) => ({
     id: crypto.randomUUID(),
     userId: owner.id,
