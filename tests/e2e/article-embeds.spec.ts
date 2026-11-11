@@ -100,7 +100,12 @@ test("editor inserts image and collection card, strips photo metadata and publis
   const article = await db.article.findFirstOrThrow({
     where: { userId: owner.id },
   });
-  await page.getByRole("button", { name: "Insert image", exact: true }).click();
+  await expect(page).toHaveURL(`/creator/${article.id}/edit?saved=1`);
+  await page
+    .getByRole("main")
+    .last()
+    .getByRole("button", { name: "Insert image", exact: true })
+    .click();
   await page.getByLabel("Image file", { exact: true }).setInputFiles({
     name: "photo.jpg",
     mimeType: "image/jpeg",
