@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
 type Profile = {
   username: string;
   publicName: string;
@@ -18,15 +19,26 @@ type Review = {
 export function PublishingForm({
   initial,
   workId,
+  importedReview,
 }: {
   initial: Profile | Review;
   workId?: string;
+  importedReview?: string | null;
 }) {
   const [draft, setDraft] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [confirmImport, setConfirmImport] = useState(false);
   const router = useRouter();
   const field = "w-full rounded border border-ink-200 bg-paper-50 p-3";
+  function copyImportedReview() {
+    if (!importedReview || !("body" in draft)) return;
+    setDraft({ ...draft, body: importedReview });
+    setConfirmImport(false);
+    setMessage(
+      "Imported review copied into this unsaved community draft. Review it, then save when ready.",
+    );
+  }
   async function save(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
@@ -113,6 +125,25 @@ export function PublishingForm({
           </>
         ) : (
           <>
+            {importedReview && (
+              <div className="rounded border border-ink-200 bg-paper-100 p-3 space-y-2">
+                <p className="text-sm">
+                  You have a private imported review for this book. Copying it
+                  creates editable draft text here; it does not save or publish
+                  anything, and your private imported review remains unchanged.
+                </p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    if (draft.body.trim()) setConfirmImport(true);
+                    else copyImportedReview();
+                  }}
+                >
+                  Copy imported review into draft
+                </Button>
+              </div>
+            )}
             <label className="block">
               Review
               <textarea
@@ -166,6 +197,29 @@ export function PublishingForm({
         </Button>
       </fieldset>
       {message && <p role="status">{message}</p>}
+      <Modal
+        open={confirmImport}
+        title="Replace community draft text?"
+        onClose={() => setConfirmImport(false)}
+      >
+        <p className="mb-4">
+          This replaces the text currently in the form with your private
+          imported review. It does not change the saved draft until you choose
+          Save review.
+        </p>
+        <div className="flex gap-3">
+          <Button type="button" onClick={copyImportedReview}>
+            Replace draft text
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setConfirmImport(false)}
+          >
+            Keep current draft
+          </Button>
+        </div>
+      </Modal>
     </form>
   );
 }

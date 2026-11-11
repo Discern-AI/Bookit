@@ -68,7 +68,7 @@ No overall completion percentage is assigned: an integration, marketplace or rel
 - [ ] **Partial:** verified author identities/author-managed pages, reader-created spaces and general discussions without a book.
 - [ ] **Partial:** challenge definition editing, participant leaderboards/discussions and subscriptions/notification delivery.
 - [ ] **Partial:** review-comment editing/threading, block/mute and broader moderation/account-sanction operations.
-- [ ] **Not built:** explicitly publishing imported reviews; imports currently preserve review text privately.
+- [x] Imported reviews remain private by default and can be copied explicitly, text-only, into an editable unsaved community-review draft. Existing draft replacement requires confirmation; saving starts private and publication remains a separate opt-in action. Private library ratings and the original imported record are not changed.
 
 ## 5. Creator and social media
 
@@ -114,7 +114,7 @@ These are outstanding release work, not claims that the local build is already r
 - [ ] **Release gate:** separately protected database/key backups, tested restore and documented retention/recovery. Automated key rotation is not implemented.
 - [ ] **Release gate:** cross-instance/edge abuse limits, monitoring, error reporting and operational email delivery checks.
 - [ ] **Release gate:** trusted moderator assignment, response process and public-content safety operations before opening public features.
-- [ ] **Release gate:** the complete 86-scenario Chromium baseline completed with 81 passes, 2 intentional skips and 3 transition-locator retries; every reproduced retry now has a focused first-pass regression. Axe checks across Chat, Library, Browse, Community and Settings pass at desktop/mobile widths in Chromium and WebKit with no serious/critical WCAG A/AA findings or horizontal overflow. A bounded local check with 100 sessions, 20 concurrent paginated reads and warmed core routes passes. Firefox Playwright runs hang in this Windows environment and remain unresolved; a retry-free expanded full run and realistic production-scale load testing also remain outstanding.
+- [ ] **Release gate:** the expanded Chromium suite now contains 93 scenarios. Every reproduced transition, fixture-isolation and database-contention failure has a focused no-retry pass; long integrated runs have progressed through all suite sections, but a single uninterrupted retry-free expanded run remains outstanding. Axe checks across Chat, Library, Browse, Community and Settings pass at desktop/mobile widths in Chromium and WebKit with no serious/critical WCAG A/AA findings or horizontal overflow. A bounded local check with 100 sessions, 20 concurrent paginated reads and warmed core routes passes. Firefox Playwright runs hang in this Windows environment and realistic production-scale load testing remains outstanding.
 - [ ] **Release gate:** complete real-provider checks for enabled integrations; label unavailable integrations honestly.
 - [ ] **Release gate:** final deployment review and launch. Nothing has been deployed by the completed local work.
 

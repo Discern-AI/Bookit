@@ -19,6 +19,15 @@ export default async function Page(props: {
     orderBy: { version: "desc" },
   });
   const review = latest?.active ? latest : null;
+  const imported = await prisma.userBook.findFirst({
+    where: {
+      userId: session!.user.id,
+      edition: { workId: params.workId },
+      importedReview: { not: null },
+    },
+    orderBy: { dateAdded: "desc" },
+    select: { importedReview: true },
+  });
   return (
     <main className="max-w-2xl mx-auto p-6 space-y-6">
       <Link className="underline" href="/community/reviews">
@@ -48,6 +57,7 @@ export default async function Page(props: {
       )}
       <PublishingForm
         workId={params.workId}
+        importedReview={imported?.importedReview ?? null}
         initial={{
           body: review?.body ?? "",
           rating: review?.rating ?? null,
