@@ -403,7 +403,10 @@ test("detail drawer saves notes and adds editions without changing reading histo
     },
   });
   await page.goto("/library");
-  await page.getByText(original.edition.work.title, { exact: true }).click();
+  await page
+    .getByText(original.edition.work.title, { exact: true })
+    .last()
+    .click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
   expect(Math.round((await dialog.boundingBox())!.width)).toBe(480);
