@@ -314,8 +314,17 @@ test("private reports support moderator dismissal and hiding without author over
   await expect(
     mod.getByText("PRIVATE_REPORT_DETAILS", { exact: true }).last(),
   ).toBeVisible();
-  await mod.getByRole("button", { name: "Hide content", exact: true }).click();
-  await mod.getByRole("button", { name: "Confirm hide", exact: true }).click();
+  const reportCard = mod
+    .getByRole("article")
+    .filter({ hasText: "PRIVATE_REPORT_DETAILS" })
+    .last();
+  await reportCard
+    .getByRole("button", { name: "Hide content", exact: true })
+    .click();
+  await mod
+    .getByRole("button", { name: "Confirm hide", exact: true })
+    .filter({ visible: true })
+    .click();
   await expect(
     mod.getByText("PRIVATE_REPORT_DETAILS", { exact: true }),
   ).toHaveCount(0);
@@ -343,6 +352,9 @@ test("private reports support moderator dismissal and hiding without author over
   );
   await mod.goto("/community/moderation");
   await mod
+    .getByRole("article")
+    .filter({ hasText: "PRIVATE_REVIEW_REPORT" })
+    .last()
     .getByRole("button", { name: "Dismiss report", exact: true })
     .click();
   await expect(
@@ -358,7 +370,12 @@ test("private reports support moderator dismissal and hiding without author over
     ).ok(),
   ).toBe(true);
   await mod.reload();
-  await mod.getByRole("button", { name: "Hide content", exact: true }).click();
+  await mod
+    .getByRole("article")
+    .filter({ hasText: "SECOND_REPORT" })
+    .last()
+    .getByRole("button", { name: "Hide content", exact: true })
+    .click();
   await mod.getByRole("button", { name: "Confirm hide", exact: true }).click();
   await expect(mod.getByText("SECOND_REPORT", { exact: true })).toHaveCount(0);
   expect((await reporter.request.get(`/review/${review.id}`)).status()).toBe(
