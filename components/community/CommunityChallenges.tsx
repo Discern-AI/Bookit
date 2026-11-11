@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 type Template = {
   id: string;
   title: string;
@@ -15,7 +14,6 @@ type Template = {
   joinedId: string | null;
 };
 export function CommunityChallenges({ challengeId }: { challengeId?: string }) {
-  const router = useRouter();
   const [page, setPage] = useState(0),
     [items, setItems] = useState<Template[]>([]),
     [more, setMore] = useState(false),
@@ -67,7 +65,7 @@ export function CommunityChallenges({ challengeId }: { challengeId?: string }) {
       });
       const d = await r.json();
       if (!r.ok) throw Error(d.error);
-      router.push(`/community/challenges#${d.id}`);
+      window.location.assign(`/community/challenges#${d.id}`);
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "Could not join. Please retry.",
