@@ -273,7 +273,9 @@ test("article feeds paginate published snapshots and honor following and profile
   const follower = await login(reader, "follower");
   await reader.goto("/community/articles?feed=following");
   await expect(
-    reader.getByText("No published articles on this page."),
+    reader
+      .getByText("No published articles on this page.")
+      .filter({ visible: true }),
   ).toBeVisible();
   await db.readerFollow.create({
     data: { followerId: follower.id, readerId: owner.id },
