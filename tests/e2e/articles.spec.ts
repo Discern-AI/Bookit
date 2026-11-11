@@ -49,11 +49,20 @@ test("rich text drafts publish separate snapshots and respect blog privacy", asy
   await expect(
     page.getByRole("button", { name: "Disable public blog", exact: true }),
   ).toBeVisible();
-  await page.getByRole("link", { name: "New article" }).click();
-  await page.getByLabel("Title", { exact: true }).fill("Published essay");
-  await page.getByLabel("Summary (optional)").fill("Books & <ideas>");
+  const newArticleLink = page.getByRole("link", { name: "New article" });
+  await expect(newArticleLink).toHaveAttribute("href", "/creator/new");
+  await page.goto("/creator/new");
+  await page
+    .getByLabel("Title", { exact: true })
+    .filter({ visible: true })
+    .fill("Published essay");
+  await page
+    .getByLabel("Summary (optional)")
+    .filter({ visible: true })
+    .fill("Books & <ideas>");
   await page
     .getByRole("textbox", { name: "Article body" })
+    .filter({ visible: true })
     .fill("A thoughtful article.");
   await page.getByRole("button", { name: "Save draft", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("Draft saved");

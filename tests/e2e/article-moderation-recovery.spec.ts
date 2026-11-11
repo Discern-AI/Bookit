@@ -163,7 +163,9 @@ test("article reports preserve published evidence, enforce stale decisions and g
   await mod.getByRole("button", { name: "Hide article", exact: true }).click();
   await mod.getByLabel("Decision note", { exact: true }).fill(decision.note);
   await mod.getByRole("button", { name: "Confirm hide", exact: true }).click();
-  await expect(mod.getByText("No article reports on this page.")).toBeVisible();
+  await expect(
+    mod.getByText("No article reports on this page.").filter({ visible: true }),
+  ).toBeVisible();
   expect((await reader.goto(`/article/${id}`))?.status()).toBe(404);
   expect(
     (await reader.request.get(`/api/article-images/${image.id}`)).status(),
@@ -201,9 +203,11 @@ test("article reports preserve published evidence, enforce stale decisions and g
     .getByRole("button", { name: "Confirm restore", exact: true })
     .click();
   await expect(
-    mod.getByText("Restoration: Restriction lifted after review", {
-      exact: true,
-    }),
+    mod
+      .getByText("Restoration: Restriction lifted after review", {
+        exact: true,
+      })
+      .filter({ visible: true }),
   ).toBeVisible();
   const restored = await db.article.findUniqueOrThrow({ where: { id } });
   expect(restored.isHidden).toBe(false);
@@ -376,6 +380,7 @@ test("opt-in browser recovery restores new and saved drafts, rejects stale copie
   ).toHaveCount(0);
   await page
     .getByLabel("Title", { exact: true })
+    .filter({ visible: true })
     .fill("Account-private local draft");
   await page.goto("/creator/new");
   await page

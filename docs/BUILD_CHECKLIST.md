@@ -51,7 +51,7 @@ No overall completion percentage is assigned: an integration, marketplace or rel
 - [ ] **Partial:** AI path generation, expert verification and automatic path progress.
 - [x] External bookshop/library search links.
 - [ ] **Partial:** a unified external acquisition panel now provides ISBN/title searches for libraries, UK retail, rare/collectable editions and explicit location-aware nearby-bookshop opening. Live borrowing availability, retail stock/prices and location-aware provider results remain unbuilt.
-- [ ] **Partial:** paginate/optimise larger reading-session histories; the new personal-context diary pagination does not resolve this separate reading-diary backlog.
+- [x] Larger per-book reading-session histories use stable 25-row cursor pages, preserve loaded rows on later-page failures and expose an explicit accessible load-more control with loaded/total counts.
 
 ## 4. Gifts and community
 
@@ -114,7 +114,7 @@ These are outstanding release work, not claims that the local build is already r
 - [ ] **Release gate:** separately protected database/key backups, tested restore and documented retention/recovery. Automated key rotation is not implemented.
 - [ ] **Release gate:** cross-instance/edge abuse limits, monitoring, error reporting and operational email delivery checks.
 - [ ] **Release gate:** trusted moderator assignment, response process and public-content safety operations before opening public features.
-- [ ] **Release gate:** broader integrated regression, accessibility/mobile/browser checks and realistic load/performance testing after remaining work.
+- [ ] **Release gate:** the complete 86-scenario Chromium baseline completed with 81 passes, 2 intentional skips and 3 transition-locator retries; every reproduced retry now has a focused first-pass regression. Axe checks across Chat, Library, Browse, Community and Settings pass at desktop/mobile widths in Chromium and WebKit with no serious/critical WCAG A/AA findings or horizontal overflow. A bounded local check with 100 sessions, 20 concurrent paginated reads and warmed core routes passes. Firefox Playwright runs hang in this Windows environment and remain unresolved; a retry-free expanded full run and realistic production-scale load testing also remain outstanding.
 - [ ] **Release gate:** complete real-provider checks for enabled integrations; label unavailable integrations honestly.
 - [ ] **Release gate:** final deployment review and launch. Nothing has been deployed by the completed local work.
 

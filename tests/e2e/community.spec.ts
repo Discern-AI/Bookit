@@ -103,7 +103,10 @@ test("explicit publishing, privacy, withdrawal and stale draft protection", asyn
   await page.getByRole("button", { name: "Save profile" }).click();
   await expect(page.getByRole("status")).toHaveText("Saved.");
   await page.goto(`/community/review/${work.id}`);
-  await page.getByLabel("Publish this review", { exact: false }).check();
+  await page
+    .getByLabel("Publish this review", { exact: false })
+    .filter({ visible: true })
+    .check();
   await page.getByRole("button", { name: "Save review" }).click();
   await expect(page.getByRole("status")).toHaveText("Saved.");
   await guest.goto(`/profile/${username}`);

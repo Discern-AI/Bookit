@@ -187,9 +187,11 @@ test("video plans save drafts and posted links against original book journals", 
   );
   page.once("dialog", (dialog) => dialog.accept());
   await page.reload();
-  await expect(page.getByLabel("Video script", { exact: true })).toHaveValue(
-    "Other tab",
-  );
+  await expect(
+    page
+      .getByLabel("Video script", { exact: true })
+      .filter({ visible: true }),
+  ).toHaveValue("Other tab");
   await page
     .getByLabel("Production status", { exact: true })
     .selectOption("published");

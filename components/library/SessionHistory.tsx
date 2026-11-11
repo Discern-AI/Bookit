@@ -9,7 +9,11 @@ export function SessionHistory({
   latestId: string | null;
 }) {
   const [sessions, setSessions] = useState<SessionData[] | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [error, setError] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
@@ -19,13 +23,36 @@ export function SessionHistory({
       .then(async (response) => {
         if (!response.ok) throw new Error();
         const data = await response.json();
-        if (!controller.signal.aborted) setSessions(data.sessions);
+        if (!controller.signal.aborted) {
+          setSessions(data.sessions);
+          setTotalCount(data.totalCount);
+          setNextCursor(data.nextCursor);
+        }
       })
       .catch(() => {
         if (!controller.signal.aborted) setError(true);
       });
     return () => controller.abort();
   }, [bookId, latestId, attempt]);
+  async function loadMore() {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    setLoadMoreError(false);
+    try {
+      const response = await fetch(
+        `/api/library/${bookId}/sessions?cursor=${encodeURIComponent(nextCursor)}`,
+      );
+      if (!response.ok) throw new Error();
+      const data = await response.json();
+      setSessions((current) => [...(current ?? []), ...data.sessions]);
+      setTotalCount(data.totalCount);
+      setNextCursor(data.nextCursor);
+    } catch {
+      setLoadMoreError(true);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
   return (
     <section className="space-y-3">
       <h3 className="font-display text-xl">Reading sessions</h3>
@@ -75,8 +102,9 @@ export function SessionHistory({
             </table>
           </div>
           <p className="text-xs text-ink-500">
-            {sessions.length} sessions &middot;{" "}
+            Showing {sessions.length} of {totalCount} sessions &middot;{" "}
             {sessions.reduce((n, s) => n + s.pageEnd - s.pageStart, 0)} pages
+            shown
           </p>
           {sessions
             .filter((s) => s.note)
@@ -86,6 +114,20 @@ export function SessionHistory({
                 <p className="text-sm italic whitespace-pre-wrap">{s.note}</p>
               </blockquote>
             ))}
+          {nextCursor && (
+            <button
+              className="text-sm text-shelf-700 disabled:opacity-50"
+              disabled={loadingMore}
+              onClick={() => void loadMore()}
+            >
+              {loadingMore ? "Loading more sessions..." : "Load more sessions"}
+            </button>
+          )}
+          {loadMoreError && (
+            <p role="alert" className="text-sm text-red-700">
+              More sessions could not load. Your loaded history is unchanged.
+            </p>
+          )}
         </>
       )}
     </section>

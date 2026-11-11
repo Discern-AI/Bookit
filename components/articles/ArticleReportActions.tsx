@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 export function ReportArticle({
@@ -92,7 +91,6 @@ export function ModerateArticle({
   version: number;
   restore?: boolean;
 }) {
-  const router = useRouter();
   const [action, setAction] = useState<"hide" | "dismiss" | "restore" | null>(
     null,
   );
@@ -111,7 +109,7 @@ export function ModerateArticle({
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       setAction(null);
-      router.refresh();
+      window.location.reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not resolve report.");
     } finally {

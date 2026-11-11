@@ -13,7 +13,7 @@ export default async function Page(props: {
   });
   const following = searchParams.feed === "following";
   return (
-    <main className="max-w-2xl mx-auto p-6 space-y-6">
+    <div className="max-w-2xl mx-auto p-6 space-y-6">
       <Link className="underline" href="/community/authors">
         Author communities
       </Link>
@@ -86,6 +86,6 @@ export default async function Page(props: {
         page={reviewPage(searchParams.page)}
         basePath={following ? "/community?feed=following" : "/community"}
       />
-    </main>
+    </div>
   );
 }

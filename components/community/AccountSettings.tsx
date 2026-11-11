@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
@@ -11,7 +10,6 @@ export function AccountSettings({
   userId: string;
   initialName: string;
 }) {
-  const router = useRouter();
   const [name, setName] = useState(initialName);
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
@@ -38,7 +36,6 @@ export function AccountSettings({
         throw new Error(data.error || "Could not update your account.");
       if (action === "name") {
         setStatus("Account name saved.");
-        router.refresh();
       } else {
         try {
           localStorage.removeItem(`folio:article-recovery-enabled:${userId}`);

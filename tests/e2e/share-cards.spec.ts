@@ -531,6 +531,7 @@ test("private card projects reopen, retain drafts and follow original journal re
     .click();
   await page
     .getByLabel("Project name", { exact: true })
+    .filter({ visible: true })
     .fill("Private project title");
   await page
     .getByLabel("Caption (optional)", { exact: true })

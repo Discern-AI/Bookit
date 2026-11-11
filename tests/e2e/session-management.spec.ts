@@ -232,6 +232,62 @@ test("session corrections and deletion update totals, reject stale changes and p
   ).toHaveAttribute("aria-label", /0 pages logged \/ 0 reading days/);
 });
 
+test("large session histories paginate without losing totals or notes", async ({
+  page,
+}) => {
+  const owner = await login(page, "pagination");
+  const work = await add(owner.id, `Session ${stamp} Paginated history`);
+  const book = await db.userBook.findFirstOrThrow({
+    where: { userId: owner.id },
+  });
+  await db.readingSession.createMany({
+    data: Array.from({ length: 31 }, (_, index) => ({
+      userId: owner.id,
+      userBookId: book.id,
+      date: new Date(Date.UTC(2026, 0, 31 - index, 12)),
+      pageStart: index * 10,
+      pageEnd: index * 10 + 10,
+      note: `Session note ${index + 1}`,
+    })),
+  });
+
+  const firstResponse = await page.request.get(
+    `/api/library/${book.id}/sessions`,
+  );
+  expect(firstResponse.status()).toBe(200);
+  const first = await firstResponse.json();
+  expect(first.sessions).toHaveLength(25);
+  expect(first.totalCount).toBe(31);
+  expect(first.nextCursor).toBe(first.sessions[24].id);
+
+  const second = await (
+    await page.request.get(
+      `/api/library/${book.id}/sessions?cursor=${first.nextCursor}`,
+    )
+  ).json();
+  expect(second.sessions).toHaveLength(6);
+  expect(second.totalCount).toBe(31);
+  expect(second.nextCursor).toBeNull();
+  expect(
+    (
+      await page.request.get(
+        `/api/library/${book.id}/sessions?cursor=${"x".repeat(101)}`,
+      )
+    ).status(),
+  ).toBe(400);
+
+  await page.goto(`/library?book=${book.id}`);
+  await expect(page.getByRole("dialog")).toContainText(work.title);
+  await page.getByRole("tab", { name: "Sessions", exact: true }).click();
+  await expect(page.getByText("Showing 25 of 31 sessions")).toBeVisible();
+  await page.getByRole("button", { name: "Load more sessions" }).click();
+  await expect(page.getByText("Showing 31 of 31 sessions")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Load more sessions" }),
+  ).toHaveCount(0);
+  await expect(page.getByText("Session note 31", { exact: true })).toBeVisible();
+});
+
 test("session times handle local midnight and daylight-saving changes with stale-draft protection", async ({
   browser,
 }) => {
