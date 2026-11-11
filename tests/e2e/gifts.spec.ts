@@ -449,7 +449,7 @@ test("AI gift suggestions require review and preserve drafts, ownership and jour
     page.getByRole("alert").filter({ hasText: "Suggestions unavailable" }),
   ).toBeVisible();
   await expect(
-    page.getByLabel("Reading preferences", { exact: true }),
+    page.getByLabel("Reading preferences", { exact: true }).last(),
   ).toHaveValue("Mystery novels");
   fail = false;
   await ask.click();
