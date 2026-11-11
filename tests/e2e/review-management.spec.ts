@@ -161,7 +161,9 @@ test("private review dashboard filters, searches, paginates and resumes drafts",
   });
   await page.goto("/community/reviews?status=published");
   await expect(
-    page.getByText("Published - profile private", { exact: true }),
+    page
+      .getByText("Published - profile private", { exact: true })
+      .filter({ visible: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("link", { name: "View discussion", exact: true }),
