@@ -37,11 +37,10 @@ export function ContextSharing({
     setEntries([]);
     setProfileAvailable(false);
     try {
-      const [a, b] = await Promise.all([
-        fetch("/api/context"),
-        fetch(`/api/context/diary?page=${p}`),
-      ]);
-      const [c, d] = await Promise.all([a.json(), b.json()]);
+      const a = await fetch("/api/context");
+      const c = await a.json();
+      const b = await fetch(`/api/context/diary?page=${p}`);
+      const d = await b.json();
       if (!a.ok || !b.ok || !c.available || !d.available)
         throw Error(
           "Personal context is unavailable. Check your saved context and server key.",
